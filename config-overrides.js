@@ -5,14 +5,15 @@ module.exports = function override(config) {
     ...config.resolve.fallback,
     "crypto": require.resolve("crypto-browserify"),
     "stream": require.resolve("stream-browserify"),
-    "buffer": require.resolve("buffer"),
+    "buffer": require.resolve("buffer")
   };
+
   config.plugins = [
     ...config.plugins,
     new webpack.ProvidePlugin({
-      global: 'global',
       Buffer: ['buffer', 'Buffer'],
-    }),
+    })
   ];
+
   return config;
 };
