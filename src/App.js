@@ -69,28 +69,18 @@ function App() {
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
 
       {/* SHIELDED floating indicators */}
-      {recentBlocks.slice(0, 5).map((b, i) => b.tx_count > 0 && (
-        <div key={b.hash + i} className="ghost" style={{ left: `${30 + i * 15}%` }}>
+      {recentBlocks.slice(0, 6).map((b, i) => b.tx_count > 0 && (
+        <div key={b.hash + i} className="shielded-float">
           SHIELDED
         </div>
       ))}
 
-      <div className="layout">
-        {/* Left Timeline */}
-        <div className="timeline" ref={timelineRef}>
-          {recentBlocks.map((b, i) => (
-            <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
-              <span className="height">#{b.height}</span>
-              <span className="txs">{b.tx_count || 0} tx</span>
-            </div>
-          ))}
-        </div>
-
+      <div className="main-layout">
         {/* Main Dashboard */}
-        <div className="main-content">
+        <div className="dashboard">
           <header className="header">
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+            <p className="subtitle centered" data-text="EXPLORER">EXPLORER</p>
           </header>
 
           <main>
@@ -102,7 +92,7 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
+              <span>0.21 tx/s</span>
               <span>{recentBlocks.length} blocks</span>
               <span>{shieldedCount} SHIELDED events</span>
             </div>
@@ -111,6 +101,16 @@ function App() {
           <footer>
             <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
           </footer>
+        </div>
+
+        {/* Right Timeline */}
+        <div className="timeline" ref={timelineRef}>
+          {recentBlocks.map((b, i) => (
+            <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+              <span className="height">#{b.height}</span>
+              <span className="txs">{b.tx_count || 0} tx</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
