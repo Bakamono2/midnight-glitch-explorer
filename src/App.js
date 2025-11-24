@@ -7,16 +7,23 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [wheelBlocks, setWheelBlocks] = useState([]);
+  const [wheelBlocks, setWheelBlocks] = useState([]); // Start with dummy for instant load
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rotation, setRotation] = useState(0);
 
+  // Dummy blocks for instant wheel render
+  const dummyBlocks = Array.from({ length: 12 }, (_, i) => ({
+    height: `###`,
+    hash: 'loading...',
+    tx_count: 0
+  }));
+
   const addParticle = () => {
     for (let i = 0; i < 25; i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + i }].slice(-100));
+        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
       }, i * 60);
     }
   };
@@ -37,28 +44,29 @@ function App() {
         setLatest(block);
         setWheelBlocks(prev => {
           const updated = [block, ...prev.filter(b => b.height !== block.height)];
-          return updated.slice(0, 12);
+          return updated.slice(0, 12).map(b => b || dummyBlocks[0]); // Fallback
         });
-        setRotation(r => r - 30); // 360° / 12 = 30° per block
+        setRotation(r => r - 30); // Smooth 30° shift per block
         addParticle();
         if (txCount > 0) spawnGhost();
         if (txCount > 6) confetti({ particleCount: 400, spread: 140, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
       }
       setLoading(false);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setLoading(false); }
   };
 
   useEffect(() => {
+    setWheelBlocks(dummyBlocks); // Instant dummy wheel
     fetchData();
     const interval = setInterval(fetchData, 7000);
     return () => clearInterval(interval);
-  }, [latest]);
+  }, []);
 
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
+  if (loading) return <div className="loading glitch" data-text="SPINNING UP THE SHADOWS...">SPINNING UP THE SHADOWS...</div>;
 
   return (
     <div className="App">
-      {particles.map(p => <div key={p.id} className="rain"></div>)}
+      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
       {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>Zero-Knowledge Ghost</div>)}
 
       <header className="header">
@@ -66,7 +74,7 @@ function App() {
         <p className="subtitle" data-text="WHEEL">WHEEL</p>
       </header>
 
-      {/* MAIN DASHBOARD CARD — RESTORED & GORGEOUS */}
+      {/* DASHBOARD — FULLY RESTORED */}
       <div className="main-card">
         <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
         <p className="block-num">#{latest?.height || '???'}</p>
@@ -74,14 +82,17 @@ function App() {
         <p className="txs">{latest ? wheelBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
       </div>
 
-      {/* HORIZONTAL 3D WHEEL */}
+      {/* FIXED HORIZONTAL 3D WHEEL */}
       <div className="wheel-container">
-        <div className="wheel" style={{ transform: `translateZ(-300px) rotateY(${rotation}deg)` }}>
+        <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
           {wheelBlocks.map((block, i) => (
             <div
-              key={block.hash}
-              className="wheel-block"
-              style={{ transform: `rotateY(${i * 30}deg) translateZ(300px)` }}
+              key={block.hash || i}
+              className={`wheel-block ${i === 0 ? 'front' : ''}`}
+              style={{ 
+                transform: `rotateY(${i * 30}deg) translateZ(350px)`,
+                '--depth': `${350 - (i * 20)}px` // Fade back
+              }}
             >
               <div className="block-face">
                 <h3>#{block.height}</h3>
@@ -93,11 +104,11 @@ function App() {
       </div>
 
       <div className="status">
-        <span className="live">LIVE</span> Midnight Testnet — The Wheel Turns Forever
+        <span className="live">● LIVE</span> Midnight Testnet — The Wheel Eternal
       </div>
 
       <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> the shadows never sleep</p>
+        <p><span className="glitch" data-text="shhh...">shhh...</span> the shadows spin forever</p>
       </footer>
     </div>
   );
