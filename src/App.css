@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — FINAL LEFT TIMELINE EDITION === */
+/* === MIDNIGHT EXPLORER — FINAL PERFECTION === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -11,21 +11,31 @@
 }
 
 /* Layout */
-.layout {
+.main-layout {
   display: flex;
   min-height: 100vh;
 }
 
-/* Left Timeline */
+/* Main Dashboard */
+.dashboard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* Right Timeline */
 .timeline {
-  width: 280px;
+  width: 300px;
   background: rgba(0,15,40,0.7);
-  border-right: 1px solid #00ffff33;
+  border-left: 1px solid #00ffff33;
   padding: 2rem 1rem;
   overflow-y: auto;
   height: 100vh;
   position: fixed;
-  left: 0;
+  right: 0;
   top: 0;
   z-index: 15;
   backdrop-filter: blur(6px);
@@ -43,27 +53,14 @@
   background: rgba(0,255,255,0.25);
   border-color: #39ff14;
   box-shadow: 0 0 25px rgba(57,255,20,0.5);
-  transform: scale(1.03);
 }
 .height { color: #ff00ff; font-weight: bold; }
 .txs { margin-left: 1rem; opacity: 0.9; }
 
-/* Main Content */
-.main-content {
-  margin-left: 280px;
-  flex: 1;
-  padding: 3rem 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-}
-
 /* Header */
-.header { margin-bottom: 3rem; }
+.header { margin-bottom: 3rem; text-align: center; }
 .glitch-title { font-size: clamp(4rem, 12vw, 7rem); font-weight: bold; text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff; animation: flicker 4s infinite alternate; }
-.subtitle { font-size: clamp(1.4rem, 5vw, 2.2rem); letter-spacing: 0.5em; opacity: 0.9; margin-top: 0.5rem; }
+.subtitle.centered { font-size: clamp(1.6rem, 6vw, 2.4rem); letter-spacing: 0.6em; opacity: 0.9; margin-top: 0.5rem; }
 
 /* Main Card */
 .main-card {
@@ -91,7 +88,29 @@
 }
 .stats-bar span { color: #39ff14; text-shadow: 0 0 12px #39ff14; }
 
-/* Rain & SHIELDED */
+/* SHIELDED floating text — fixed & elegant */
+.shielded-float {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: bold;
+  color: #39ff14;
+  text-shadow: 0 0 30px #39ff14;
+  opacity: 0;
+  animation: floatUp 18s linear forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.8); }
+  15% { opacity: 1; }
+  85% { opacity: 1; transform: translateX(-50%) translateY(-60vh) scale(1.2); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-80vh) scale(0.8); }
+}
+
+/* Rain */
 .rain {
   position: absolute;
   width: 3px; height: 22px;
@@ -107,21 +126,7 @@
 .rain:nth-child(odd)  { animation-duration: 5s; background: linear-gradient(to bottom, #ff00ff, transparent); box-shadow: 0 0 18px #ff00ff; }
 .rain:nth-child(3n)   { animation-duration: 3.5s; background: linear-gradient(to bottom, #ffd700, transparent); box-shadow: 0 0 22px #ffd700; }
 
-.ghost {
-  position: absolute;
-  top: 20%;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
-  font-weight: bold;
-  opacity: 0;
-  animation: ghostFloat 18s linear forwards;
-  pointer-events: none;
-  z-index: 5;
-  color: #39ff14;
-  text-shadow: 0 0 25px #39ff14;
-}
-@keyframes ghostFloat { 0% { opacity: 0; transform: translateY(-50px) scale(0.6); } 15% { opacity: 0.9; } 85% { opacity: 0.9; transform: translateY(70vh) scale(1.1); } 100% { opacity: 0; transform: translateY(90vh) scale(0.7); } }
-
-/* Glitch & Pulse */
+/* Glitch */
 @keyframes glitch { 0%,100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); } 20% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff; transform: translate(-1px,-1px); } 40% { text-shadow: 1px -2px #ff00ff, -1px 2px #00ffff; transform: translate(1px,-1px); } 60% { text-shadow: -1px 1px #ff00ff, 1px -1px #00ffff; transform: translate(-1px,1px); } 80% { text-shadow: 2px -1px #ff00ff, -2px 1px #00ffff; transform: translate(1px,1px); } }
 @keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.92; } }
 
