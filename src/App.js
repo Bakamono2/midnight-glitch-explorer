@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
@@ -9,22 +9,23 @@ function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
-  const [ghosts, setGhosts] = useState([]);
+  const [shieldedEvents, setShieldedEvents] = useState(0);
   const [loading, setLoading] = useState(true);
+  const timelineRef = useRef(null);
 
   const addParticle = (count) => {
-    for (let i = 0; i < Math.min(count * 3, 30); i++) {
+    for (let i = 0; i < Math.min(count * 3, 25); i++) {
       setTimeout(() => {
         setParticles(p => [...p, { 
           id: Date.now() + i + Math.random(),
           left: Math.random() * 100 
-        }].slice(-120));
-      }, i * 80);
+        }].slice(-100));
+      }, i * 100);
     }
   };
 
-  const spawnGhost = () => {
-    setGhosts(g => [...g, { id: Date.now(), left: Math.random() * 80 + 10 }]);
+  const spawnShielded = () => {
+    setShieldedEvents(e => e + 1);
   };
 
   const fetchData = async () => {
@@ -34,12 +35,15 @@ function App() {
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
       const txs = await txRes.json();
 
-      if (!latest || block.height > latest.height) {
+      if (!latest || block.hash !== latest.hash) {
         const txCount = txs.length;
         setLatest(block);
-        setRecentBlocks(prev => [block, ...prev].slice(0, 40));
+        setRecentBlocks(prev => {
+          const filtered = prev.filter(b => b.hash !== block.hash);
+          return [block, ...filtered].slice(0, 50); // max 50
+        });
         addParticle(txCount);
-        if (txCount > 0) spawnGhost();
+        if (txCount > 0) spawnShielded();
 
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
@@ -48,6 +52,13 @@ function App() {
       setLoading(false);
     } catch (e) { console.error(e); }
   };
+
+  // Auto-scroll timeline to bottom
+  useEffect(() => {
+    if (timelineRef.current) {
+      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
+    }
+  }, [recentBlocks]);
 
   useEffect(() => {
     fetchData();
@@ -59,47 +70,47 @@ function App() {
 
   return (
     <div className="App">
-      {/* Encrypted rain */}
+      {/* Rain */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
 
-      {/* SHIELDED indicators */}
-      {ghosts.map(g => (
-        <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>
-          SHIELDED
-        </div>
-      ))}
-
-      <header className="header">
-        <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-      </header>
-
-      <main>
-        <div className="card main-card">
-          <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-          <p className="block-num">#{latest?.height || '???'}</p>
-          <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-          <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
-        </div>
-
-        <div className="recent-blocks">
-          {recentBlocks.slice(1).map(b => (
-            <div key={b.hash} className="mini-card">
-              #{b.height} — {b.tx_count || 0} tx
+      <div className="layout">
+        {/* Left Timeline */}
+        <div className="timeline" ref={timelineRef}>
+          {recentBlocks.map((b, i) => (
+            <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+              <span className="height">#{b.height}</span>
+              <span className="txs">{b.tx_count || 0} tx</span>
             </div>
           ))}
         </div>
 
-        <div className="stats-bar">
-          <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
-          <span>{recentBlocks.length - 1} blocks shown</span>
-          <span>{ghosts.length} SHIELDED events</span>
-        </div>
-      </main>
+        {/* Main Content */}
+        <div className="main-content">
+          <header className="header">
+            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+          </header>
 
-      <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-      </footer>
+          <main>
+            <div className="card main-card">
+              <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+              <p className="block-num">#{latest?.height || '???'}</p>
+              <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+              <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
+            </div>
+
+            <div className="stats-bar">
+              <span>0.17 tx/s</span>
+              <span>{recentBlocks.length} blocks</span>
+              <span>{shieldedEvents} SHIELDED events</span>
+            </div>
+          </main>
+
+          <footer>
+            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+          </footer>
+        </div>
+      </div>
     </div>
   );
 }
