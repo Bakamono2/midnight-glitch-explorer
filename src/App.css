@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — FINAL & FLAWLESS === */
+/* === MIDNIGHT EXPLORER — FINAL PERFECTION === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -60,18 +60,8 @@
 
 /* Header */
 .header { margin-bottom: 3rem; text-align: center; }
-.glitch-title { 
-  font-size: clamp(4rem, 12vw, 7rem); 
-  font-weight: bold; 
-  text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff; 
-  animation: flicker 4s infinite alternate; 
-}
-.subtitle.centered { 
-  font-size: clamp(1.6rem, 6vw, 2.4rem); 
-  letter-spacing: 0.6em; 
-  opacity: 0.9; 
-  margin-top: 0.5rem; 
-}
+.glitch-title { font-size: clamp(4rem, 12vw, 7rem); font-weight: bold; text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff; animation: flicker 4s infinite alternate; }
+.subtitle.centered { font-size: clamp(1.6rem, 6vw, 2.4rem); letter-spacing: 0.6em; opacity: 0.9; margin-top: 0.5rem; }
 
 /* Main Card */
 .main-card {
@@ -99,26 +89,25 @@
 }
 .stats-bar span { color: #39ff14; text-shadow: 0 0 12px #39ff14; }
 
-/* SHIELDED floating text — FIXED & GORGEOUS */
+/* SHIELDED floating text — PERFECTLY RANDOM & ELEGANT */
 .shielded-float {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: clamp(2rem, 6vw, 3.5rem);
+  top: 100vh;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: bold;
   color: #39ff14;
-  text-shadow: 0 0 30px #39ff14;
+  text-shadow: 0 0 35px #39ff14;
   opacity: 0;
-  animation: floatUp 20s linear forwards;
   pointer-events: none;
   z-index: 5;
   white-space: nowrap;
+  animation: floatUp linear forwards;
 }
 @keyframes floatUp {
-  0% { opacity: 0; transform: translateX(-50%) translateY(100px) scale(0.8); }
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
   10% { opacity: 1; }
-  90% { opacity: 1; transform: translateX(-50%) translateY(-80vh) scale(1.2); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-100vh) scale(0.8); }
+  90% { opacity: 1; transform: translateY(-110vh) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-130vh) scale(0.8); }
 }
 
 /* Rain */
@@ -138,13 +127,7 @@
 .rain:nth-child(3n)   { animation-duration: 3.5s; background: linear-gradient(to bottom, #ffd700, transparent); box-shadow: 0 0 22px #ffd700; }
 
 /* Glitch */
-@keyframes glitch { 
-  0%,100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); } 
-  20% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff; transform: translate(-1px,-1px); } 
-  40% { text-shadow: 1px -2px #ff00ff, -1px 2px #00ffff; transform: translate(1px,-1px); } 
-  60% { text-shadow: -1px 1px #ff00ff, 1px -1px #00ffff; transform: translate(-1px,1px); } 
-  80% { text-shadow: 2px -1px #ff00ff, -2px 1px #00ffff; transform: translate(1px,1px); } 
-}
+@keyframes glitch { 0%,100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); } 20% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff; transform: translate(-1px,-1px); } 40% { text-shadow: 1px -2px #ff00ff, -1px 2px #00ffff; transform: translate(1px,-1px); } 60% { text-shadow: -1px 1px #ff00ff, 1px -1px #00ffff; transform: translate(-1px,1px); } 80% { text-shadow: 2px -1px #ff00ff, -2px 1px #00ffff; transform: translate(1px,1px); } }
 @keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.92; } }
 
 .glitch { animation: glitch 4s infinite linear; position: relative; display: inline-block; }
