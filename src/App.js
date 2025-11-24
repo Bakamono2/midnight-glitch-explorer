@@ -10,21 +10,7 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
-  const [tps, setTps] = useState(0);
-  const [totalTxToday, setTotalTxToday] = useState(0);
-  const [darkMode, setDarkMode] = useState(true);
-  const [soundOn, setSoundOn] = useState(false);
-
-  // Ambient sound (toggleable)
-  useEffect(() => {
-    if (soundOn) {
-      const audio = new Audio('data:audio/wav;base64,...'); // tiny 15s dark synth loop
-      audio.loop = true;
-      audio.volume = 0.15;
-      audio.play().catch(() => {});
-      return () => audio.pause();
-    }
-  }, [soundOn]);
+  const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
     for (let i = 0; i < Math.min(count * 3, 30); i++) {
@@ -51,22 +37,15 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        setRecentBlocks(prev => [block, ...prev].slice(0, 12));
-        setTotalTxToday(t => t + txCount);
+        setRecentBlocks(prev => [block, ...prev].slice(0, 40));   // ← ONLY THIS LINE CHANGED
         addParticle(txCount);
         if (txCount > 0) spawnGhost();
-
-        // TPS calculation (rough)
-        const now = Date.now();
-        setTps(prev => {
-          const elapsed = (now - (prev.time || now)) / 1000;
-          return { value: txCount / Math.max(elapsed, 1), time: now };
-        });
 
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
       }
+      setLoading(false);
     } catch (e) { console.error(e); }
   };
 
@@ -76,20 +55,13 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
+  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
+
   return (
-    <div className={`App ${darkMode ? 'midnight' : 'dawn'}`}>
-      {/* Background pulse */}
-      <div className="pulse-bg"></div>
-
-      {/* Encrypted rain */}
+    <div className="App">
+      {/* rain, ghosts, etc. */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-
-      {/* Ghosts */}
-      {ghosts.map(g => (
-        <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>
-          Zero-Knowledge Ghost
-        </div>
-      ))}
+      {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>Zero-Knowledge Ghost</div>)}
 
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -105,7 +77,7 @@ function App() {
         </div>
 
         <div className="recent-blocks">
-          {recentBlocks.slice(1, 9).map(b => (
+          {recentBlocks.slice(1).map(b => (
             <div key={b.hash} className="mini-card">
               #{b.height} — {b.tx_count || 0} tx
             </div>
@@ -113,18 +85,13 @@ function App() {
         </div>
 
         <div className="stats-bar">
-          <span>{tps.value?.toFixed(2) || '0.00'} tx/s</span>
-          <span>{totalTxToday} today</span>
+          <span>{(recentBlocks.length > 1 ? (recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / (recentBlocks.length * 6.5) : 0).toFixed(2)} tx/s</span>
+          <span>{recentBlocks.length - 1}+ blocks shown</span>
           <span>{ghosts.length} ghosts watching</span>
         </div>
 
         <div className="controls">
-          <button onClick={() => setDarkMode(!darkMode)}>
-            {darkMode ? 'Dawn Mode' : 'Midnight Mode'}
-          </button>
-          <button onClick={() => setSoundOn(!soundOn)}>
-            {soundOn ? 'Silence' : 'Sound'}
-          </button>
+          <button onClick={() => document.body.classList.toggle('dawn')}>Dawn Mode</button>
         </div>
       </main>
 
