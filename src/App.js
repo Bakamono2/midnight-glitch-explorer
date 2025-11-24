@@ -13,23 +13,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [rotation, setRotation] = useState(0);
 
-  // Pre-populated dummy blocks for instant beauty
-  const dummyBlocks = Array.from({ length: 12 }, (_, i) => ({
-    height: `...`,
-    hash: 'shadows loading...',
-    tx_count: 0,
-    isDummy: true
-  }));
-
-  useEffect(() => {
-    setWheelBlocks(dummyBlocks);
-    setLoading(false);
-  }, []);
-
   const addParticle = () => {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 35; i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
+        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-120));
       }, i * 70);
     }
   };
@@ -48,25 +35,23 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        
+
+        // Insert new block at index 0 → always front/center
         setWheelBlocks(prev => {
-          const updated = [block, ...prev.filter(b => !b.isDummy && b.height !== block.height)];
-          // Fill with dummies if needed
-          while (updated.length < 12) {
-            updated.push(dummyBlocks[updated.length % dummyBlocks.length]);
-          }
-          return updated.slice(0, 12);
+          const updated = [block, ...prev.filter(b => b.height !== block.height)];
+          return updated.slice(0, 12); // Max 12 real blocks
         });
 
-        // ONLY SPIN WHEN NEW BLOCK ARRIVES
-        setRotation(r => r - 30);
+        // Rotate wheel so newest block is always in center
+        setRotation(r => r - 30); // 30° per block
 
         addParticle();
         if (txCount > 0) spawnGhost();
-        if (txCount > 6) {
-          confetti({ particleCount: 400, spread: 140, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        if (txCount > 7) {
+          confetti({ particleCount: 450, spread: 150, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
       }
+      setLoading(false);
     } catch (e) { console.error(e); }
   };
 
@@ -92,20 +77,23 @@ function App() {
         <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
         <p className="block-num">#{latest?.height || '???'}</p>
         <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-        <p className="txs">{latest ? wheelBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
+        <p className="txs">{wheelBlocks[0]?.tx_count || 0} shielded transactions</p>
       </div>
 
       <div className="wheel-container">
         <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
           {wheelBlocks.map((block, i) => (
             <div
-              key={block.hash || i}
-              className={`wheel-block ${i === 0 ? 'front' : ''} ${block.isDummy ? 'dummy' : ''}`}
-              style={{ transform: `rotateY(${i * 30}deg) translateZ(380px)` }}
+              key={block.hash}
+              className={`wheel-block ${i === 0 ? 'front' : ''}`}
+              style={{ 
+                transform: `rotateY(${i * 30}deg) translateZ(400px)`,
+                opacity: i === 0 ? 1 : 1 - (i * 0.08)
+              }}
             >
               <div className="block-face">
                 <h3>#{block.height}</h3>
-                <p>{block.tx_count !== undefined ? block.tx_count : 0} tx</p>
+                <p>{block.tx_count || 0} tx</p>
               </div>
             </div>
           ))}
