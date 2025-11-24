@@ -53,13 +53,14 @@
 .ghost {
   position: absolute;
   top: 15%;
-  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  font-size: clamp(1.4rem, 3.5vw, 1.6rem);
   opacity: 0;
   animation: ghostFloat 22s linear forwards;
   pointer-events: none;
   z-index: 5;
   color: rgba(0,255,255,0.6);
   text-shadow: 0 0 20px #00ffff;
+  font-weight: bold;
 }
 @keyframes ghostFloat { 0% { opacity: 0; transform: translateY(-50px) scale(0.6); } 15% { opacity: 0.7; } 85% { opacity: 0.7; transform: translateY(70vh) scale(1.1); } 100% { opacity: 0; transform: translateY(90vh) scale(0.7); } }
 
