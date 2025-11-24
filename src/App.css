@@ -113,7 +113,7 @@
 /* FIXED SIZE MINI CARDS — THIS IS THE BUG FIX */
 .mini-card {
   flex: 0 0 160px;           /* ← Fixed width, no stretching */
-  width: 160px;
+  width: 180px;
   scroll-snap-align: center;
   background: rgba(0,255,255,0.1);
   border: 1px solid #00ffff;
