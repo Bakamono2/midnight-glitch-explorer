@@ -9,7 +9,7 @@ function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
-  const [shieldedEvents, setShieldedEvents] = useState(0);
+  const [shieldedCount, setShieldedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const timelineRef = useRef(null);
 
@@ -24,10 +24,6 @@ function App() {
     }
   };
 
-  const spawnShielded = () => {
-    setShieldedEvents(e => e + 1);
-  };
-
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
@@ -40,10 +36,10 @@ function App() {
         setLatest(block);
         setRecentBlocks(prev => {
           const filtered = prev.filter(b => b.hash !== block.hash);
-          return [block, ...filtered].slice(0, 50); // max 50
+          return [block, ...filtered].slice(0, 50);
         });
         addParticle(txCount);
-        if (txCount > 0) spawnShielded();
+        if (txCount > 0) setShieldedCount(c => c + txCount);
 
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
@@ -53,25 +49,31 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
-  // Auto-scroll timeline to bottom
-  useEffect(() => {
-    if (timelineRef.current) {
-      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
-    }
-  }, [recentBlocks]);
-
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 6500);
     return () => clearInterval(interval);
   }, [latest]);
 
+  useEffect(() => {
+    if (timelineRef.current) {
+      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
+    }
+  }, [recentBlocks]);
+
   if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
 
   return (
     <div className="App">
-      {/* Rain */}
+      {/* Encrypted rain */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
+
+      {/* SHIELDED floating indicators */}
+      {recentBlocks.slice(0, 5).map((b, i) => b.tx_count > 0 && (
+        <div key={b.hash + i} className="ghost" style={{ left: `${30 + i * 15}%` }}>
+          SHIELDED
+        </div>
+      ))}
 
       <div className="layout">
         {/* Left Timeline */}
@@ -84,7 +86,7 @@ function App() {
           ))}
         </div>
 
-        {/* Main Content */}
+        {/* Main Dashboard */}
         <div className="main-content">
           <header className="header">
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -100,9 +102,9 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span>0.17 tx/s</span>
+              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
               <span>{recentBlocks.length} blocks</span>
-              <span>{shieldedEvents} SHIELDED events</span>
+              <span>{shieldedCount} SHIELDED events</span>
             </div>
           </main>
 
