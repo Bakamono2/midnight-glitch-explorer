@@ -25,11 +25,11 @@ function App() {
 
   const spawnShieldedFloat = () => {
     const id = Date.now() + Math.random();
-    const left = 20 + Math.random() * 60; // random horizontal position
-    const delay = Math.random() * 8;      // staggered start
-    const duration = 18 + Math.random() * 8; // 18–26s float time
+    const left = 15 + Math.random() * 70; // random horizontal position
+    const delay = Math.random() * 10;   // staggered start
+    const duration = 20 + Math.random() * 10; // 20–30s float time
 
-    setShieldedFloats(prev => [...prev, { id, left, delay, duration }].slice(-8));
+    setShieldedFloats(prev => [...prev, { id, left, delay, duration }].slice(-12));
   };
 
   const fetchData = async () => {
@@ -50,12 +50,17 @@ function App() {
         if (txCount > 0) spawnShieldedFloat();
 
         if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+          confetti({ 
+            particleCount: 300, 
+            spread: 160, 
+            origin: { y: 0.3 }, 
+            colors: ['#ffd700', '#ff00ff', '#00ffff'] 
+          });
         }
       }
       setLoading(false);
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching data:", e);
       setLoading(false);
     }
   };
@@ -70,10 +75,12 @@ function App() {
 
   return (
     <div className="App">
-      {/* Rain */}
-      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
+      {/* Encrypted rain */}
+      {particles.map(p => (
+        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
+      ))}
 
-      {/* SHIELDED floating text — now perfect */}
+      {/* SHIELDED floating text — perfect randomization */}
       {shieldedFloats.map(f => (
         <div
           key={f.id}
@@ -89,6 +96,7 @@ function App() {
       ))}
 
       <div className="main-layout">
+        {/* Main Dashboard */}
         <div className="dashboard">
           <header className="header">
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -104,7 +112,7 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span>0.21 tx/s</span>
+              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
               <span>{recentBlocks.length} blocks</span>
               <span>{shieldedFloats.length} SHIELDED events</span>
             </div>
@@ -115,6 +123,7 @@ function App() {
           </footer>
         </div>
 
+        {/* Right Timeline */}
         <div className="timeline">
           {recentBlocks.map((b, i) => (
             <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
