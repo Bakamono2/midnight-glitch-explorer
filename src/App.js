@@ -7,7 +7,7 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [blocks, setBlocks] = useState([]);  // Only real blocks
+  const [blocks, setBlocks] = useState([]);
   const [rotation, setRotation] = useState(0);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
@@ -16,8 +16,8 @@ function App() {
   const addParticle = () => {
     for (let i = 0; i < 40; i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-120));
-      }, i * 60);
+        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
+      }, i * 70);
     }
   };
 
@@ -35,20 +35,14 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-
         setBlocks(prev => {
           const filtered = prev.filter(b => b.height !== block.height);
-          const updated = [block, ...filtered];
-          return updated.slice(0, 12); // Max 12 real blocks
+          return [block, ...filtered].slice(0, 12);
         });
-
-        setRotation(prev => prev - 30); // 30° per new block
-
+        setRotation(r => r - 30); // Spin only on new block
         addParticle();
         if (txCount > 0) spawnGhost();
-        if (txCount > 7) {
-          confetti({ particleCount: 500, spread: 160, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
-        }
+        if (txCount > 7) confetti({ particleCount: 500, spread: 160, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
       }
       setLoading(false);
     } catch (e) { console.error(e); }
@@ -60,13 +54,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="SPINNING UP...">SPINNING UP...</div>;
-
-  // Fill missing slots with empty placeholders so wheel is always full
-  const displayBlocks = [...blocks];
-  while (displayBlocks.length < 12) {
-    displayBlocks.push({ height: '', tx_count: 0, isPlaceholder: true });
-  }
+  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
 
   return (
     <div className="App">
@@ -88,15 +76,15 @@ function App() {
       <div className="wheel-container">
         <div className="wheel-scene">
           <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
-            {displayBlocks.map((block, i) => (
+            {blocks.map((block, i) => (
               <div
-                key={block.height || `placeholder-${i}`}
-                className={`wheel-block ${i === 0 ? 'front' : ''} ${block.isPlaceholder ? 'placeholder' : ''}`}
-                style={{ transform: `rotateY(${i * 30}deg) translateZ(420px)` }}
+                key={block.hash}
+                className={`wheel-block ${i === 0 ? 'front' : ''}`}
+                style={{ transform: `rotateY(${i * 30}deg) translateZ(450px)` }}
               >
                 <div className="block-face">
-                  <h3>{block.height ? `#${block.height}` : '...'}</h3>
-                  <p>{block.tx_count !== undefined ? `${block.tx_count} tx` : ''}</p>
+                  <h3>#{block.height}</h3>
+                  <p>{block.tx_count} tx</p>
                 </div>
               </div>
             ))}
