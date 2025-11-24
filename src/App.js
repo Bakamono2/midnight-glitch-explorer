@@ -61,7 +61,7 @@ function App() {
     <div className="App">
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle glitch" data-text="GLITCH EXPLORER">GLITCH EXPLORER</p>
+        <p className="subtitle glitch" data-text="EXPLORER">GLITCH EXPLORER</p>
       </header>
 
       <main>
