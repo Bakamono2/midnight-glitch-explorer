@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "blockfrost-js": "^2.2.1",
+    "@blockfrost/blockfrost-js": "^6.0.0",
     "canvas-confetti": "^1.9.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
