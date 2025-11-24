@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — ETERNAL DARKNESS EDITION === */
+/* === MIDNIGHT EXPLORER — ELEGANT FINAL === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -85,7 +85,7 @@
 .hash { font-size: clamp(0.8rem, 3vw, 1rem); opacity: 0.85; word-break: break-all; margin: 0.8rem 0; }
 .txs { font-size: clamp(1.2rem, 4vw, 1.7rem); margin-top: 1.8rem; }
 
-/* Horizontal timeline — fixed width */
+/* Horizontal timeline */
 .recent-blocks {
   display: flex;
   gap: 1rem;
@@ -111,19 +111,14 @@
   transition: all 0.4s ease;
   backdrop-filter: blur(4px);
 }
-.mini-card:hover {
-  transform: translateY(-6px) scale(1.05);
-  box-shadow: 0 0 30px #00ffff;
-  border-color: #39ff14;
-}
+.mini-card:hover { transform: translateY(-6px) scale(1.05); box-shadow: 0 0 30px #00ffff; border-color: #39ff14; }
 
 /* Scrollbar */
 .recent-blocks::-webkit-scrollbar { height: 10px; }
 .recent-blocks::-webkit-scrollbar-track { background: #001122; border-radius: 5px; }
 .recent-blocks::-webkit-scrollbar-thumb { background: linear-gradient(to right, #00ffff, #39ff14); border-radius: 5px; box-shadow: 0 0 20px #00ffff; }
-.recent-blocks::-webkit-scrollbar-thumb:hover { background: #39ff14; }
 
-/* Stats */
+/* Stats & footer */
 .stats-bar {
   margin: 3rem 0;
   font-size: clamp(1rem, 3vw, 1.2rem);
@@ -134,17 +129,22 @@
   flex-wrap: wrap;
 }
 .stats-bar span { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
-
-/* Footer */
 footer { margin-top: clamp(8rem, 20vh, 14rem); opacity: 0.75; font-size: clamp(1rem, 3vw, 1.3rem); z-index: 10; }
 
-/* Glitch */
-@keyframes glitch { 0% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(0); } 20% { text-shadow: -4px -4px #ff00ff, 4px 4px #00ffff; transform: translate(-4px,-4px); } 40% { text-shadow: 4px -4px #ff00ff, -4px 4px #00ffff; transform: translate(4px,4px); } 60% { text-shadow: -4px 4px #ff00ff, 4px -4px #00ffff; transform: translate(-4px,4px); } 80% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(4px,-4px); } 100% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(0); } }
-@keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.88; } }
+/* === ELEGANT GLITCH — CALM & HYPNOTIC === */
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); }
+  10% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff; transform: translate(-1px, -1px); }
+  20% { text-shadow: 1px -2px #ff00ff, -1px 2px #00ffff; transform: translate(1px, -1px); }
+  30% { text-shadow: -1px 1px #ff00ff, 1px -1px #00ffff; transform: translate(-1px, 1px); }
+  40% { text-shadow: 2px -1px #ff00ff, -2px 1px #00ffff; transform: translate(1px, 1px); }
+  50%, 100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); }
+}
+@keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.92; } }
 
-.glitch { animation: glitch 0.7s linear infinite; position: relative; display: inline-block; }
-.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: #000; }
-.glitch::before { animation: glitch 0.5s reverse infinite; clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); color: #ff00ff; }
-.glitch::after  { animation: glitch 0.7s infinite; clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); color: #00ffff; }
+.glitch { animation: glitch 4s infinite linear; position: relative; display: inline-block; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: #000; opacity: 0.8; }
+.glitch::before { animation: glitch 3.8s infinite reverse; clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%); color: #ff00ff; }
+.glitch::after  { animation: glitch 4.2s infinite; clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%); color: #00ffff; }
 
 .loading { font-size: clamp(2rem, 8vw, 3rem); margin-top: 30vh; }
