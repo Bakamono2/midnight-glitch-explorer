@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Blockfrost from 'blockfrost-js';
+import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import confetti from 'canvas-confetti';
 import './App.css';
 
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 
-const blockfrost = new Blockfrost(API_KEY, 'preprod');
+const blockfrost = new BlockFrostAPI({
+  projectId: API_KEY,
+  network: 'preprod'
+});
 // ↑ Change 'preprod' → 'mainnet' when Midnight mainnet launches
 
 function App() {
