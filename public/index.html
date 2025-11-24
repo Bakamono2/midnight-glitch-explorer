@@ -7,20 +7,39 @@
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Midnight Explorer — Privacy in the Shadows" />
     <title>Midnight Explorer</title>
+
+    <!-- Global scanlines & base style -->
     <style>
-      body { margin: 0; background: #000; }
+      body { 
+        margin: 0; 
+        background: #000; 
+        overflow-x: hidden; 
+      }
       body::before {
         content: '';
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
+        inset: 0;
         background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
         pointer-events: none;
         z-index: 9999;
+        opacity: 0.7;
       }
+      /* Secret Easter egg: Press M = GLITCH STORM */
+      body.glitch-storm::before { animation: flicker 0.05s infinite; }
+      @keyframes flicker { 0%,100% { opacity: 0.7; } 50% { opacity: 0.3; } }
     </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>You need to enable JavaScript to enter the shadows.</noscript>
     <div id="root"></div>
+
+    <!-- SECRET EASTER EGG: Press "M" for full glitch chaos -->
+    <script>
+      document.addEventListener('keydown', e => {
+        if (e.key === 'm' || e.key === 'M') {
+          document.body.classList.toggle('glitch-storm');
+        }
+      });
+    </script>
   </body>
 </html>
