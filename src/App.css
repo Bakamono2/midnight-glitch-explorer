@@ -1,3 +1,111 @@
+/* === MIDNIGHT EXPLORER — FINAL AESTHETIC === */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+.App {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #000 0%, #001122 100%);
+  color: #00ffff;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Global scanlines */
+.App::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0.7;
+}
+
+/* Privacy pulse background */
+.pulse-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(0,255,255,0.08) 0%, transparent 70%);
+  animation: pulse 14s infinite;
+  z-index: 1;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.06; transform: scale(1); }
+  50% { opacity: 0.14; transform: scale(1.1); }
+}
+
+/* Encrypted rain — from title */
+.rain {
+  position: absolute;
+  width: 3px; height: 22px;
+  background: linear-gradient(to bottom, #00ffff, transparent);
+  top: 140px;
+  left: var(--x, 50%);
+  border-radius: 2px;
+  animation: rainFall linear forwards;
+  box-shadow: 0 0 14px #00ffff;
+  opacity: 0.8;
+}
+@keyframes rainFall {
+  to { transform: translateY(120vh) rotate(360deg); opacity: 0; }
+}
+.rain:nth-child(odd)  { animation-duration: 5s; background: linear-gradient(to bottom, #ff00ff, transparent); box-shadow: 0 0 18px #ff00ff; }
+.rain:nth-child(3n)   { animation-duration: 3.5s; background: linear-gradient(to bottom, #ffd700, transparent); box-shadow: 0 0 22px #ffd700; }
+
+/* Zero-knowledge ghosts */
+.ghost {
+  position: absolute;
+  top: 15%;
+  font-size: 1.8rem;
+  opacity: 0;
+  animation: ghostFloat 22s linear forwards;
+  pointer-events: none;
+  z-index: 5;
+  color: rgba(0,255,255,0.6);
+  text-shadow: 0 0 20px #00ffff;
+}
+@keyframes ghostFloat {
+  0%   { opacity: 0; transform: translateY(-50px) scale(0.6); }
+  15%  { opacity: 0.7; }
+  85%  { opacity: 0.7; transform: translateY(70vh) scale(1.1); }
+  100% { opacity: 0; transform: translateY(90vh) scale(0.7); }
+}
+
+/* Header */
+.header { margin: 2rem 0 4rem; position: relative; z-index: 10; }
+.glitch-title { 
+  font-size: 6.5rem; 
+  font-weight: bold; 
+  text-shadow: 0 0 30px #00ffff, 0 0 60px #ff00ff; 
+  animation: flicker 4s infinite alternate; 
+}
+.subtitle { 
+  font-size: 1.9rem; 
+  letter-spacing: 0.45em; 
+  opacity: 0.9; 
+  margin-top: 0.5rem; 
+}
+
+/* Main card */
+.main-card {
+  background: rgba(0,20,50,0.82);
+  border: 2px solid #00ffff;
+  border-radius: 22px;
+  padding: 3.8rem;
+  max-width: 620px;
+  margin: 2rem auto;
+  box-shadow: 0 0 70px rgba(0,255,255,0.75);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 10;
+}
+.block-num { font-size: 4.2rem; color: #ff00ff; text-shadow: 0 0 28px #ff00ff; margin: 1.2rem 0; }
+.hash { font-size: 1rem; opacity: 0.85; word-break: break-all; margin: 0.8rem 0; }
+.txs { font-size: 1.7rem; margin-top: 1.8rem; }
+
+/* HORIZONTAL SCROLLING TIMELINE — INFINITE & CLEAN */
 .recent-blocks {
   display: flex;
   gap: 1rem;
@@ -14,7 +122,7 @@
   scroll-behavior: smooth;
 }
 
-/* Gorgeous custom scrollbar */
+/* Cyberpunk scrollbar */
 .recent-blocks::-webkit-scrollbar {
   height: 10px;
 }
@@ -31,9 +139,91 @@
   background: #39ff14;
 }
 
-/* Mini cards snap into place */
+/* Mini cards */
 .mini-card {
   flex: 0 0 auto;
   scroll-snap-align: center;
-  min-width: 140px;
+  min-width: 150px;
+  background: rgba(0,255,255,0.1);
+  border: 1px solid #00ffff;
+  border-radius: 14px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  transition: all 0.4s ease;
+  backdrop-filter: blur(4px);
+}
+.mini-card:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 0 30px #00ffff;
+  border-color: #39ff14;
+}
+
+/* Stats bar */
+.stats-bar {
+  margin: 4rem 0;
+  font-size: 1.2rem;
+  opacity: 0.9;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.stats-bar span { 
+  color: #39ff14; 
+  text-shadow: 0 0 10px #39ff14;
+}
+
+/* Controls */
+.controls {
+  margin: 3rem 0;
+  z-index: 10;
+}
+.controls button {
+  background: transparent;
+  border: 1.5px solid #00ffff;
+  color: #00ffff;
+  padding: 0.9rem 2rem;
+  margin: 0 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.5s;
+}
+.controls button:hover {
+  background: #00ffff;
+  color: #000;
+  box-shadow: 0 0 40px #00ffff;
+  transform: scale(1.1);
+}
+
+/* Footer */
+footer { margin-top: 14rem; opacity: 0.75; font-size: 1.3rem; z-index: 10; }
+
+/* Glitch & animations */
+@keyframes glitch { 
+  0% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(0); } 
+  20% { text-shadow: -4px -4px #ff00ff, 4px 4px #00ffff; transform: translate(-4px,-4px); } 
+  40% { text-shadow: 4px -4px #ff00ff, -4px 4px #00ffff; transform: translate(4px,4px); } 
+  60% { text-shadow: -4px 4px #ff00ff, 4px -4px #00ffff; transform: translate(-4px,4px); } 
+  80% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(4px,-4px); } 
+  100% { text-shadow: 4px 4px #ff00ff, -4px -4px #00ffff; transform: translate(0); } 
+}
+@keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.88; } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.glitch { animation: glitch 0.7s linear infinite; position: relative; display: inline-block; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: #000; }
+.glitch::before { animation: glitch 0.5s reverse infinite; clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); color: #ff00ff; }
+.glitch::after  { animation: glitch 0.7s infinite; clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); color: #00ffff; }
+
+/* Loading */
+.loading { font-size: 3rem; margin-top: 30vh; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .glitch-title { font-size: 4.5rem; }
+  .main-card { padding: 2.5rem; }
+  .mini-card { min-width: 120px; font-size: 0.85rem; }
 }
