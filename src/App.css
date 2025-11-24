@@ -1,143 +1,39 @@
-/* MIDNIGHT WHEEL — FINAL & FLAWLESS */
-* { margin:0; padding:0; box-sizing:border-box; }
-
-.App {
-  min-height: 100vh;
-  background: #000;
-  color: #00ffff;
-  font-family: 'Courier New', monospace;
-  text-align: center;
+.recent-blocks {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
   padding: 2rem 1rem;
-  perspective: 2000px;
-  overflow: hidden;
+  margin: 3rem 0;
+  scrollbar-color: #00ffff #001122;
+  scrollbar-width: thin;
+  white-space: nowrap;
+  justify-content: flex-start;
+  max-width: 100vw;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 1rem;
+  scroll-behavior: smooth;
 }
 
-.App::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
-  pointer-events: none;
-  z-index: 20;
+/* Gorgeous custom scrollbar */
+.recent-blocks::-webkit-scrollbar {
+  height: 10px;
 }
-
-/* Rain */
-.rain {
-  position: absolute;
-  width: 3px; height: 30px;
-  background: linear-gradient(to bottom, #00ffff, transparent);
-  top: -30px;
-  left: var(--left, 50%);
-  animation: rainFall 8s linear infinite;
+.recent-blocks::-webkit-scrollbar-track {
+  background: #001122;
+  border-radius: 5px;
+}
+.recent-blocks::-webkit-scrollbar-thumb {
+  background: linear-gradient(to right, #00ffff, #39ff14);
+  border-radius: 5px;
   box-shadow: 0 0 20px #00ffff;
-  opacity: 0.7;
 }
-@keyframes rainFall { to { transform: translateY(120vh); opacity: 0; } }
-
-/* Ghosts */
-.ghost {
-  position: absolute;
-  top: 20%;
-  font-size: 2rem;
-  opacity: 0;
-  animation: ghostFloat 22s linear forwards;
-  color: rgba(0,255,255,0.6);
-  text-shadow: 0 0 30px #00ffff;
-}
-@keyframes ghostFloat { 0% { opacity: 0; transform: translateY(-100px); } 20% { opacity: 0.7; } 80% { opacity: 0.7; } 100% { opacity: 0; transform: translateY(100vh); } }
-
-/* Header */
-.header { margin: 2rem 0 3rem; z-index: 10; }
-.glitch-title { font-size: 7rem; text-shadow: 0 0 40px #00ffff, 0 0 80px #ff00ff; animation: flicker 4s infinite alternate; }
-.subtitle { font-size: 2.4rem; letter-spacing: 0.6em; opacity: 0.9; margin-top: 0.5rem; }
-
-/* Dashboard */
-.main-card {
-  background: rgba(0,15,40,0.92);
-  border: 2px solid #00ffff;
-  border-radius: 24px;
-  padding: 4rem;
-  max-width: 720px;
-  margin: 2rem auto;
-  box-shadow: 0 0 70px rgba(0,255,255,0.6);
-  backdrop-filter: blur(12px);
-  z-index: 10;
-}
-.block-num { font-size: 5.2rem; color: #ff00ff; text-shadow: 0 0 30px #ff00ff; margin: 1rem 0; }
-.hash { font-size: 1.1rem; opacity: 0.9; word-break: break-all; margin: 0.8rem 0; }
-.txs { font-size: 1.9rem; margin-top: 1.5rem; }
-
-/* 3D WHEEL — PERFECT SPACING & SPIN */
-.wheel-container {
-  height: 70vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 5rem 0;
-}
-.wheel-scene {
-  width: 100%;
-  height: 100%;
-  perspective: 2000px;
-}
-.wheel {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 2s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-.wheel-block {
-  position: absolute;
-  width: 320px;
-  height: 200px;
-  left: 50%;
-  top: 50%;
-  margin-left: -160px;
-  margin-top: -100px;
-}
-.block-face {
-  width: 100%;
-  height: 100%;
-  background: rgba(0,20,50,0.98);
-  border: 3px solid #00ffff;
-  border-radius: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  backface-visibility: hidden;
-  box-shadow: 0 0 60px rgba(0,255,255,0.5);
-  backdrop-filter: blur(12px);
-}
-.block-face h3 { font-size: 2.8rem; color: #ff00ff; text-shadow: 0 0 25px #ff00ff; margin: 0.5rem 0; }
-.block-face p { font-size: 1.4rem; opacity: 0.9; }
-
-/* Front block — perfect glow */
-.wheel-block.front .block-face {
-  transform: scale(1.3);
-  box-shadow: 0 0 120px rgba(57, 255, 20, 0.8);
-  border-color: #39ff14;
+.recent-blocks::-webkit-scrollbar-thumb:hover {
+  background: #39ff14;
 }
 
-/* Depth & spacing */
-.wheel-block:nth-child(n+4) { opacity: 0.7; }
-.wheel-block:nth-child(n+7) { opacity: 0.5; }
-.wheel-block:nth-child(n+10) { opacity: 0.3; }
-
-/* Status & Footer */
-.status { margin: 6rem 0; font-size: 1.6rem; z-index: 10; }
-.live { color: #39ff14; animation: pulse 2s infinite; }
-footer { margin-top: 16rem; opacity: 0.75; font-size: 1.4rem; }
-
-/* Glitch */
-@keyframes glitch { 0% { text-shadow: 5px 5px #ff00ff, -5px -5px #00ffff; } 20% { text-shadow: -5px -5px #ff00ff, 5px 5px #00ffff; } 40% { text-shadow: 5px -5px #ff00ff, -5px 5px #00ffff; } 60% { text-shadow: -5px 5px #ff00ff, 5px -5px #00ffff; } 80% { text-shadow: 5px 5px #ff00ff, -5px -5px #00ffff; } 100% { text-shadow: 5px 5px #ff00ff, -5px -5px #00ffff; } }
-@keyframes flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.88; } }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-.glitch { animation: glitch 0.7s linear infinite; position: relative; display: inline-block; }
-.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: #000; }
-.glitch::before { animation: glitch 0.5s reverse infinite; clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); color: #ff00ff; }
-.glitch::after  { animation: glitch 0.7s infinite; clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%); color: #00ffff; }
-
-.loading { font-size: 5rem; margin-top: 40vh; }
+/* Mini cards snap into place */
+.mini-card {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  min-width: 140px;
+}
