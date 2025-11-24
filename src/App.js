@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import './App.css';
 
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
-const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
+const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';   // ← Change to mainnet URL when live
 
 function App() {
   const [block, setBlock] = useState(null);
@@ -31,15 +31,19 @@ function App() {
       if (transactions.length > 0) {
         confetti({
           particleCount: 120,
-          spread: 100,
+          spread: 110,
           origin: { y: 0.6 },
-          colors: ['#00ffff', '#ff00ff', '#7400b8']
+          colors: ['#00ffff', '#ff00ff', '#7400b8', '#39ff14'],
+          shapes: ['square', 'circle'],
+          scalar: 1.3
         });
+
         const shhh = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUX+');
-        shhh.volume = 0.2; shhh.play().catch(() => {});
+        shhh.volume = 0.2;
+        shhh.play().catch(() => {});
       }
     } catch (err) {
-      setError('Check your Blockfrost key');
+      setError('Check Blockfrost key');
       setLoading(false);
     }
   };
@@ -69,6 +73,7 @@ function App() {
             {txs} transaction{txs !== 1 ? 's' : ''} shielded in zero-knowledge
           </p>
         </div>
+
         <div className="status">
           <span className="live">● LIVE</span> Midnight Testnet via Blockfrost
         </div>
