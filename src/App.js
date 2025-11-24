@@ -7,24 +7,30 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [wheelBlocks, setWheelBlocks] = useState([]); // Start with dummy for instant load
+  const [wheelBlocks, setWheelBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rotation, setRotation] = useState(0);
 
-  // Dummy blocks for instant wheel render
+  // Pre-populated dummy blocks for instant beauty
   const dummyBlocks = Array.from({ length: 12 }, (_, i) => ({
-    height: `###`,
-    hash: 'loading...',
-    tx_count: 0
+    height: `...`,
+    hash: 'shadows loading...',
+    tx_count: 0,
+    isDummy: true
   }));
 
+  useEffect(() => {
+    setWheelBlocks(dummyBlocks);
+    setLoading(false);
+  }, []);
+
   const addParticle = () => {
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 30; i++) {
       setTimeout(() => {
         setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
-      }, i * 60);
+      }, i * 70);
     }
   };
 
@@ -42,27 +48,35 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
+        
         setWheelBlocks(prev => {
-          const updated = [block, ...prev.filter(b => b.height !== block.height)];
-          return updated.slice(0, 12).map(b => b || dummyBlocks[0]); // Fallback
+          const updated = [block, ...prev.filter(b => !b.isDummy && b.height !== block.height)];
+          // Fill with dummies if needed
+          while (updated.length < 12) {
+            updated.push(dummyBlocks[updated.length % dummyBlocks.length]);
+          }
+          return updated.slice(0, 12);
         });
-        setRotation(r => r - 30); // Smooth 30° shift per block
+
+        // ONLY SPIN WHEN NEW BLOCK ARRIVES
+        setRotation(r => r - 30);
+
         addParticle();
         if (txCount > 0) spawnGhost();
-        if (txCount > 6) confetti({ particleCount: 400, spread: 140, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        if (txCount > 6) {
+          confetti({ particleCount: 400, spread: 140, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        }
       }
-      setLoading(false);
-    } catch (e) { console.error(e); setLoading(false); }
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
-    setWheelBlocks(dummyBlocks); // Instant dummy wheel
     fetchData();
     const interval = setInterval(fetchData, 7000);
     return () => clearInterval(interval);
-  }, []);
+  }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="SPINNING UP THE SHADOWS...">SPINNING UP THE SHADOWS...</div>;
+  if (loading) return <div className="loading glitch" data-text="ENTERING THE VOID...">ENTERING THE VOID...</div>;
 
   return (
     <div className="App">
@@ -74,7 +88,6 @@ function App() {
         <p className="subtitle" data-text="WHEEL">WHEEL</p>
       </header>
 
-      {/* DASHBOARD — FULLY RESTORED */}
       <div className="main-card">
         <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
         <p className="block-num">#{latest?.height || '???'}</p>
@@ -82,21 +95,17 @@ function App() {
         <p className="txs">{latest ? wheelBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
       </div>
 
-      {/* FIXED HORIZONTAL 3D WHEEL */}
       <div className="wheel-container">
         <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
           {wheelBlocks.map((block, i) => (
             <div
               key={block.hash || i}
-              className={`wheel-block ${i === 0 ? 'front' : ''}`}
-              style={{ 
-                transform: `rotateY(${i * 30}deg) translateZ(350px)`,
-                '--depth': `${350 - (i * 20)}px` // Fade back
-              }}
+              className={`wheel-block ${i === 0 ? 'front' : ''} ${block.isDummy ? 'dummy' : ''}`}
+              style={{ transform: `rotateY(${i * 30}deg) translateZ(380px)` }}
             >
               <div className="block-face">
                 <h3>#{block.height}</h3>
-                <p>{block.tx_count || 0} tx</p>
+                <p>{block.tx_count !== undefined ? block.tx_count : 0} tx</p>
               </div>
             </div>
           ))}
@@ -104,7 +113,7 @@ function App() {
       </div>
 
       <div className="status">
-        <span className="live">● LIVE</span> Midnight Testnet — The Wheel Eternal
+        <span className="live">LIVE</span> Midnight Testnet — The Wheel Eternal
       </div>
 
       <footer>
