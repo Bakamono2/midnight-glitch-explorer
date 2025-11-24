@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import confetti from 'canvas-confetti';
 import './App.css';
 
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
-
-const blockfrost = new BlockFrostAPI({
-  projectId: API_KEY,
-  network: 'preprod'
-});
-// ↑ Change 'preprod' → 'mainnet' when Midnight mainnet launches
+const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [block, setBlock] = useState(null);
@@ -19,8 +13,15 @@ function App() {
 
   const fetchData = async () => {
     try {
-      const latest = await blockfrost.blocksLatest();
-      const transactions = await blockfrost.blocksTxs(latest.hash);
+      const latestRes = await fetch(`${BASE_URL}/blocks/latest`, {
+        headers: { project_id: API_KEY }
+      });
+      const latest = await latestRes.json();
+
+      const txsRes = await fetch(`${BASE_URL}/blocks/${latest.hash}/txs`, {
+        headers: { project_id: API_KEY }
+      });
+      const transactions = await txsRes.json();
 
       setBlock(latest);
       setTxs(transactions.length);
@@ -28,35 +29,28 @@ function App() {
       setLoading(false);
 
       if (transactions.length > 0) {
-        // Encrypted confetti rain
         confetti({
-          particleCount: 100,
-          spread: 120,
+          particleCount: 120,
+          spread: 100,
           origin: { y: 0.6 },
-          colors: ['#00ffff', '#ff00ff', '#7400b8', '#000000'],
-          shapes: ['square', 'circle'],
-          scalar: 1.3,
-          ticks: 120,
+          colors: ['#00ffff', '#ff00ff', '#7400b8']
         });
-
-        // Tiny "shhh" privacy sound
         const shhh = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUX+');
-        shhh.volume = 0.2;
-        shhh.play().catch(() => {});
+        shhh.volume = 0.2; shhh.play().catch(() => {});
       }
     } catch (err) {
-      setError('Check your Blockfrost key or network');
-      console.error(err);
+      setError('Check your Blockfrost key');
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 8000);
-    return () => clearInterval(interval);
+    const id = setInterval(fetchData, 8000);
+    return () => clearInterval(id);
   }, []);
 
-  if (loading) return <div className="loading glitch" data-text="LOADING...">LOADING...</div>;
+  if (loading) return <div className="loading glitch" data-text="SCANNING...">SCANNING...</div>;
   if (error) return <div className="error glitch" data-text="ERROR">{error}</div>;
 
   return (
@@ -69,21 +63,20 @@ function App() {
       <main>
         <div className="card">
           <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-          <p className="block-num">#{block?.height || block?.block_no || '???'}</p>
+          <p className="block-num">#{block?.height || block?.slot || '???'}</p>
           <p className="hash">Hash: {(block?.hash || '').slice(0, 24)}...</p>
           <p className="txs">
             {txs} transaction{txs !== 1 ? 's' : ''} shielded in zero-knowledge
           </p>
         </div>
-
         <div className="status">
-          <span className="live">● LIVE</span> Testnet • Midnight Network
+          <span className="live">● LIVE</span> Midnight Testnet via Blockfrost
         </div>
       </main>
 
       <footer>
         <p>
-          <span className="glitch" data-text="shhh...">shhh...</span> your data never left the dark
+          <span className="glitch" data-text="shhh...">shhh...</span> your secrets are safe
         </p>
       </footer>
     </div>
