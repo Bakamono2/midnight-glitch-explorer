@@ -25,11 +25,8 @@ function App() {
 
   const spawnShieldedFloat = () => {
     const id = Date.now() + Math.random();
-    const left = 15 + Math.random() * 70; // random horizontal position
-    const delay = Math.random() * 10;   // staggered start
-    const duration = 20 + Math.random() * 10; // 20–30s float time
-
-    setShieldedFloats(prev => [...prev, { id, left, delay, duration }].slice(-12));
+    const left = 10 + Math.random() * 80;
+    setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
   };
 
   const fetchData = async () => {
@@ -50,17 +47,12 @@ function App() {
         if (txCount > 0) spawnShieldedFloat();
 
         if (txCount > 8) {
-          confetti({ 
-            particleCount: 300, 
-            spread: 160, 
-            origin: { y: 0.3 }, 
-            colors: ['#ffd700', '#ff00ff', '#00ffff'] 
-          });
+          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
       }
       setLoading(false);
     } catch (e) {
-      console.error("Error fetching data:", e);
+      console.error("Error:", e);
       setLoading(false);
     }
   };
@@ -80,17 +72,9 @@ function App() {
         <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
       ))}
 
-      {/* SHIELDED floating text — perfect randomization */}
+      {/* SHIELDED — falling like the original ghosts */}
       {shieldedFloats.map(f => (
-        <div
-          key={f.id}
-          className="shielded-float"
-          style={{
-            left: `${f.left}%`,
-            animationDelay: `${f.delay}s`,
-            animationDuration: `${f.duration}s`
-          }}
-        >
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
