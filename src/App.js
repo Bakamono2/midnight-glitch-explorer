@@ -42,11 +42,19 @@ function App() {
         if (txCount > 0) setShieldedCount(c => c + txCount);
 
         if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+          confetti({ 
+            particleCount: 300, 
+            spread: 160, 
+            origin: { y: 0.3 }, 
+            colors: ['#ffd700', '#ff00ff', '#00ffff'] 
+          });
         }
       }
       setLoading(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Fetch error:", e);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -66,14 +74,25 @@ function App() {
   return (
     <div className="App">
       {/* Encrypted rain */}
-      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-
-      {/* SHIELDED floating indicators */}
-      {recentBlocks.slice(0, 6).map((b, i) => b.tx_count > 0 && (
-        <div key={b.hash + i} className="shielded-float">
-          SHIELDED
-        </div>
+      {particles.map(p => (
+        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
       ))}
+
+      {/* SHIELDED floating text — fixed & beautiful */}
+      {recentBlocks.slice(0, 6).map((b, i) => 
+        b.tx_count > 0 && (
+          <div 
+            key={b.hash + '-shielded-' + i} 
+            className="shielded-float"
+            style={{ 
+              animationDelay: `${i * 3}s`,
+              top: `${20 + i * 10}%`
+            }}
+          >
+            SHIELDED
+          </div>
+        )
+      )}
 
       <div className="main-layout">
         {/* Main Dashboard */}
@@ -92,7 +111,11 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span>0.21 tx/s</span>
+              <span>
+                {recentBlocks.length > 1 
+                  ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2)
+                  : '0.00'} tx/s
+              </span>
               <span>{recentBlocks.length} blocks</span>
               <span>{shieldedCount} SHIELDED events</span>
             </div>
