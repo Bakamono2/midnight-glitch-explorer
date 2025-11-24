@@ -7,17 +7,19 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [blocks, setBlocks] = useState([]);
-  const [rotation, setRotation] = useState(0);
+  const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const addParticle = () => {
-    for (let i = 0; i < 40; i++) {
+  const addParticle = (count) => {
+    for (let i = 0; i < Math.min(count * 3, 30); i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
-      }, i * 70);
+        setParticles(p => [...p, { 
+          id: Date.now() + i + Math.random(),
+          left: Math.random() * 100 
+        }].slice(-120));
+      }, i * 80);
     }
   };
 
@@ -35,14 +37,14 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        setBlocks(prev => {
-          const filtered = prev.filter(b => b.height !== block.height);
-          return [block, ...filtered].slice(0, 12);
-        });
-        setRotation(r => r - 30); // Spin only on new block
-        addParticle();
+        // LIMIT TO LAST 40 BLOCKS
+        setRecentBlocks(prev => [block, ...prev].slice(0, 40));
+        addParticle(txCount);
         if (txCount > 0) spawnGhost();
-        if (txCount > 7) confetti({ particleCount: 500, spread: 160, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+
+        if (txCount > 8) {
+          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        }
       }
       setLoading(false);
     } catch (e) { console.error(e); }
@@ -50,7 +52,7 @@ function App() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 7000);
+    const interval = setInterval(fetchData, 6500);
     return () => clearInterval(interval);
   }, [latest]);
 
@@ -63,41 +65,38 @@ function App() {
 
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle" data-text="WHEEL">WHEEL</p>
+        <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
       </header>
 
-      <div className="main-card">
-        <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-        <p className="block-num">#{latest?.height || '???'}</p>
-        <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-        <p className="txs">{blocks[0]?.tx_count || 0} shielded transactions</p>
-      </div>
-
-      <div className="wheel-container">
-        <div className="wheel-scene">
-          <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
-            {blocks.map((block, i) => (
-              <div
-                key={block.hash}
-                className={`wheel-block ${i === 0 ? 'front' : ''}`}
-                style={{ transform: `rotateY(${i * 30}deg) translateZ(450px)` }}
-              >
-                <div className="block-face">
-                  <h3>#{block.height}</h3>
-                  <p>{block.tx_count} tx</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      <main>
+        <div className="card main-card">
+          <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+          <p className="block-num">#{latest?.height || '???'}</p>
+          <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+          <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
         </div>
-      </div>
 
-      <div className="status">
-        <span className="live">LIVE</span> Midnight Testnet — The Wheel Eternal
-      </div>
+        <div className="recent-blocks">
+          {recentBlocks.slice(1).map(b => (
+            <div key={b.hash} className="mini-card">
+              #{b.height} — {b.tx_count || 0} tx
+            </div>
+          ))}
+        </div>
+
+        <div className="stats-bar">
+          <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
+          <span>{recentBlocks.length - 1} blocks shown</span>
+          <span>{ghosts.length} ghosts watching</span>
+        </div>
+
+        <div className="controls">
+          <button onClick={() => document.body.classList.toggle('dawn')}>Dawn Mode</button>
+        </div>
+      </main>
 
       <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> the ledger turns forever</p>
+        <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
       </footer>
     </div>
   );
