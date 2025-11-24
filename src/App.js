@@ -7,19 +7,17 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [recentBlocks, setRecentBlocks] = useState([]);
+  const [wheelBlocks, setWheelBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wheelRotation, setWheelRotation] = useState(0);
 
-  const addParticle = (count) => {
-    for (let i = 0; i < Math.min(count * 3, 30); i++) {
+  const addParticle = () => {
+    for (let i = 0; i < 20; i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { 
-          id: Date.now() + i + Math.random(),
-          left: Math.random() * 100 
-        }].slice(-120));
-      }, i * 80);
+        setParticles(p => [...p, { id: Date.now() + i }].slice(-80));
+      }, i * 50);
     }
   };
 
@@ -37,14 +35,14 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        // LIMIT TO LAST 40 BLOCKS
-        setRecentBlocks(prev => [block, ...prev].slice(0, 40));
-        addParticle(txCount);
+        setWheelBlocks(prev => {
+          const updated = [block, ...prev.filter(b => b.height !== block.height)];
+          return updated.slice(0, 12); // 12 blocks on the wheel
+        });
+        setWheelRotation(r => r - 30); // 360° / 12 = 30° per block
+        addParticle();
         if (txCount > 0) spawnGhost();
-
-        if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
-        }
+        if (txCount > 5) confetti({ particleCount: 300, spread: 120, origin: { y: 0.4 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
       }
       setLoading(false);
     } catch (e) { console.error(e); }
@@ -52,51 +50,47 @@ function App() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 6500);
+    const interval = setInterval(fetchData, 7000);
     return () => clearInterval(interval);
   }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
+  if (loading) return <div className="loading glitch" data-text="ENTERING THE VOID...">ENTERING THE VOID...</div>;
 
   return (
     <div className="App">
-      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
+      {/* Rain & Ghosts */}
+      {particles.map(p => <div key={p.id} className="rain"></div>)}
       {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>Zero-Knowledge Ghost</div>)}
 
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+        <p className="subtitle" data-text="WHEEL">WHEEL</p>
       </header>
 
-      <main>
-        <div className="card main-card">
-          <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-          <p className="block-num">#{latest?.height || '???'}</p>
-          <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-          <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
-        </div>
-
-        <div className="recent-blocks">
-          {recentBlocks.slice(1).map(b => (
-            <div key={b.hash} className="mini-card">
-              #{b.height} — {b.tx_count || 0} tx
+      {/* THE 3D WHEEL */}
+      <div className="wheel-container">
+        <div className="wheel" style={{ transform: `translateZ(-300px) rotateX(${wheelRotation}deg)` }}>
+          {wheelBlocks.map((block, i) => (
+            <div
+              key={block.hash}
+              className="wheel-block"
+              style={{ transform: `rotateX(${i * 30}deg) translateZ(300px)` }}
+            >
+              <div className="block-face">
+                <h3>#{block.height}</h3>
+                <p>{block.tx_count || 0} shielded tx</p>
+              </div>
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="stats-bar">
-          <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
-          <span>{recentBlocks.length - 1} blocks shown</span>
-          <span>{ghosts.length} ghosts watching</span>
-        </div>
-
-        <div className="controls">
-          <button onClick={() => document.body.classList.toggle('dawn')}>Dawn Mode</button>
-        </div>
-      </main>
+      <div className="status">
+        <span className="live">LIVE</span> Midnight Testnet — The Wheel Never Stops
+      </div>
 
       <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+        <p><span className="glitch" data-text="shhh...">shhh...</span> the ledger turns forever</p>
       </footer>
     </div>
   );
