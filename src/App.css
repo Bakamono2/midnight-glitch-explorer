@@ -11,9 +11,10 @@
   max-width: 100vw;
   scroll-snap-type: x mandatory;
   scroll-padding: 1rem;
+  scroll-behavior: smooth;
 }
 
-/* Cyberpunk scrollbar */
+/* Gorgeous custom scrollbar */
 .recent-blocks::-webkit-scrollbar {
   height: 10px;
 }
@@ -22,7 +23,7 @@
   border-radius: 5px;
 }
 .recent-blocks::-webkit-scrollbar-thumb {
-  background: #00ffff;
+  background: linear-gradient(to right, #00ffff, #39ff14);
   border-radius: 5px;
   box-shadow: 0 0 20px #00ffff;
 }
@@ -30,8 +31,9 @@
   background: #39ff14;
 }
 
-/* Smooth snap */
+/* Mini cards snap into place */
 .mini-card {
   flex: 0 0 auto;
   scroll-snap-align: center;
+  min-width: 140px;
 }
