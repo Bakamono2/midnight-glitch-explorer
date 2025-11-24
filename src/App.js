@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import './App.css';
 
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
-const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';   // ← Change to mainnet URL when live
+const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';   // ← mainnet when ready
 
 function App() {
   const [block, setBlock] = useState(null);
@@ -61,7 +61,7 @@ function App() {
     <div className="App">
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle glitch" data-text="EXPLORER">GLITCH EXPLORER</p>
+        <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
       </header>
 
       <main>
@@ -75,7 +75,7 @@ function App() {
         </div>
 
         <div className="status">
-          <span className="live">● LIVE</span> Midnight Testnet via Blockfrost
+          <span className="live">LIVE</span> Midnight Testnet via Blockfrost
         </div>
       </main>
 
