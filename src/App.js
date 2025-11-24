@@ -61,7 +61,7 @@ function App() {
   return (
     <div className="App">
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-      {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>PRIVACY</div>)}
+      {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>SHIELDED</div>)}
 
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
