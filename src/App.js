@@ -37,7 +37,6 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        // LIMIT TO LAST 40 BLOCKS
         setRecentBlocks(prev => [block, ...prev].slice(0, 40));
         addParticle(txCount);
         if (txCount > 0) spawnGhost();
@@ -60,8 +59,15 @@ function App() {
 
   return (
     <div className="App">
+      {/* Encrypted rain */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-      {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>SHIELDED</div>)}
+
+      {/* SHIELDED indicators */}
+      {ghosts.map(g => (
+        <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>
+          SHIELDED
+        </div>
+      ))}
 
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -87,11 +93,7 @@ function App() {
         <div className="stats-bar">
           <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
           <span>{recentBlocks.length - 1} blocks shown</span>
-          <span>{ghosts.length} ghosts watching</span>
-        </div>
-
-        <div className="controls">
-          <button onClick={() => document.body.classList.toggle('dawn')}>Dawn Mode</button>
+          <span>{ghosts.length} SHIELDED events</span>
         </div>
       </main>
 
