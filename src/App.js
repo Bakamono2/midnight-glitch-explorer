@@ -1,96 +1,86 @@
 import React, { useState, useEffect } from 'react';
 import Blockfrost from 'blockfrost-js';
 import confetti from 'canvas-confetti';
+import './App.css';
 
-// === CONFIGURATION ===
-// Put your Blockfrost Project ID (the long string starting with "preprod...") 
-// in Vercel Environment Variables as: REACT_APP_BLOCKFROST_KEY
-const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY || 'YOUR_PREPROD_KEY_HERE_TEMP';
+const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 
-// This works for Midnight testnet right now (Nov 2025)
-const blockfrost = new Blockfrost(API_KEY, 'preprod');  
-// ↑ When mainnet launches, just change 'preprod' → 'mainnet'
+const blockfrost = new Blockfrost(API_KEY, 'preprod');
+// ↑ Change 'preprod' → 'mainnet' when Midnight mainnet launches
 
 function App() {
-  const [latestBlock, setLatestBlock] = useState(null);
-  const [txCount, setTxCount] = useState(0);
+  const [block, setBlock] = useState(null);
+  const [txs, setTxs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchLatest = async () => {
+  const fetchData = async () => {
     try {
-      const block = await blockfrost.blocksLatest();
-      const txs = await blockfrost.blocksTxs(block.hash);
+      const latest = await blockfrost.blocksLatest();
+      const transactions = await blockfrost.blocksTxs(latest.hash);
 
-      setLatestBlock(block);
-      setTxCount(txs.length);
+      setBlock(latest);
+      setTxs(transactions.length);
       setError(null);
       setLoading(false);
 
-      // Fun confetti + encrypted particles when real txs appear
-      if (txs.length > 0) {
+      if (transactions.length > 0) {
+        // Encrypted confetti rain
         confetti({
-          particleCount: 80,
-          spread: 100,
+          particleCount: 100,
+          spread: 120,
           origin: { y: 0.6 },
-          colors: ['#00ffff', '#ff00ff', '#7400b8'],
-          scalar: 1.2,
+          colors: ['#00ffff', '#ff00ff', '#7400b8', '#000000'],
           shapes: ['square', 'circle'],
-          ticks: 100,
+          scalar: 1.3,
+          ticks: 120,
         });
 
-        // Optional tiny "shhh" sound (privacy vibe)
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUX+');
-        audio.volume = 0.15;
-        audio.play().catch(() => {}); // browsers block autoplay sometimes
+        // Tiny "shhh" privacy sound
+        const shhh = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUX+');
+        shhh.volume = 0.2;
+        shhh.play().catch(() => {});
       }
     } catch (err) {
+      setError('Check your Blockfrost key or network');
       console.error(err);
-      setError('API key missing or rate-limited. Add your Preprod key in Vercel!');
     }
   };
 
   useEffect(() => {
-    fetchLatest();
-    const interval = setInterval(fetchLatest, 7000); // Refresh every 7 sec
+    fetchData();
+    const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, []);
 
-  if (loading && !latestBlock) {
-    return <div className="loading">Decrypting the shadows...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
+  if (loading) return <div className="loading glitch" data-text="LOADING...">LOADING...</div>;
+  if (error) return <div className="error glitch" data-text="ERROR">{error}</div>;
 
   return (
     <div className="App">
       <header className="header">
         <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-        <p className="subtitle">Glitch Explorer • Testnet Live • Privacy = Freedom</p>
+        <p className="subtitle glitch" data-text="GLITCH EXPLORER">GLITCH EXPLORER</p>
       </header>
 
-      <main className="block-info">
+      <main>
         <div className="card">
-          <h2>Latest Block</h2>
-          <p className="block-number">#{latestBlock?.height || latestBlock?.block_no}</p>
-          <p className="hash">Hash: {(latestBlock?.hash || '').slice(0, 20)}...</p>
-          <p className="tx-count">
-            {txCount} transaction{txCount !== 1 ? 's' : ''} in this block
-            {txCount > 0 && ' 🛡️ Shrouded in zero-knowledge'}
+          <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+          <p className="block-num">#{block?.height || block?.block_no || '???'}</p>
+          <p className="hash">Hash: {(block?.hash || '').slice(0, 24)}...</p>
+          <p className="txs">
+            {txs} transaction{txs !== 1 ? 's' : ''} shielded in zero-knowledge
           </p>
         </div>
 
         <div className="status">
-          <span className="pulse">● LIVE</span> Next scan in ~7s
+          <span className="live">● LIVE</span> Testnet • Midnight Network
         </div>
       </main>
 
       <footer>
         <p>
-          Built with 💜 for the Midnight community •{' '}
-          <span className="glitch" data-text="shhh...">shhh...</span>
+          <span className="glitch" data-text="shhh...">shhh...</span> your data never left the dark
         </p>
       </footer>
     </div>
