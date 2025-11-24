@@ -1,43 +1,114 @@
-.App {
-  text-align: center;
-  background: linear-gradient(180deg, #000 0%, #001122 100%);
-  min-height: 100vh;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
   color: #00ffff;
-  padding: 20px;
+  font-family: 'Courier New', monospace;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
-.header h1 {
-  font-size: 3em;
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #ff00ff;
-  animation: flicker 1.5s infinite alternate;
+.App {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(180deg, #000 0%, #001122 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Scan lines */
+.App::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.header { margin-bottom: 3rem; }
+.glitch-title {
+  font-size: 4.5rem;
+  font-weight: bold;
+  text-shadow: 0 0 20px #00ffff, 0 0 40px #ff00ff;
+  animation: flicker 2s infinite alternate;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  margin-top: 1rem;
+  opacity: 0.9;
+}
+
+.card {
+  background: rgba(0,10,30,0.8);
+  border: 2px solid #00ffff;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  margin: 2rem auto;
+  box-shadow: 0 0 30px rgba(0,255,255,0.4);
+}
+
+.block-num {
+  font-size: 2.8rem;
+  margin: 1rem 0;
+  color: #ff00ff;
+}
+
+.hash { font-size: 0.9rem; opacity: 0.8; word-break: break-all; }
+.txs { margin-top: 1rem; font-size: 1.3rem; }
+
+.status {
+  margin: 3rem 0;
+  font-size: 1.1rem;
+}
+.live { color: #00ff00; animation: pulse 2s infinite; }
+
+.loading, .error {
+  font-size: 2.5rem;
+  margin-top: 15vh;
+}
+
+footer {
+  margin-top: 6rem;
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+/* GLITCH ANIMATIONS */
+@keyframes glitch {
+  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); }
+  20% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; transform: translate(-2px, -2px); }
+  40% { text-shadow: 2px -2px #ff00ff, -2px 2px #00ffff; transform: translate(2px, 2px); }
+  60% { text-shadow: -2px 2px #ff00ff, 2px -2px #00ffff; transform: translate(-2px, 2px); }
+  80% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(2px, -2px); }
+  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); }
 }
 
 @keyframes flicker {
-  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
-  20%, 24%, 55% { opacity: 0.4; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
 }
 
-.block-card {
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid #00ffff;
-  border-radius: 10px;
-  margin: 20px auto;
-  padding: 20px;
-  max-width: 600px;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.loading, .glitch {
-  animation: glitch 0.5s infinite;
+.glitch {
+  animation: glitch 0.5s linear infinite;
+  display: inline-block;
 }
 
-@keyframes glitch {
-  0% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
-  100% { transform: translate(0); }
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  background: #000;
 }
-
-footer { margin-top: 50px; font-size: 0.8em; color: #888; }
+.glitch::before { animation: glitch 0.4s reverse infinite; clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%); color: #ff00ff; }
+.glitch::after  { animation: glitch 0.6s infinite; clip-path: polygon(0 80%, 100% 80%, 100% 100%, 0 100%); color: #00ffff; }
