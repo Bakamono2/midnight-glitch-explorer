@@ -7,17 +7,17 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
-  const [wheelBlocks, setWheelBlocks] = useState([]);
+  const [blocks, setBlocks] = useState([]);  // Only real blocks
+  const [rotation, setRotation] = useState(0);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rotation, setRotation] = useState(0);
 
   const addParticle = () => {
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 40; i++) {
       setTimeout(() => {
         setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-120));
-      }, i * 70);
+      }, i * 60);
     }
   };
 
@@ -36,19 +36,18 @@ function App() {
         const txCount = txs.length;
         setLatest(block);
 
-        // Insert new block at index 0 → always front/center
-        setWheelBlocks(prev => {
-          const updated = [block, ...prev.filter(b => b.height !== block.height)];
+        setBlocks(prev => {
+          const filtered = prev.filter(b => b.height !== block.height);
+          const updated = [block, ...filtered];
           return updated.slice(0, 12); // Max 12 real blocks
         });
 
-        // Rotate wheel so newest block is always in center
-        setRotation(r => r - 30); // 30° per block
+        setRotation(prev => prev - 30); // 30° per new block
 
         addParticle();
         if (txCount > 0) spawnGhost();
         if (txCount > 7) {
-          confetti({ particleCount: 450, spread: 150, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+          confetti({ particleCount: 500, spread: 160, origin: { y: 0.5 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
       }
       setLoading(false);
@@ -61,7 +60,13 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE VOID...">ENTERING THE VOID...</div>;
+  if (loading) return <div className="loading glitch" data-text="SPINNING UP...">SPINNING UP...</div>;
+
+  // Fill missing slots with empty placeholders so wheel is always full
+  const displayBlocks = [...blocks];
+  while (displayBlocks.length < 12) {
+    displayBlocks.push({ height: '', tx_count: 0, isPlaceholder: true });
+  }
 
   return (
     <div className="App">
@@ -77,26 +82,25 @@ function App() {
         <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
         <p className="block-num">#{latest?.height || '???'}</p>
         <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-        <p className="txs">{wheelBlocks[0]?.tx_count || 0} shielded transactions</p>
+        <p className="txs">{blocks[0]?.tx_count || 0} shielded transactions</p>
       </div>
 
       <div className="wheel-container">
-        <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
-          {wheelBlocks.map((block, i) => (
-            <div
-              key={block.hash}
-              className={`wheel-block ${i === 0 ? 'front' : ''}`}
-              style={{ 
-                transform: `rotateY(${i * 30}deg) translateZ(400px)`,
-                opacity: i === 0 ? 1 : 1 - (i * 0.08)
-              }}
-            >
-              <div className="block-face">
-                <h3>#{block.height}</h3>
-                <p>{block.tx_count || 0} tx</p>
+        <div className="wheel-scene">
+          <div className="wheel" style={{ transform: `rotateY(${rotation}deg)` }}>
+            {displayBlocks.map((block, i) => (
+              <div
+                key={block.height || `placeholder-${i}`}
+                className={`wheel-block ${i === 0 ? 'front' : ''} ${block.isPlaceholder ? 'placeholder' : ''}`}
+                style={{ transform: `rotateY(${i * 30}deg) translateZ(420px)` }}
+              >
+                <div className="block-face">
+                  <h3>{block.height ? `#${block.height}` : '...'}</h3>
+                  <p>{block.tx_count !== undefined ? `${block.tx_count} tx` : ''}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -105,7 +109,7 @@ function App() {
       </div>
 
       <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> the shadows spin forever</p>
+        <p><span className="glitch" data-text="shhh...">shhh...</span> the ledger turns forever</p>
       </footer>
     </div>
   );
