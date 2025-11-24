@@ -37,7 +37,8 @@ function App() {
       if (!latest || block.height > latest.height) {
         const txCount = txs.length;
         setLatest(block);
-        setRecentBlocks(prev => [block, ...prev].slice(0, 40));   // ← ONLY THIS LINE CHANGED
+        // LIMIT TO LAST 40 BLOCKS
+        setRecentBlocks(prev => [block, ...prev].slice(0, 40));
         addParticle(txCount);
         if (txCount > 0) spawnGhost();
 
@@ -59,7 +60,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* rain, ghosts, etc. */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
       {ghosts.map(g => <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>Zero-Knowledge Ghost</div>)}
 
@@ -85,8 +85,8 @@ function App() {
         </div>
 
         <div className="stats-bar">
-          <span>{(recentBlocks.length > 1 ? (recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / (recentBlocks.length * 6.5) : 0).toFixed(2)} tx/s</span>
-          <span>{recentBlocks.length - 1}+ blocks shown</span>
+          <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
+          <span>{recentBlocks.length - 1} blocks shown</span>
           <span>{ghosts.length} ghosts watching</span>
         </div>
 
