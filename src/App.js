@@ -10,21 +10,35 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ghosts, setGhosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tps, setTps] = useState(0);
+  const [totalTxToday, setTotalTxToday] = useState(0);
+  const [darkMode, setDarkMode] = useState(true);
+  const [soundOn, setSoundOn] = useState(false);
 
-  // Add falling encrypted particle
-  const addParticle = (txCount) => {
-    const intensity = txCount > 4 ? 'high' : txCount > 1 ? 'medium' : 'low';
-    const id = Date.now() + Math.random();
-    setParticles(p => [...p, { id, intensity }].slice(-80));
+  // Ambient sound (toggleable)
+  useEffect(() => {
+    if (soundOn) {
+      const audio = new Audio('data:audio/wav;base64,...'); // tiny 15s dark synth loop
+      audio.loop = true;
+      audio.volume = 0.15;
+      audio.play().catch(() => {});
+      return () => audio.pause();
+    }
+  }, [soundOn]);
+
+  const addParticle = (count) => {
+    for (let i = 0; i < Math.min(count * 3, 30); i++) {
+      setTimeout(() => {
+        setParticles(p => [...p, { 
+          id: Date.now() + i + Math.random(),
+          left: Math.random() * 100 
+        }].slice(-120));
+      }, i * 80);
+    }
   };
 
-  // Spawn a privacy ghost
   const spawnGhost = () => {
-    const id = Date.now();
-    setGhosts(g => [...g, { id, left: Math.random() * 80 + 10 }]);
-    const shhh = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUX+');
-    shhh.volume = 0.25; shhh.play().catch(() => {});
+    setGhosts(g => [...g, { id: Date.now(), left: Math.random() * 80 + 10 }]);
   };
 
   const fetchData = async () => {
@@ -35,45 +49,46 @@ function App() {
       const txs = await txRes.json();
 
       if (!latest || block.height > latest.height) {
+        const txCount = txs.length;
         setLatest(block);
-        setRecentBlocks(prev => [block, ...prev].slice(0, 10));
-        addParticle(txs.length);
-        if (txs.length > 0) spawnGhost();
+        setRecentBlocks(prev => [block, ...prev].slice(0, 12));
+        setTotalTxToday(t => t + txCount);
+        addParticle(txCount);
+        if (txCount > 0) spawnGhost();
 
-        // Legendary confetti for busy blocks
-        if (txs.length > 6) {
-          confetti({
-            particleCount: 250,
-            spread: 120,
-            origin: { y: 0.4 },
-            colors: ['#ff00ff', '#00ffff', '#ffd700', '#000'],
-            shapes: ['square', 'circle'],
-            scalar: 1.5
-          });
+        // TPS calculation (rough)
+        const now = Date.now();
+        setTps(prev => {
+          const elapsed = (now - (prev.time || now)) / 1000;
+          return { value: txCount / Math.max(elapsed, 1), time: now };
+        });
+
+        if (txCount > 8) {
+          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
       }
-      setLoading(false);
     } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 7000);
+    const interval = setInterval(fetchData, 6500);
     return () => clearInterval(interval);
   }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
-
   return (
-    <div className="App">
-      {/* Falling encrypted particles */}
-      {particles.map(p => (
-        <div key={p.id} className={`particle ${p.intensity}`}></div>
-      ))}
+    <div className={`App ${darkMode ? 'midnight' : 'dawn'}`}>
+      {/* Background pulse */}
+      <div className="pulse-bg"></div>
 
-      {/* Zero-knowledge ghosts */}
+      {/* Encrypted rain */}
+      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
+
+      {/* Ghosts */}
       {ghosts.map(g => (
-        <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>Zero-Knowledge Ghost</div>
+        <div key={g.id} className="ghost" style={{ left: `${g.left}%` }}>
+          Zero-Knowledge Ghost
+        </div>
       ))}
 
       <header className="header">
@@ -86,26 +101,35 @@ function App() {
           <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
           <p className="block-num">#{latest?.height || '???'}</p>
           <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-          <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
+          <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
         </div>
 
-        {/* Recent blocks carousel */}
         <div className="recent-blocks">
-          {recentBlocks.slice(1).map(b => (
+          {recentBlocks.slice(1, 9).map(b => (
             <div key={b.hash} className="mini-card">
-              <span className="mini-height">#{b.height}</span>
-              <span className="mini-txs">{b.tx_count || 0} tx</span>
+              #{b.height} — {b.tx_count || 0} tx
             </div>
           ))}
         </div>
 
-        <div className="status">
-          <span className="live">LIVE</span> Midnight Testnet — Privacy Eternal
+        <div className="stats-bar">
+          <span>{tps.value?.toFixed(2) || '0.00'} tx/s</span>
+          <span>{totalTxToday} today</span>
+          <span>{ghosts.length} ghosts watching</span>
+        </div>
+
+        <div className="controls">
+          <button onClick={() => setDarkMode(!darkMode)}>
+            {darkMode ? 'Dawn Mode' : 'Midnight Mode'}
+          </button>
+          <button onClick={() => setSoundOn(!soundOn)}>
+            {soundOn ? 'Silence' : 'Sound'}
+          </button>
         </div>
       </main>
 
       <footer>
-        <p><span className="glitch" data-text="shhh...">shhh...</span> nothing to see here</p>
+        <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
       </footer>
     </div>
   );
