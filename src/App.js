@@ -10,27 +10,10 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
-  const [shieldedToday, setShieldedToday] = useState(0);
-  const [lastResetDate, setLastResetDate] = useState('');
+  const [epochShielded, setEpochShielded] = useState(0);
+  const [currentEpoch, setCurrentEpoch] = useState(0);
+  const [epochStart, setEpochStart] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Load saved shielded count + date from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('midnightShieldedToday');
-    const savedDate = localStorage.getItem('midnightShieldedDate');
-    const today = new Date().toISOString().split('T')[0];
-
-    if (saved && savedDate === today) {
-      setShieldedToday(parseInt(saved, 10));
-      setLastResetDate(savedDate);
-    } else {
-      // New day — reset
-      localStorage.setItem('midnightShieldedToday', '0');
-      localStorage.setItem('midnightShieldedDate', today);
-      setShieldedToday(0);
-      setLastResetDate(today);
-    }
-  }, []);
 
   const addParticle = (count) => {
     for (let i = 0; i < Math.min(count * 3, 25); i++) {
@@ -44,6 +27,26 @@ function App() {
     const id = Date.now() + Math.random();
     const left = 10 + Math.random() * 80;
     setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
+  };
+
+  // Fetch epoch stats (called every 5 mins)
+  const fetchEpochStats = async () => {
+    try {
+      const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
+      const epoch = await epochRes.json();
+      setCurrentEpoch(epoch.epoch);
+      setEpochStart(epoch.start_time);
+
+      // Fetch blocks from epoch start to latest
+      const epochBlocksRes = await fetch(`${BASE_URL}/blocks?from=${epoch.start_time}&until=${epoch.end_time}&order=desc`, { headers: { project_id: API_KEY }});
+      const epochBlocks = await epochBlocksRes.json();
+
+      // Sum shielded txs in epoch
+      const totalShielded = epochBlocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
+      setEpochShielded(totalShielded);
+    } catch (e) {
+      console.error("Epoch stats error:", e);
+    }
   };
 
   const fetchData = async () => {
@@ -60,17 +63,8 @@ function App() {
           const filtered = prev.filter(b => b.hash !== block.hash);
           return [block, ...filtered].slice(0, 50);
         });
-
         addParticle(txCount);
-        if (txCount > 0) {
-          spawnShieldedFloat();
-          // ONLY INCREASE — never decrease
-          setShieldedToday(prev => {
-            const newTotal = prev + txCount;
-            localStorage.setItem('midnightShieldedToday', newTotal.toString());
-            return newTotal;
-          });
-        }
+        if (txCount > 0) spawnShieldedFloat();
 
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
@@ -88,6 +82,12 @@ function App() {
     const interval = setInterval(fetchData, 6500);
     return () => clearInterval(interval);
   }, [latest]);
+
+  useEffect(() => {
+    fetchEpochStats();
+    const epochInterval = setInterval(fetchEpochStats, 300000); // 5 mins
+    return () => clearInterval(epochInterval);
+  }, []);
 
   if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
 
@@ -112,9 +112,12 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span><strong>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'}</strong> TPS</span>
+              <span><strong>{((recentBlocks[0]?.height - recentBlocks[recentBlocks.length-1]?.height) / ((recentBlocks.length-1) * 6.5))?.toFixed(2) || '0.00'}</strong> TPS</span>
               <span><strong>{latest?.height || 0}</strong> Total Blocks</span>
-              <span><strong>{shieldedToday}</strong> Shielded Today</span>
+              <span><strong>{epochShielded}</strong> Shielded This Epoch</span>
+              <span>Epoch <strong>{currentEpoch}</strong></span>
+              <span>Slot <strong>{latest?.slot || '-'}</strong></span>
+              <span>Privacy <strong>{(recentBlocks.filter(b => (b.tx_count || 0) > 0).length / recentBlocks.length * 100)?.toFixed(0) || 0}%</strong></span>
               <span><strong>{shieldedFloats.length}</strong> Live Events</span>
             </div>
           </main>
