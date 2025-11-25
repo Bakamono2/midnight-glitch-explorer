@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — EXPANDED STATS BAR === */
+/* === MIDNIGHT EXPLORER — FINAL & FLAWLESS === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -78,32 +78,16 @@
 .hash { font-size: clamp(0.9rem, 3vw, 1.1rem); opacity: 0.85; word-break: break-all; margin: 1rem 0; }
 .txs { font-size: clamp(1.3rem, 4.5vw, 1.9rem); margin-top: 2rem; }
 
-/* EXPANDED STATS BAR — VALUABLE + ADDICTIVE */
+/* Stats */
 .stats-bar {
   margin: 4rem 0;
-  font-size: clamp(1rem, 3vw, 1.3rem);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1.5rem;
-  justify-items: center;
-  padding: 2rem;
-  background: rgba(0,255,255,0.05);
-  border: 1px solid rgba(0,255,255,0.2);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 30px rgba(0,255,255,0.1);
-  z-index: 10;
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
-.stats-bar span {
-  color: #39ff14;
-  text-shadow: 0 0 12px #39ff14;
-  text-align: center;
-}
-.stats-bar strong {
-  color: #ff00ff;
-  font-size: 1.2em;
-  display: block;
-}
+.stats-bar span { color: #39ff14; text-shadow: 0 0 12px #39ff14; }
 
 /* SHIELDED — falling like the original ghosts */
 .shielded-fall {
@@ -149,9 +133,49 @@
   box-shadow: 0 0 14px #00ffff;
   opacity: 0.8;
 }
-@keyframes rainFall { to { transform: translateY(120vh) rotate(360deg); opacity: 0; } }
+@keyframes rainFall { 
+  to { transform: translateY(120vh) rotate(360deg); opacity: 0; } 
+}
 .rain:nth-child(odd)  { animation-duration: 5s; background: linear-gradient(to bottom, #ff00ff, transparent); box-shadow: 0 0 18px #ff00ff; }
 .rain:nth-child(3n)   { animation-duration: 3.5s; background: linear-gradient(to bottom, #ffd700, transparent); box-shadow: 0 0 22px #ffd700; }
 
-/* Glitch */
-@keyframes glitch { 0%,100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); } 20% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff
+/* Glitch — FIXED & ELEGANT */
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0); }
+  20% { text-shadow: -2px -1px #ff00ff, 2px 1px #00ffff; transform: translate(-1px,-1px); }
+  40% { text-shadow: 1px -2px #ff00ff, -1px 2px #00ffff; transform: translate(1px,-1px); }
+  60% { text-shadow: -1px 1px #ff00ff, 1px -1px #00ffff; transform: translate(-1px,1px); }
+  80% { text-shadow: 2px -1px #ff00ff, -2px 1px #00ffff; transform: translate(1px,1px); }
+}
+
+@keyframes flicker {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+
+.glitch { 
+  animation: glitch 4s infinite linear; 
+  position: relative; 
+  display: inline-block; 
+}
+.glitch::before, .glitch::after { 
+  content: attr(data-text); 
+  position: absolute; 
+  top: 0; left: 0; 
+  width: 100%; 
+  background: #000; 
+  opacity: 0.8; 
+}
+.glitch::before { 
+  animation: glitch 3.8s infinite reverse; 
+  clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%); 
+  color: #ff00ff; 
+}
+.glitch::after { 
+  animation: glitch 4.2s infinite; 
+  clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%); 
+  color: #00ffff; 
+}
+
+footer { margin-top: 10rem; opacity: 0.75; font-size: clamp(1.1rem, 3vw, 1.4rem); }
+.loading { font-size: clamp(2.5rem, 9vw, 4rem); margin-top: 40vh; }
