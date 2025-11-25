@@ -11,15 +11,6 @@ function App() {
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalBlocks, setTotalBlocks] = useState(0);
-  const [todaysBlocks, setTodaysBlocks] = useState(0);
-  const [shieldedToday, setShieldedToday] = useState(0);
-  const [activeNodes, setActiveNodes] = useState(0);
-  const [tps, setTps] = useState(0);
-  const [privacyScore, setPrivacyScore] = useState(0);
-  const [uptime, setUptime] = useState(0);
-  const [peakTps, setPeakTps] = useState(0);
-  const [startOfDay] = useState(new Date().setHours(0, 0, 0, 0));
 
   const addParticle = (count) => {
     for (let i = 0; i < Math.min(count * 3, 25); i++) {
@@ -55,23 +46,6 @@ function App() {
         addParticle(txCount);
         if (txCount > 0) spawnShieldedFloat();
 
-        // Stats calculations
-        setTotalBlocks(block.height);
-        const now = Date.now();
-        const dayStart = new Date(now);
-        dayStart.setHours(0, 0, 0, 0);
-        const blocksToday = Math.round((now - dayStart) / 20000); // ~20s/block
-        setTodaysBlocks(blocksToday);
-        const avgShielded = recentBlocks.slice(0, 24).reduce((sum, b) => sum + (b.tx_count || 0), 0) / 24;
-        setShieldedToday(Math.round(avgShielded * blocksToday));
-        const recentTime = now - (recentBlocks[recentBlocks.length - 1]?.time || now);
-        const recentTx = recentBlocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
-        const newTps = recentTx / (recentTime / 1000);
-        setTps(newTps);
-        if (newTps > peakTps) setPeakTps(newTps);
-        setPrivacyScore(Math.round((recentBlocks.filter(b => (b.tx_count || 0) > 0).length / recentBlocks.length) * 100) || 0);
-        setActiveNodes(45); // Live estimate
-
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
         }
@@ -83,21 +57,11 @@ function App() {
     }
   };
 
-  // Uptime
   useEffect(() => {
-    const start = Date.now();
-    const timer = setInterval(() => {
-      setUptime(Math.floor((Date.now() - start) / 1000));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatUptime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h ? h + 'h ' : ''}${m}m ${s}s`;
-  };
+    fetchData();
+    const interval = setInterval(fetchData, 6500);
+    return () => clearInterval(interval);
+  }, [latest]);
 
   if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
 
@@ -132,17 +96,9 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span><strong>{tps.toFixed(2)}</strong> TPS</span>
-              <span><strong>{totalBlocks}</strong> Total Blocks</span>
-              <span><strong>{todaysBlocks}</strong> Today</span>
-              <span>Epoch <strong>{latest?.epoch || '-'}</strong></span>
-              <span>Slot <strong>{latest?.slot || '-'}</strong></span>
-              <span><strong>{shieldedToday}</strong> Shielded Today</span>
-              <span><strong>{shieldedFloats.length}</strong> Session Events</span>
-              <span>Nodes <strong>{activeNodes}</strong></span>
-              <span>Privacy <strong>{privacyScore}%</strong></span>
-              <span>Uptime <strong>{formatUptime(uptime)}</strong></span>
-              <span>Peak <strong>{peakTps.toFixed(2)}</strong> TPS</span>
+              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length- pan1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
+              <span>{recentBlocks.length} blocks</span>
+              <span>{shieldedFloats.length} SHIELDED events</span>
             </div>
           </main>
 
