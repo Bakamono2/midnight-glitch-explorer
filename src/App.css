@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — FINAL WITH VALUABLE STATS === */
+/* === MIDNIGHT EXPLORER — EPOCH STATS BAR === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App { min-height:100vh; background:#000; color:#00ffff; font-family:'Courier New',monospace; position:relative; overflow:hidden; }
@@ -19,7 +19,7 @@
 .hash { font-size:clamp(0.9rem,3vw,1.1rem); opacity:0.85; word-break:break-all; margin:1rem 0; }
 .txs { font-size:clamp(1.3rem,4.5vw,1.9rem); margin-top:2rem; }
 
-/* VALUABLE STATS BAR */
+/* EPOCH STATS BAR */
 .stats-bar {
   margin:4rem 0;
   padding:2rem;
@@ -30,6 +30,7 @@
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
   gap:1.5rem;
+  justify-items:center;
   font-size:clamp(1rem,3vw,1.3rem);
 }
 .stats-bar span { color:#39ff14; text-shadow:0 0 12px #39ff14; text-align:center; }
