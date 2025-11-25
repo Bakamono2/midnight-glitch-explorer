@@ -96,7 +96,7 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length- pan1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
+              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
               <span>{recentBlocks.length} blocks</span>
               <span>{shieldedFloats.length} SHIELDED events</span>
             </div>
