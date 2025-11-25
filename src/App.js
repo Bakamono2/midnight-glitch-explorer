@@ -32,10 +32,10 @@ function App() {
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
-      if (!res.ok) throw new Error('API error');
+      if (!res.ok) throw new Error('API failed');
       const block = await res.json();
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
-      if (!txRes.ok) throw new Error('API error');
+      if (!txRes.ok) throw new Error('Tx fetch failed');
       const txs = await txRes.json();
 
       if (!latest || block.hash !== latest.hash) {
@@ -54,7 +54,7 @@ function App() {
       }
       setLoading(false);
     } catch (e) {
-      console.error("Error:", e);
+      console.error("Fetch error:", e);
       setLoading(false);
     }
   };
@@ -69,8 +69,17 @@ function App() {
 
   return (
     <div className="App">
-      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-      {shieldedFloats.map(f => <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>)}
+      {/* Rain */}
+      {particles.map(p => (
+        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
+      ))}
+
+      {/* SHIELDED falling */}
+      {shieldedFloats.map(f => (
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
+      ))}
 
       <div className="main-layout">
         <div className="dashboard">
