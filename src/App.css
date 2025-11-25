@@ -1,4 +1,4 @@
-/* === MIDNIGHT EXPLORER — FINAL & FLAWLESS === */
+/* === MIDNIGHT EXPLORER — FINAL & ELEGANT === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -25,6 +25,8 @@
   justify-content: center;
   padding: 2rem;
   min-height: 100vh;
+  position: relative;
+  z-index: 10;
 }
 
 /* Right Timeline */
@@ -73,6 +75,8 @@
   width: 100%;
   box-shadow: 0 0 80px rgba(0,255,255,0.8);
   backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 10;
 }
 .block-num { font-size: clamp(3rem, 9vw, 5rem); color: #ff00ff; text-shadow: 0 0 30px #ff00ff; margin: 1.5rem 0; }
 .hash { font-size: clamp(0.9rem, 3vw, 1.1rem); opacity: 0.85; word-break: break-all; margin: 1rem 0; }
@@ -86,38 +90,39 @@
   gap: 3rem;
   flex-wrap: wrap;
   justify-content: center;
+  z-index: 10;
 }
 .stats-bar span { color: #39ff14; text-shadow: 0 0 12px #39ff14; }
 
-/* SHIELDED — falling exactly like the original ghosts */
-.shielded-fall {
+/* SHIELDED — now in the background, behind everything */
+.shielded-bg {
   position: absolute;
   top: -10%;
-  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-size: clamp(2.5rem, 8vw, 5rem);
   font-weight: bold;
-  color: #39ff14;
-  text-shadow: 0 0 30px #39ff14;
+  color: rgba(57, 255, 20, 0.25);
+  text-shadow: 0 0 40px rgba(57, 255, 20, 0.3);
   opacity: 0;
-  animation: ghostFall 22s linear forwards;
+  animation: ghostFall 25s linear forwards;
   pointer-events: none;
-  z-index: 5;
+  z-index: 1;
   white-space: nowrap;
 }
 @keyframes ghostFall {
   0% {
     opacity: 0;
-    transform: translateY(-100px) scale(0.6) rotate(-10deg);
+    transform: translateY(-100px) scale(0.6) rotate(-8deg);
   }
-  10% {
-    opacity: 0.9;
+  12% {
+    opacity: 0.25;
   }
-  90% {
-    opacity: 0.9;
-    transform: translateY(90vh) scale(1.1) rotate(5deg);
+  88% {
+    opacity: 0.25;
+    transform: translateY(90vh) scale(1.1) rotate(6deg);
   }
   100% {
     opacity: 0;
-    transform: translateY(110vh) scale(0.8) rotate(-5deg);
+    transform: translateY(110vh) scale(0.8) rotate(-6deg);
   }
 }
 
@@ -132,6 +137,7 @@
   animation: rainFall linear forwards;
   box-shadow: 0 0 14px #00ffff;
   opacity: 0.8;
+  z-index: 5;
 }
 @keyframes rainFall { to { transform: translateY(120vh) rotate(360deg); opacity: 0; } }
 .rain:nth-child(odd)  { animation-duration: 5s; background: linear-gradient(to bottom, #ff00ff, transparent); box-shadow: 0 0 18px #ff00ff; }
@@ -152,5 +158,5 @@
 .glitch::before { animation: glitch 3.8s infinite reverse; clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%); color: #ff00ff; }
 .glitch::after { animation: glitch 4.2s infinite; clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%); color: #00ffff; }
 
-footer { margin-top: 10rem; opacity: 0.75; font-size: clamp(1.1rem, 3vw, 1.4rem); }
+footer { margin-top: 10rem; opacity: 0.75; font-size: clamp(1.1rem, 3vw, 1.4rem); z-index: 10; }
 .loading { font-size: clamp(2.5rem, 9vw, 4rem); margin-top: 40vh; }
