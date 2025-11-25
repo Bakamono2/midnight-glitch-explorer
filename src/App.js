@@ -12,52 +12,50 @@ function App() {
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [epochShielded, setEpochShielded] = useState(0);
   const [currentEpoch, setCurrentEpoch] = useState(0);
-  const [epochStartHeight, setEpochStartHeight] = useState(0);
-  const [epochEndHeight, setEpochEndHeight] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
-    for (let i = 0; i < Math.min(count * 3, 25); i++) {
+    for (let i = 0; i < Math.min(count * 4, 30); i++) {
       setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + Math.random(), left: Math.random() * 100 }].slice(-100));
-      }, i * 100);
+        setParticles(p => [...p, { id: Date.now() + Math.random(), left: Math.random() * 100 }].slice(-120));
+      }, i * 80);
     }
   };
 
   const spawnShieldedFloat = () => {
     const id = Date.now() + Math.random();
     const left = 10 + Math.random() * 80;
-    setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
+    setShieldedFloats(prev => [...prev, { id, left }].slice(-12));
   };
 
-  // Fetch full epoch stats (paginated to get all blocks)
-  const fetchEpochStats = async () => {
+  // REAL EPOCH SHIELDED COUNTER — counts every single shielded tx in current epoch
+  const fetchEpochShielded = async () => {
     try {
       const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
       const epoch = await epochRes.json();
       setCurrentEpoch(epoch.epoch);
-      setEpochStartHeight(epoch.start_height);
-      setEpochEndHeight(epoch.end_height);
 
-      // Paginate to get all epoch blocks and sum txs
-      let allEpochTxs = 0;
-      let currentPage = 0;
-      const pageSize = 100; // Blockfrost max
+      // Get all blocks in current epoch (paginated)
+      let allTxs = 0;
+      let page = 1;
       let hasMore = true;
 
       while (hasMore) {
-        const blocksRes = await fetch(`${BASE_URL}/blocks?from=${epoch.start_height}&until=${epoch.end_height}&order=asc&count=${pageSize}&page=${currentPage}`, { headers: { project_id: API_KEY }});
+        const blocksRes = await fetch(
+          `${BASE_URL}/epochs/${epoch.epoch}/blocks?page=${page}&count=100`,
+          { headers: { project_id: API_KEY }}
+        );
         const blocks = await blocksRes.json();
-        if (blocks.length === 0) hasMore = false;
-        else {
-          allEpochTxs += blocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
-          currentPage++;
-        }
+        if (blocks.length === 0) break;
+
+        allTxs += blocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
+        page++;
+        if (blocks.length < 100) hasMore = false;
       }
 
-      setEpochShielded(allEpochTxs);
+      setEpochShielded(allTxs);
     } catch (e) {
-      console.error("Epoch stats error:", e);
+      console.error("Epoch fetch failed:", e);
     }
   };
 
@@ -78,13 +76,13 @@ function App() {
         addParticle(txCount);
         if (txCount > 0) spawnShieldedFloat();
 
-        if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        if (txCount > 10) {
+          confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700', '#ff00ff', '#00ffff', '#39ff14'] });
         }
       }
       setLoading(false);
     } catch (e) {
-      console.error("Error:", e);
+      console.error(e);
       setLoading(false);
     }
   };
@@ -96,8 +94,8 @@ function App() {
   }, [latest]);
 
   useEffect(() => {
-    fetchEpochStats();
-    const epochInterval = setInterval(fetchEpochStats, 300000); // 5 mins
+    fetchEpochShielded();
+    const epochInterval = setInterval(fetchEpochShielded, 300000); // every 5 mins
     return () => clearInterval(epochInterval);
   }, []);
 
@@ -124,12 +122,9 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span><strong>{((recentBlocks[0]?.height - recentBlocks[recentBlocks.length-1]?.height) / ((recentBlocks.length-1) * 6.5))?.toFixed(2) || '0.00'}</strong> TPS</span>
-              <span><strong>{latest?.height || 0}</strong> Total Blocks</span>
               <span><strong>{epochShielded}</strong> Shielded This Epoch</span>
               <span>Epoch <strong>{currentEpoch}</strong></span>
-              <span>Slot <strong>{latest?.slot || '-'}</strong></span>
-              <span>Privacy <strong>{recentBlocks.length > 0 ? Math.round((recentBlocks.filter(b => (b.tx_count || 0) > 0).length / recentBlocks.length * 100) : 0}%</strong></span>
+              <span><strong>{recentBlocks.length}</strong> Recent Blocks</span>
               <span><strong>{shieldedFloats.length}</strong> Live Events</span>
             </div>
           </main>
@@ -143,13 +138,4 @@ function App() {
           {recentBlocks.map((b, i) => (
             <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
               <span className="height">#{b.height}</span>
-              <span className="txs">{b.tx_count || 0} tx</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default App;
+              <span className="txs">{b.tx_count || 0} tx</span
