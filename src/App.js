@@ -10,7 +10,7 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
-  const [liveTxs, setLiveTxs] = useState([]); // ← NEW: flying transactions
+  const [liveTxs, setLiveTxs] = useState([]);
   const [epochEndTime, setEpochEndTime] = useState(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,6 @@ function App() {
     setShieldedFloats(prev => [...prev, { id, left }].slice(-12));
   };
 
-  // NEW: Flying live transaction shards
   const spawnLiveTx = (txHash, txCount) => {
     const id = Date.now() + Math.random();
     const start = Math.random() * 100;
@@ -41,10 +40,10 @@ function App() {
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
-      if (!res.ok) throw new Error('API error');
+      if (!res.ok) return;
       const block = await res.json();
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
-      if (!txRes.ok) throw new Error('Tx fetch failed');
+      if (!txRes.ok) return;
       const txs = await txRes.json();
 
       if (!latest || block.hash !== latest.hash) {
@@ -59,7 +58,6 @@ function App() {
           spawnShieldedFloat();
           txs.forEach(tx => spawnLiveTx(tx.hash, txCount));
         }
-
         if (txCount > 10) {
           confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700', '#ff00ff', '#00ffff', '#39ff14'] });
         }
@@ -68,23 +66,28 @@ function App() {
         const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
         if (epochRes.ok) {
           const epoch = await epochRes.json();
-          setEpochEndTime(epoch.end_time * 1000); // convert to ms
+          setEpochEndTime(epoch.end_time * 1000);
         }
       }
       setLoading(false);
     } catch (e) {
-      console.error("Error:", e);
+      console.error(e);
       setLoading(false);
     }
   };
 
-  // Countdown timer
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 6500);
+    return () => clearInterval(interval);
+  }, [latest]);
+
   useEffect(() => {
     if (!epochEndTime) return;
     const timer = setInterval(() => {
       const diff = epochEndTime - Date.now();
       if (diff <= 0) {
-        setTimeLeft("EPOCH ENDING NOW");
+        setTimeLeft("EPOCH ENDING");
         return;
       }
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -96,34 +99,14 @@ function App() {
     return () => clearInterval(timer);
   }, [epochEndTime]);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 6500);
-    return () => clearInterval(interval);
-  }, [latest]);
-
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
+  if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
   return (
     <div className="App">
-      {/* Rain */}
       {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-
-      {/* SHIELDED falling */}
       {shieldedFloats.map(f => <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>)}
-
-      {/* LIVE FLYING TRANSACTIONS */}
       {liveTxs.map(tx => (
-        <div
-          key={tx.id}
-          className="live-tx"
-          style={{
-            '--start': `${tx.start}%`,
-            '--end': `${tx.end}%`,
-            borderColor: tx.color,
-            boxShadow: `0 0 20px ${tx.color}`
-          }}
-        >
+        <div key={tx.id} className="live-tx" style={{ '--start': `${tx.start}%`, '--end': `${tx.end}%`, borderColor: tx.color }}>
           {tx.hash}...
         </div>
       ))}
@@ -143,15 +126,13 @@ function App() {
               <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
             </div>
 
-            {/* EPOCH COUNTDOWN */}
             <div className="epoch-countdown">
               EPOCH ENDS IN <span className="timer">{timeLeft || 'Loading...'}</span>
             </div>
 
             <div className="stats-bar">
-              <span><strong>{((recentBlocks[0]?.height - recentBlocks[recentBlocks.length-1]?.height) / ((recentBlocks.length-1) * 6.5))?.toFixed(2) || '0.00'}</strong> TPS</span>
               <span><strong>{recentBlocks.length}</strong> blocks</span>
-              <span><strong>{liveTxs.length}</strong> live events</span>
+              <span><strong>{shieldedFloats.length}</strong> live events</span>
             </div>
           </main>
 
