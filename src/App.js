@@ -12,7 +12,7 @@ function App() {
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [epochShielded, setEpochShielded] = useState(0);
   const [currentEpoch, setCurrentEpoch] = useState(0);
-  const [epochStart, setEpochStart] = useState(null);
+  const [epochStartHeight, setEpochStartHeight] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
@@ -29,21 +29,22 @@ function App() {
     setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
   };
 
-  // Fetch epoch stats (called every 5 mins)
+  // Fetch epoch stats
   const fetchEpochStats = async () => {
     try {
       const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
       const epoch = await epochRes.json();
       setCurrentEpoch(epoch.epoch);
-      setEpochStart(epoch.start_time);
 
-      // Fetch blocks from epoch start to latest
-      const epochBlocksRes = await fetch(`${BASE_URL}/blocks?from=${epoch.start_time}&until=${epoch.end_time}&order=desc`, { headers: { project_id: API_KEY }});
-      const epochBlocks = await epochBlocksRes.json();
+      // Fetch blocks from epoch start to latest (limit to last 500 for rate limits)
+      const startHeight = epoch.start_height || (epoch.epoch * 43200); // ~5 days * 12 blocks/hr * 24hr
+      const blocksRes = await fetch(`${BASE_URL}/blocks?from=${startHeight}&order=desc&count=500`, { headers: { project_id: API_KEY }});
+      const epochBlocks = await blocksRes.json();
 
-      // Sum shielded txs in epoch
+      // Sum shielded txs (all txs are shielded on Midnight testnet, but filter for non-empty)
       const totalShielded = epochBlocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
       setEpochShielded(totalShielded);
+      setEpochStartHeight(startHeight);
     } catch (e) {
       console.error("Epoch stats error:", e);
     }
@@ -117,7 +118,7 @@ function App() {
               <span><strong>{epochShielded}</strong> Shielded This Epoch</span>
               <span>Epoch <strong>{currentEpoch}</strong></span>
               <span>Slot <strong>{latest?.slot || '-'}</strong></span>
-              <span>Privacy <strong>{(recentBlocks.filter(b => (b.tx_count || 0) > 0).length / recentBlocks.length * 100)?.toFixed(0) || 0}%</strong></span>
+              <span>Privacy <strong>{recentBlocks.length > 0 ? Math.round((recentBlocks.filter(b => (b.tx_count || 0) > 0).length / recentBlocks.length * 100) : 0}%</strong></span>
               <span><strong>{shieldedFloats.length}</strong> Live Events</span>
             </div>
           </main>
