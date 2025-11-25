@@ -67,16 +67,16 @@ function App() {
 
   return (
     <div className="App">
-      {/* Encrypted rain */}
-      {particles.map(p => (
-        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
-      ))}
-
-      {/* SHIELDED — falling like the original ghosts */}
+      {/* SHIELDED — now in the background */}
       {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+        <div key={f.id} className="shielded-bg" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
+      ))}
+
+      {/* Rain */}
+      {particles.map(p => (
+        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
       ))}
 
       <div className="main-layout">
