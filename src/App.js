@@ -13,6 +13,7 @@ function App() {
   const [epochShielded, setEpochShielded] = useState(0);
   const [currentEpoch, setCurrentEpoch] = useState(0);
   const [epochStartHeight, setEpochStartHeight] = useState(0);
+  const [epochEndHeight, setEpochEndHeight] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
@@ -29,22 +30,32 @@ function App() {
     setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
   };
 
-  // Fetch epoch stats
+  // Fetch full epoch stats (paginated to get all blocks)
   const fetchEpochStats = async () => {
     try {
       const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
       const epoch = await epochRes.json();
       setCurrentEpoch(epoch.epoch);
+      setEpochStartHeight(epoch.start_height);
+      setEpochEndHeight(epoch.end_height);
 
-      // Fetch blocks from epoch start to latest (limit to last 500 for rate limits)
-      const startHeight = epoch.start_height || (epoch.epoch * 43200); // ~5 days * 12 blocks/hr * 24hr
-      const blocksRes = await fetch(`${BASE_URL}/blocks?from=${startHeight}&order=desc&count=500`, { headers: { project_id: API_KEY }});
-      const epochBlocks = await blocksRes.json();
+      // Paginate to get all epoch blocks and sum txs
+      let allEpochTxs = 0;
+      let currentPage = 0;
+      const pageSize = 100; // Blockfrost max
+      let hasMore = true;
 
-      // Sum shielded txs (all txs are shielded on Midnight testnet, but filter for non-empty)
-      const totalShielded = epochBlocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
-      setEpochShielded(totalShielded);
-      setEpochStartHeight(startHeight);
+      while (hasMore) {
+        const blocksRes = await fetch(`${BASE_URL}/blocks?from=${epoch.start_height}&until=${epoch.end_height}&order=asc&count=${pageSize}&page=${currentPage}`, { headers: { project_id: API_KEY }});
+        const blocks = await blocksRes.json();
+        if (blocks.length === 0) hasMore = false;
+        else {
+          allEpochTxs += blocks.reduce((sum, b) => sum + (b.tx_count || 0), 0);
+          currentPage++;
+        }
+      }
+
+      setEpochShielded(allEpochTxs);
     } catch (e) {
       console.error("Epoch stats error:", e);
     }
