@@ -10,16 +10,27 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
-  const [stats, setStats] = useState({
-    totalBlocks: 0,
-    todaysBlocks: 0,
-    shieldedToday: 0,
-    tps: 0,
-    privacyScore: 0,
-    epoch: '-',
-    slot: '-'
-  });
+  const [shieldedToday, setShieldedToday] = useState(0);
+  const [lastResetDate, setLastResetDate] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Load saved shielded count + date from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('midnightShieldedToday');
+    const savedDate = localStorage.getItem('midnightShieldedDate');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (saved && savedDate === today) {
+      setShieldedToday(parseInt(saved, 10));
+      setLastResetDate(savedDate);
+    } else {
+      // New day — reset
+      localStorage.setItem('midnightShieldedToday', '0');
+      localStorage.setItem('midnightShieldedDate', today);
+      setShieldedToday(0);
+      setLastResetDate(today);
+    }
+  }, []);
 
   const addParticle = (count) => {
     for (let i = 0; i < Math.min(count * 3, 25); i++) {
@@ -45,40 +56,21 @@ function App() {
       if (!latest || block.hash !== latest.hash) {
         const txCount = txs.length;
         setLatest(block);
-
-        // Update recent blocks
         setRecentBlocks(prev => {
           const filtered = prev.filter(b => b.hash !== block.hash);
           return [block, ...filtered].slice(0, 50);
         });
 
         addParticle(txCount);
-        if (txCount > 0) spawnShieldedFloat();
-
-        // === REAL BLOCKCHAIN STATS ===
-        const now = Date.now();
-        const dayStart = new Date(now);
-        dayStart.setHours(0, 0, 0, 0);
-        const blocksToday = Math.max(1, Math.round((now - dayStart) / 20000)); // ~20s/block
-
-        const shieldedInRecent = recentBlocks.filter(b => (b.tx_count || 0) > 0).length + (txCount > 0 ? 1 : 0);
-        const privacyScore = recentBlocks.length > 0 
-          ? Math.round((shieldedInRecent / (recentBlocks.length + 1)) * 100)
-          : 0;
-
-        const recentTime = now - (recentBlocks[recentBlocks.length - 1]?.time || now);
-        const recentTxs = recentBlocks.reduce((sum, b) => sum + (b.tx_count || 0), 0) + txCount;
-        const tps = recentTxs / Math.max(recentTime / 1000, 1);
-
-        setStats({
-          totalBlocks: block.height,
-          todaysBlocks: blocksToday,
-          shieldedToday: Math.round(privacyScore / 100 * blocksToday),
-          tps: tps.toFixed(2),
-          privacyScore,
-          epoch: block.epoch || '-',
-          slot: block.slot || '-'
-        });
+        if (txCount > 0) {
+          spawnShieldedFloat();
+          // ONLY INCREASE — never decrease
+          setShieldedToday(prev => {
+            const newTotal = prev + txCount;
+            localStorage.setItem('midnightShieldedToday', newTotal.toString());
+            return newTotal;
+          });
+        }
 
         if (txCount > 8) {
           confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
@@ -119,15 +111,10 @@ function App() {
               <p className="txs">{latest ? recentBlocks[0]?.tx_count || 0 : 0} shielded transactions</p>
             </div>
 
-            {/* VALUABLE STATS BAR */}
             <div className="stats-bar">
-              <span><strong>{stats.tps}</strong> TPS</span>
-              <span><strong>{stats.totalBlocks.toLocaleString()}</strong> Total Blocks</span>
-              <span><strong>{stats.todaysBlocks}</strong> Today</span>
-              <span>Epoch <strong>{stats.epoch}</strong></span>
-              <span>Slot <strong>{stats.slot}</strong></span>
-              <span><strong>{stats.shieldedToday}</strong> Shielded Today</span>
-              <span>Privacy <strong>{stats.privacyScore}%</strong></span>
+              <span><strong>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'}</strong> TPS</span>
+              <span><strong>{latest?.height || 0}</strong> Total Blocks</span>
+              <span><strong>{shieldedToday}</strong> Shielded Today</span>
               <span><strong>{shieldedFloats.length}</strong> Live Events</span>
             </div>
           </main>
