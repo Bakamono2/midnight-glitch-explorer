@@ -19,7 +19,7 @@
 .hash { font-size:clamp(0.9rem,3vw,1.1rem); opacity:0.85; word-break:break-all; margin:1rem 0; }
 .txs { font-size:clamp(1.3rem,4.5vw,1.9rem); margin-top:2rem; }
 
-/* EPOCH STATS BAR */
+/* EPOCH STATS BAR — VALUABLE & GLOWING */
 .stats-bar {
   margin:4rem 0;
   padding:2rem;
