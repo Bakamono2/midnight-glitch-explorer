@@ -19,19 +19,19 @@ function App() {
 
   const spawnRain = (txCount) => {
     const newDrops = [];
-    const count = Math.min(txCount * 5, 80);
+    const count = Math.min(txCount * 6, 100);   // a bit more intense
 
     for (let i = 0; i < count; i++) {
       newDrops.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -500,
-        speed: 2 + Math.random() * 4,
-        fontSize: 14 + Math.random() * 8,
-        length: 10 + Math.floor(txCount * 1.5) + Math.random() * 20,
+        y: Math.random() * -600,
+        speed: 2.5 + Math.random() * 4,
+        fontSize: 16 + Math.random() * 10,
+        length: 12 + txCount * 2 + Math.random() * 25,
         hue: i % 3
       });
     }
-    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-400);
+    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-500);
   };
 
   const spawnShielded = () => {
@@ -46,28 +46,22 @@ function App() {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
       if (!res.ok) return;
       const block = await res.json();
-
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
       if (!txRes.ok) return;
       const txs = await txRes.json();
 
       if (!latest || latest.hash !== block.hash) {
         const txCount = txs.length;
-        setLatest(block);                                      // ← THIS LINE WAS MISSING BEFORE
+        setLatest(block);
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
         spawnRain(txCount);
         if (txCount > 0) spawnShielded();
-        if (txCount > 15) {
-          confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
-        }
+        if (txCount > 15) confetti({ particleCount: 700, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
       }
       setLoading(false);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -90,7 +84,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Canvas Matrix rain
+  // Canvas rain — fixed z-index
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -101,32 +95,31 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const animate = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(0,0,0,0.04)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      dropsRef.current = dropsRef.current.filter(drop => drop.y < canvas.height + 200);
+      dropsRef.current = dropsRef.current.filter(d => d.y < canvas.height + 300);
 
       dropsRef.current.forEach(drop => {
-        drop.y += drop.speed * 2.5;
+        drop.y += drop.speed * 3;
 
         ctx.font = `${drop.fontSize}px monospace`;
-        ctx.shadowBlur = 10;
 
-        // Trail
+        // trail
         for (let i = 0; i < drop.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const opacity = Math.max(0, 1 - i / drop.length);
-          ctx.globalAlpha = opacity * 0.7;
+          ctx.globalAlpha = Math.max(0, 1 - i / drop.length);
           ctx.fillStyle = colors[drop.hue];
           ctx.shadowColor = colors[drop.hue];
-          ctx.fillText(char, drop.x, drop.y - i * drop.fontSize);
+          ctx.shadowBlur = 12;
+          ctx.fillText(char, drop.x, drop.y - i * drop.fontSize * 1.2);
         }
 
-        // White head
+        // white head
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = 40;
         ctx.fillText('█', drop.x, drop.y);
       });
 
@@ -134,15 +127,14 @@ function App() {
     };
     animate();
 
-    const handleResize = () => {
+    const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Polling
   useEffect(() => {
     fetchData();
     const int = setInterval(fetchData, 7000);
@@ -153,8 +145,21 @@ function App() {
 
   return (
     <div className="App">
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: 1, pointerEvents: 'none' }} />
+      {/* CANVAS RAIN — now visible! */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 2,           // ← this is the fix
+          pointerEvents: 'none'
+        }}
+      />
 
+      {/* Rest of your UI */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
