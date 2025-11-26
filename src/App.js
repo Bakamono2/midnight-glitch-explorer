@@ -13,23 +13,20 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
-
   const spawnMatrixRain = (txCount) => {
-    const drops = Math.min(txCount * 4, 50); // 1 tx = 4 drops
-
+    const drops = Math.min(txCount * 4, 50);
     const newDrops = [];
+
     for (let i = 0; i < drops; i++) {
       newDrops.push({
-        id: Date.now() + i + Math.random(),
-        x: Math.random() * 100,
-        speed: 6 + Math.random() * 8, // 6–14s fall time
-        length: 10 + Math.floor(Math.random() * 25) + txCount, // longer with more tx
-        delay: Math.random() * 1.5,
-        hue: i % 3 // 0=cyan, 1=magenta, 2=gold
+        id: Date.now() + i,
+        left: Math.random() * 98 + 1,
+        speed: 8 + Math.random() * 10,
+        length: 15 + txCount * 2 + Math.floor(Math.random() * 30),
+        hue: i % 3   // 0=cyan, 1=magenta, 2=gold
       });
     }
-    setRainDrops(prev => [...prev, ...newDrops].slice(-200));
+    setRainDrops(prev => [...prev, ...newDrops].slice(-60)); // max 60 drops alive
   };
 
   const spawnShielded = () => {
@@ -90,31 +87,31 @@ function App() {
 
   if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
-  const getColor = (hue) => hue === 0 ? '#00ffff' : hue === 1 ? '#ff00ff' : '#ffd700';
+  const hueToColor = (h) => h === 0 ? '#00ffff' : h === 1 ? '#ff00ff' : '#ffd700';
 
   return (
     <div className="App">
-      {/* PERFECT MATRIX RAIN — movie accurate */}
+      {/* PERFECT, STABLE MATRIX RAIN — only 1 DOM node per drop */}
       {rainDrops.map(drop => (
         <div
           key={drop.id}
-          className="matrix-drop"
+          className="matrix-rain"
           style={{
-            left: `${drop.x}%`,
+            '--x': `${drop.left}%`,
             '--duration': `${drop.speed}s`,
-            '--delay': `${drop.delay}s`,
-            '--color': getColor(drop.hue)
+            '--length': `${drop.length * 24}px`,
+            '--color': hueToColor(drop.hue)
           }}
-        >
-          <MatrixDrop length={drop.length} />
-        </div>
+        />
       ))}
 
       {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
       ))}
 
-      {/* Your UI */}
+      {/* Your UI — unchanged */}
       <div className="main-layout">
         <div className="dashboard">
           <header className="header">
@@ -150,26 +147,6 @@ function App() {
         </div>
       </div>
     </div>
-  );
-}
-
-function MatrixDrop({ length }) {
-  return (
-    <>
-      <span className="head">█</span>
-      {Array.from({ length }, (_, i) => (
-        <span
-          key={i}
-          className="char"
-          style={{
-            animationDelay: `${i * 0.05 + Math.random() * 0.3}s`,
-            opacity: i < length - 3 ? 0.9 - (i * 0.03) : 0.3
-          }}
-        >
-          {matrixChars[Math.floor(Math.random() * matrixChars.length)]}
-        </span>
-      ))}
-    </>
   );
 }
 
