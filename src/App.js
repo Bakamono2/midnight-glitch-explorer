@@ -16,22 +16,22 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // ONE COLUMN PER TRANSACTION
+  // ONE COLUMN = ONE TRANSACTION
   const spawnOneColumnPerTx = (txCount) => {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -1200,
-        speed: 2.5 + Math.random() * 3.5,
-        length: 16 + Math.floor(Math.random() * 24),
-        headPos: 0, // position of the glowing white character (0 = top of tail)
+        y: Math.random() * -1400,
+        speed: 0.8 + Math.random() * 1.4,        // ← SLOWER, MAJESTIC
+        length: 18 + Math.floor(Math.random() * 30),
+        headPos: Math.random() * 10,
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-800);
+    columnsRef.current = columnsRef.current.slice(-900);
   };
 
-  useEffect(() => { spawnOneColumnPerTx(6); }, []);
+  useEffect(() => { spawnOneColumnPerTx(7); }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,7 +81,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // TRUE MATRIX RAIN — MOVIE-ACCURATE (NO █, ONLY GLOWING WHITE CHARACTERS)
+  // TRUE MATRIX RAIN — FINAL CINEMATIC VERSION
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -94,31 +94,34 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    const colors = ['#00ff99', '#00ffcc', '#00ffff']; // iconic Matrix green tones
+    // THE EXACT MATRIX FONT FROM THE MOVIE
+    ctx.font = '28px "Matrix Code NFI", "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
-        col.y += col.speed * 2.8;
-        col.headPos = (col.headPos + 0.4) % (col.length + 10); // moving spotlight
+        col.y += col.speed;           // ← SLOWER SPEED
+        col.headPos += 0.35;
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const distanceFromHead = Math.abs(i - col.headPos);
-          const opacity = Math.max(0.05, 1 - i / col.length * 0.95);
-          const brightness = distanceFromHead < 1.5 ? 1.0 : distanceFromHead < 3 ? 0.7 : opacity;
+          const distance = Math.abs(i - col.headPos);
+          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.75 : Math.max(0.08, 1 - i / col.length);
 
           ctx.globalAlpha = brightness;
           ctx.fillStyle = brightness > 0.9 ? 'white' : colors[col.hue];
           ctx.shadowColor = brightness > 0.9 ? 'white' : colors[col.hue];
-          ctx.shadowBlur = brightness > 0.9 ? 80 : 15;
-          ctx.font = '22px monospace';
-          ctx.fillText(char, col.x, col.y - i * 26);
+          ctx.shadowBlur = brightness > 0.9 ? 90 : 18;
+          ctx.fillText(char, col.x, col.y - i * 32);
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1200);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1600);
       requestAnimationFrame(draw);
     };
 
@@ -129,6 +132,9 @@ function App() {
 
   return (
     <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      {/* LOAD THE REAL MATRIX FONT */}
+      <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
+
       <canvas
         ref={canvasRef}
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
