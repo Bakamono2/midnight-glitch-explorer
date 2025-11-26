@@ -13,6 +13,7 @@ function App() {
   const [liveTxs, setLiveTxs] = useState([]);
   const [epochEndTime, setEpochEndTime] = useState(null);
   const [timeLeft, setTimeLeft] = useState('');
+  const [shieldedThisEpoch, setShieldedThisEpoch] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
@@ -57,7 +58,9 @@ function App() {
         if (txCount > 0) {
           spawnShieldedFloat();
           txs.forEach(tx => spawnLiveTx(tx.hash, txCount));
+          setShieldedThisEpoch(prev => prev + txCount);
         }
+
         if (txCount > 10) {
           confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700', '#ff00ff', '#00ffff', '#39ff14'] });
         }
@@ -131,8 +134,9 @@ function App() {
             </div>
 
             <div className="stats-bar">
+              <span><strong>{shieldedThisEpoch}</strong> Shielded This Epoch</span>
               <span><strong>{recentBlocks.length}</strong> blocks</span>
-              <span><strong>{shieldedFloats.length}</strong> live events</span>
+              <span><strong>{liveTxs.length}</strong> live events</span>
             </div>
           </main>
 
