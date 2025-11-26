@@ -13,16 +13,28 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  // Safe rain (no setTimeout loops)
+  // Matrix character set
+  const matrixChars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  // Generate Matrix rain columns when a new block appears
   const addParticles = (count) => {
-    const newOnes = Array.from({ length: Math.min(count * 3, 25) }, (_, i) => ({
-      id: `${Date.now()}-${i}`,
-      left: Math.random() * 100
-    }));
-    setParticles(p => [...p, ...newOnes].slice(-100));
+    const newColumns = [];
+    for (let i = 0; i < Math.min(count * 3, 30); i++) {
+      const length = 8 + Math.floor(Math.random() * 15);
+      const text = Array.from({ length }, () => 
+        matrixChars[Math.floor(Math.random() * matrixChars.length)]
+      ).join('');
+
+      newColumns.push({
+        id: `${Date.now()}-${i}-${Math.random()}`,
+        left: Math.random() * 100,
+        text: text
+      });
+    }
+    setParticles(prev => [...prev, ...newColumns].slice(-120));
   };
 
-  // Safe SHIELDED fall
+  // SHIELDED falling word
   const spawnShielded = () => {
     setShieldedFloats(prev => [...prev, {
       id: Date.now() + Math.random(),
@@ -30,6 +42,7 @@ function App() {
     }].slice(-10));
   };
 
+  // Fetch latest block + transactions
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
@@ -47,7 +60,7 @@ function App() {
         addParticles(txCount);
         if (txCount > 0) spawnShielded();
         if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+          confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#00ff41', '#00ffff', '#ff00ff', '#ffffff'] });
         }
       }
       setLoading(false);
@@ -56,7 +69,7 @@ function App() {
     }
   };
 
-  // ONE SINGLE epoch timer — no leaks, no crashes
+  // Epoch countdown — one safe interval
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -90,6 +103,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Polling
   useEffect(() => {
     fetchData();
     const int = setInterval(fetchData, 7000);
@@ -100,8 +114,19 @@ function App() {
 
   return (
     <div className="App">
-      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
-      {shieldedFloats.map(f => <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>)}
+      {/* Matrix Digital Rain */}
+      {particles.map(p => (
+        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}>
+          {p.text}
+        </div>
+      ))}
+
+      {/* SHIELDED falling words */}
+      {shieldedFloats.map(f => (
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
+      ))}
 
       <div className="main-layout">
         <div className="dashboard">
