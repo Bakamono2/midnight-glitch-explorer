@@ -5,35 +5,41 @@ import './App.css';
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
+let particleIdCounter = 0;
+let shieldedIdCounter = 0;
+let txIdCounter = 0;
+
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [liveTxs, setLiveTxs] = useState([]);
-  const [epochEndTime, setEpochEndTime] = useState(null);
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
   const addParticle = (count) => {
+    const newParticles = [];
     for (let i = 0; i < Math.min(count * 3, 25); i++) {
-      setTimeout(() => {
-        setParticles(p => [...p, { id: Date.now() + i, left: Math.random() * 100 }].slice(-100));
-      }, i * 100);
+      newParticles.push({
+        id: ++particleIdCounter,
+        left: Math.random() * 100
+      });
     }
+    setParticles(p => [...p, ...newParticles].slice(-100));
   };
 
   const spawnShieldedFloat = () => {
-    const id = Date.now();
-    const left = 10 + Math.random() * 80;
-    setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
+    setShieldedFloats(prev => [...prev, { id: ++shieldedIdCounter, left: 10 + Math.random() * 80 }].slice(-10));
   };
 
   const spawnLiveTx = (txHash) => {
-    const id = Date.now();
-    const start = Math.random() * 80 + 10;
-    const end = start + (Math.random() > 0.5 ? 1 : -1) * 40;
-    setLiveTxs(prev => [...prev, { id, start, end, hash: txHash.slice(0, 12) }].slice(-12));
+    setLiveTxs(prev => [...prev, {
+      id: ++txIdCounter,
+      start: 10 + Math.random() * 80,
+      end: 10 + Math.random() * 80,
+      hash: txHash.slice(0, 12)
+    }].slice(-12));
   };
 
   const fetchData = async () => {
@@ -60,11 +66,27 @@ function App() {
         }
       }
 
-      // Fetch epoch end time
+      // Epoch countdown (only fetch once per minute to be gentle)
       const epochRes = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
       if (epochRes.ok) {
         const epoch = await epochRes.json();
-        setEpochEndTime(epoch.end_time * 1000);
+        const endMs = epoch.end_time * 1000;
+        const updateTimer = () => {
+          const diff = endMs - Date.now();
+          if (diff <= 0) {
+            setTimeLeft("EPOCH ENDED");
+            return;
+          }
+          const d = Math.floor(diff / 86400000);
+          const h = Math.floor((diff % 86400000) / 3600000);
+          const m = Math.floor((diff % 3600000) / 60000);
+          const s = Math.floor((diff % 60000) / 1000);
+          setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+        };
+        updateTimer();
+        // Update every second
+        const timer = setInterval(updateTimer, 1000);
+        return () => clearInterval(timer);
       }
 
       setLoading(false);
@@ -73,29 +95,11 @@ function App() {
     }
   };
 
-  // Countdown timer
-  useEffect(() => {
-    if (!epochEndTime) return;
-    const interval = setInterval(() => {
-      const diff = epochEndTime - Date.now();
-      if (diff <= 0) {
-        setTimeLeft("EPOCH ENDED");
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [epochEndTime]);
-
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 7000);
     return () => clearInterval(interval);
-  }, [latest]);
+  }, []);
 
   if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
@@ -129,8 +133,8 @@ function App() {
             </div>
 
             <div className="stats-bar">
-              <span><strong>{recentBlocks.length}</strong> blocks seen</span>
-              <span><strong>{liveTxs.length}</strong> live txs</span>
+              <span><strong>{recentBlocks.length}</strong> recent blocks</span>
+              <span><strong>{liveTxs.length}</strong> live txs flying</span>
             </div>
           </main>
 
