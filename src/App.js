@@ -32,42 +32,46 @@ function App() {
     dropsRef.current = dropsRef.current.slice(-800);
   };
 
-  // IMMEDIATE RAIN ON LOAD — you will see it in 0.1 seconds
+  // Immediate rain on load — you WILL see it instantly
   useEffect(() => {
-    spawnRain(5);
+    spawnRain(6);
   }, []);
 
-  // Live blocks
+  // Live block polling
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } });
-        const block = await res.json();
-        const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } });
-        const txs = await txRes.json();
-
-        if (!latest || latest.hash !== block.hash) {
-          setLatest(block);
-          setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnRain(txs.length || 3);
-          if (txs.length > 0) {
-            setShieldedFloats(prev => [...prev, { id: Date.now(), left: 15 + Math.random() * 70 }].slice(-15));
-          }
-        }
-      } catch (e) { console.error(e); }
+      fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } })
+        .then(r => r.json())
+        .then(block => {
+          fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } })
+            .then(r => r.json())
+            .then(txs => {
+              if (!latest || latest.hash !== block.hash) {
+                setLatest(block);
+                setRecentBlocks(prev => [block, ...prev].slice(0, 50));
+                spawnRain(txs.length || 3);
+                if (txs.length > 0) {
+                  setShieldedFloats(prev => [...prev, { id: Date.now(), left: 15 + Math.random() * 70 }].slice(-15));
+                }
+              }
+            });
+        })
+        .catch(() => {});
     };
+
     fetchData();
     const int = setInterval(fetchData, 8000);
     return () => clearInterval(int);
   }, [latest]);
 
-  // Epoch timer
+  // Epoch countdown
   useEffect(() => {
     const update = async () => {
       try {
         const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY } });
         const e = await r.json();
         const end = e.end_time * 1000;
+
         const timer = setInterval(() => {
           const diff = end - Date.now();
           if (diff <= 0) return setTimeLeft('EPOCH ENDED');
@@ -77,15 +81,20 @@ function App() {
           const s = Math.floor((diff % 60000) / 1000);
           setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
         }, 1000);
+
         return () => clearInterval(timer);
-      } catch {}
+      } catch (e) {
+        setTimeLeft('—');
+      }
+    };
     update();
   }, []);
 
-  // Canvas rain — FINAL FIX
+  // Canvas rain — behind UI, always visible
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -131,6 +140,7 @@ function App() {
       canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', resize);
+
     return () => {
       cancelAnimationFrame(frameRef.current);
       window.removeEventListener('resize', resize);
@@ -145,13 +155,13 @@ function App() {
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: -10,                 // absolutely behind everything
+          zIndex: -10,
           pointerEvents: 'none',
           background: 'transparent'
         }}
       />
 
-      {/* Your UI */}
+      {/* Your perfect UI */}
       <div className="App">
         {shieldedFloats.map(f => (
           <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
@@ -168,8 +178,8 @@ function App() {
             <main>
               <div className="card main-card">
                 <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-                <p className="block-num">#{latest?.height || '...'}</p>
-                <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+                <p className="block-num">#{latest?.height || '…'}</p>
+                <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}…</p>
                 <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
               </div>
               <div className="epoch-countdown">
