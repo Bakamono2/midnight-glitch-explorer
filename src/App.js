@@ -74,7 +74,7 @@ function App() {
       }
       setLoading(false);
     } catch (e) {
-      console.error(e);
+      console.error("Error:", e);
       setLoading(false);
     }
   };
