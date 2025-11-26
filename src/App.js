@@ -16,7 +16,7 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // ONE COLUMN PER TRANSACTION — EXACTLY
+  // ONE COLUMN PER TRANSACTION
   const spawnOneColumnPerTx = (txCount) => {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
@@ -24,18 +24,14 @@ function App() {
         y: Math.random() * -1200,
         speed: 2.5 + Math.random() * 3.5,
         length: 16 + Math.floor(Math.random() * 24),
-        hue: i % 3,
-        born: Date.now() // for future effects if needed
+        headPos: 0, // position of the glowing white character (0 = top of tail)
+        hue: i % 3
       });
     }
-    // Keep only recent columns — prevents infinite growth
     columnsRef.current = columnsRef.current.slice(-800);
   };
 
-  useEffect(() => {
-    // Gentle ambient rain when idle
-    spawnOneColumnPerTx(5);
-  }, []);
+  useEffect(() => { spawnOneColumnPerTx(6); }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,32 +43,21 @@ function App() {
 
         if (!latest || latest.hash !== block.hash) {
           const txCount = txs.length;
-
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-
-          // ONE DROP PER TRANSACTION — THIS IS THE TRUTH
           spawnOneColumnPerTx(txCount);
-
-          // SHIELDED word on every tx
           if (txCount > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
-          }
-
-          // Big blocks get celebration
-          if (txCount > 25) {
-            confetti({ particleCount: txCount * 20, spread: 120, origin: { y: 0.4 } });
           }
         }
       } catch (e) { console.error(e); }
     };
-
     fetchData();
     const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, [latest]);
 
-  // EPOCH COUNTDOWN — WORKING
+  // EPOCH COUNTDOWN
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -83,7 +68,6 @@ function App() {
       } catch {}
     };
     fetchEpoch();
-
     const timer = setInterval(() => {
       if (!epochEnd) return setTimeLeft('Loading...');
       const diff = epochEnd - Date.now();
@@ -97,7 +81,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // CANVAS RAIN — PERFECT, BLACK, ONE DROP = ONE TX
+  // TRUE MATRIX RAIN — MOVIE-ACCURATE (NO █, ONLY GLOWING WHITE CHARACTERS)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -110,33 +94,28 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    const colors = ['#00ffff', '#ff00ff', '#ffd700'];
+    const colors = ['#00ff99', '#00ffcc', '#00ffff']; // iconic Matrix green tones
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
         col.y += col.speed * 2.8;
+        col.headPos = (col.headPos + 0.4) % (col.length + 10); // moving spotlight
 
-        // Tail
-        for (let i = 1; i <= col.length; i++) {
+        for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const opacity = Math.max(0.12, 1 - i / col.length);
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = colors[col.hue];
-          ctx.shadowColor = colors[col.hue];
-          ctx.shadowBlur = 14;
-          ctx.font = '20px monospace';
-          ctx.fillText(char, col.x, col.y - i * 25);
-        }
+          const distanceFromHead = Math.abs(i - col.headPos);
+          const opacity = Math.max(0.05, 1 - i / col.length * 0.95);
+          const brightness = distanceFromHead < 1.5 ? 1.0 : distanceFromHead < 3 ? 0.7 : opacity;
 
-        // White head
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = 'white';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 60;
-        ctx.font = '32px monospace';
-        ctx.fillText('█', col.x, col.y);
+          ctx.globalAlpha = brightness;
+          ctx.fillStyle = brightness > 0.9 ? 'white' : colors[col.hue];
+          ctx.shadowColor = brightness > 0.9 ? 'white' : colors[col.hue];
+          ctx.shadowBlur = brightness > 0.9 ? 80 : 15;
+          ctx.font = '22px monospace';
+          ctx.fillText(char, col.x, col.y - i * 26);
+        }
       });
 
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1200);
