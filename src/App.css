@@ -1,6 +1,74 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 
-.App { min-height:100vh; background:#000; color:#00ffff; font-family:'Courier New',monospace; position:relative; overflow:hidden; }
+.App {
+  min-height: 100vh;
+  background: #000;
+  color: #00ff41;
+  font-family: 'Courier New', monospace;
+  position: relative;
+  overflow: hidden;
+}
+
+/* === MATRIX DIGITAL RAIN === */
+.rain {
+  position: absolute;
+  top: -50px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #00ff41;
+  text-shadow: 
+    0 0 5px #00ff41,
+    0 0 15px #00ff41,
+    0 0 30px #00ff41;
+  opacity: 0;
+  animation: matrixFall linear forwards;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+/* Different speeds and lengths for variety */
+.rain:nth-child(3n+1) { animation-duration: 4s; font-size: 18px; }
+.rain:nth-child(3n+2) { animation-duration: 6s; font-size: 14px; }
+.rain:nth-child(3n+3) { animation-duration: 5s; font-size: 20px; }
+
+/* Random bright head character */
+.rain::before {
+  content: '█';
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ffffff;
+  text-shadow: 0 0 20px #ffffff;
+  animation: matrixHead 0.2s infinite;
+}
+
+/* The actual falling animation */
+@keyframes matrixFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(100vh + 200px));
+  }
+}
+
+@keyframes matrixHead {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* === REST OF YOUR ORIGINAL STYLES (unchanged) === */
 .main-layout { display:flex; min-height:100vh; }
 .dashboard { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; }
 .timeline { width:300px; background:rgba(0,15,40,0.7); border-left:1px solid rgba(0,255,255,0.2); padding:2rem 1rem; overflow-y:auto; height:100vh; position:fixed; right:0; top:0; z-index:15; backdrop-filter:blur(6px); }
@@ -26,11 +94,6 @@
 
 .shielded-fall { position:absolute; top:-10%; font-size:clamp(2rem,6vw,3.5rem); font-weight:bold; color:#39ff14; text-shadow:0 0 30px #39ff14; opacity:0; animation:ghostFall 22s linear forwards; pointer-events:none; z-index:5; white-space:nowrap; }
 @keyframes ghostFall { 0% { opacity:0; transform:translateY(-100px) scale(0.6) rotate(-10deg); } 10% { opacity:0.9; } 90% { opacity:0.9; transform:translateY(90vh) scale(1.1) rotate(5deg); } 100% { opacity:0; transform:translateY(110vh) scale(0.8) rotate(-5deg); } }
-
-.rain { position:absolute; width:3px; height:22px; background:linear-gradient(to bottom,#00ffff,transparent); top:140px; border-radius:2px; animation:rainFall linear forwards; box-shadow:0 0 14px #00ffff; opacity:0.8; }
-@keyframes rainFall { to { transform:translateY(120vh) rotate(360deg); opacity:0; } }
-.rain:nth-child(odd) { animation-duration:5s; background:linear-gradient(to bottom,#ff00ff,transparent); box-shadow:0 0 18px #ff00ff; }
-.rain:nth-child(3n) { animation-duration:3.5s; background:linear-gradient(to bottom,#ffd700,transparent); box-shadow:0 0 22px #ffd700; }
 
 @keyframes glitch { 0%,100% { text-shadow:2px 2px #ff00ff,-2px -2px #00ffff; transform:translate(0); } 20% { text-shadow:-2px -1px #ff00ff,2px 1px #00ffff; transform:translate(-1px,-1px); } 40% { text-shadow:1px -2px #ff00ff,-1px 2px #00ffff; transform:translate(1px,-1px); } 60% { text-shadow:-1px 1px #ff00ff,1px -1px #00ffff; transform:translate(-1px,1px); } 80% { text-shadow:2px -1px #ff00ff,-2px 1px #00ffff; transform:translate(1px,1px); } }
 @keyframes flicker { 0%,100% { opacity:1; } 50% { opacity:0.92; } }
