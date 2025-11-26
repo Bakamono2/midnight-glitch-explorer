@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
@@ -8,39 +8,30 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [rainDrops, setRainDrops] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
 
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+  const canvasRef = useRef(null);
+  const dropsRef = useRef([]);
 
-  const spawnRain = (txCount) => {
-    const newDrops = [];
-    const count = Math.min(6 + txCount * 3, 40); // 6–40 columns
+  const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
+  const spawnDrop = (txIntensity = 1) => {
+    const count = Math.min(4 + txIntensity * 6, 40);
     for (let i = 0; i < count; i++) {
-      const length = 12 + Math.floor(Math.random() * 28);
-      newDrops.push({
-        id: Date.now() + i,
-        x: Math.random() * 98 + 1,
-        length,
-        speed: 10 + Math.random() * 8,
-        delay: Math.random() * 3,
-        hue: i % 3
+      dropsRef.current.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * -800,
+        speed: 2 + Math.random() * 4,
+        length: 10 + Math.floor(Math.random() * 30),
+        hue: Math.floor(Math.random() * 3),
+        chars: Array(50).fill().map(() => matrixChars[Math.floor(Math.random() * matrixChars.length)])
       });
     }
-    setRainDrops(prev => [...prev, ...newDrops].slice(-80));
-  };
-
-  const spawnShielded = () => {
-    setShieldedFloats(prev => [...prev, {
-      id: Date.now(),
-      left: 10 + Math.random() * 80
-    }].slice(-12));
   };
 
   useEffect(() => {
-    spawnRain(5); // Initial rain
+    spawnDrop(3); // Initial rain
   }, []);
 
   useEffect(() => {
@@ -54,13 +45,14 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnRain(txs.length);
-          if (txs.length > 0) spawnShielded();
-          if (txs.length > 15) confetti({ particleCount: 600, spread: 180, origin: { y: 0.35 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+          spawnDrop(txs.length);
+          if (txs.length > 0) {
+            setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
+          }
+          if (txs.length > 20) confetti({ particleCount: 800, spread: 180, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
         }
       } catch (e) { console.error(e); }
     };
-
     fetchData();
     const int = setInterval(fetchData, 8000);
     return () => clearInterval(int);
@@ -87,36 +79,72 @@ function App() {
     update();
   }, []);
 
-  const colors = ['#00ffff', '#ff00ff', '#ffd700'];
+  // REAL MATRIX RAIN — CANVAS
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ['#00ffff', '#ff00ff', '#ffd700'];
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      dropsRef.current = dropsRef.current.filter(d => d.y < canvas.height + 1000);
+
+      dropsRef.current.forEach(drop => {
+        drop.y += drop.speed * 3;
+
+        // Draw tail
+        for (let i = 1; i < drop.length; i++) {
+          const charIndex = Math.floor((Date.now() / 150 + i) % drop.chars.length);
+          ctx.globalAlpha = Math.max(0.1, 1 - i / drop.length);
+          ctx.fillStyle = colors[drop.hue];
+          ctx.shadowColor = colors[drop.hue];
+          ctx.shadowBlur = 10;
+          ctx.font = '18px monospace';
+          ctx.fillText(drop.chars[charIndex], drop.x, drop.y - i * 22);
+        }
+
+        // White head
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'white';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 40;
+        ctx.font = '24px monospace';
+        ctx.fillText('█', drop.x, drop.y);
+      });
+
+      requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
 
   return (
     <div className="App">
-      {/* PERFECT MATRIX RAIN */}
-      {rainDrops.map(drop => (
-        <div
-          key={drop.id}
-          className="matrix-column"
-          style={{
-            left: `${drop.x}%`,
-            '--duration': `${drop.speed}s`,
-            '--delay': `${drop.delay}s`,
-            '--color': colors[drop.hue]
-          }}
-        >
-          <div className="head">█</div>
-          {Array.from({ length: drop.length }, (_, i) => (
-            <span
-              key={i}
-              style={{
-                opacity: Math.max(0.1, 1 - i / drop.length),
-                animationDelay: `${i * 0.05}s`
-              }}
-            >
-              {chars[Math.floor(Math.random() * chars.length)]}
-            </span>
-          ))}
-        </div>
-      ))}
+      {/* REAL MATRIX RAIN — BEHIND EVERYTHING */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: -1,
+          pointerEvents: 'none'
+        }}
+      />
 
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
@@ -124,7 +152,6 @@ function App() {
         </div>
       ))}
 
-      {/* Your UI */}
       <div className="main-layout">
         <div className="dashboard">
           <header className="header">
