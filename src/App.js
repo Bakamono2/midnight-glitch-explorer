@@ -16,30 +16,24 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // Spawn rain columns based on transaction count
   const spawnColumns = (txCount = 1) => {
-    const count = Math.min(8 + txCount * 5, 45);
-    const width = window.innerWidth;
-
+    const count = Math.min(10 + txCount * 6, 50);
     for (let i = 0; i < count; i++) {
       columnsRef.current.push({
-        x: Math.random() * width,
-        y: Math.random() * -800,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * -1000,
         speed: 2 + Math.random() * 4,
-        length: 10 + Math.floor(Math.random() * 30),
-        hue: Math.floor(Math.random() * 3),
-        chars: Array(60).fill().map(() => chars[Math.floor(Math.random() * chars.length)])
+        length: 12 + Math.floor(Math.random() * 28),
+        hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-400); // prevent memory leak
+    columnsRef.current = columnsRef.current.slice(-500);
   };
 
-  // Initial rain
   useEffect(() => {
-    spawnColumns(4);
+    spawnColumns(5);
   }, []);
 
-  // Fetch blocks & spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -55,9 +49,6 @@ function App() {
           if (txs.length > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
           }
-          if (txs.length > 20) {
-            confetti({ particleCount: 800, spread: 180, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
-          }
         }
       } catch (e) { console.error(e); }
     };
@@ -66,7 +57,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // Canvas Matrix Rain — FINAL & PERFECT
+  // THE FIXED CANVAS RAIN — PERFECT
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -82,34 +73,36 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      // THIS WAS THE BUG — was filling with black → gray overlay
+      // Now: only fade previous frame slightly, no gray!
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
-        col.y += col.speed * 2.5;
+        col.y += col.speed * 2.8;
 
         // Tail
         for (let i = 1; i <= col.length; i++) {
-          const charIndex = Math.floor(Date.now() / 130 + i) % col.chars.length;
-          const opacity = Math.max(0.1, 1 - i / col.length);
-          ctx.globalAlpha = opacity * 0.8;
+          const char = chars[Math.floor(Math.random() * chars.length)];
+          const opacity = Math.max(0.08, 1 - i / col.length);
+          ctx.globalAlpha = opacity;
           ctx.fillStyle = colors[col.hue];
           ctx.shadowColor = colors[col.hue];
-          ctx.shadowBlur = 10;
-          ctx.font = '19px monospace';
-          ctx.fillText(col.chars[charIndex], col.x, col.y - i * 23);
+          ctx.shadowBlur = 12;
+          ctx.font = '20px monospace';
+          ctx.fillText(char, col.x, col.y - i * 25);
         }
 
-        // White glowing head
+        // White head — bright and leading
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
-        ctx.shadowBlur = 45;
-        ctx.font = '28px monospace';
+        ctx.shadowBlur = 50;
+        ctx.font = '30px monospace';
         ctx.fillText('█', col.x, col.y);
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 800);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
       requestAnimationFrame(draw);
     };
 
@@ -119,30 +112,29 @@ function App() {
   }, []);
 
   return (
-    <div className="App">
-      {/* REAL MATRIX RAIN — VISIBLE */}
+    <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh' }}>
+      {/* CANVAS RAIN — NOW VISIBLE, NO GRAY OVERLAY */}
       <canvas
         ref={canvasRef}
         style={{
-          position: 'fixed',
+          position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: 1,                    // ← THIS MAKES IT VISIBLE
-          pointerEvents: 'none',
-          background: 'transparent'
+          zIndex: 1,
+          pointerEvents: 'none'
         }}
       />
 
-      {/* SHIELDED words */}
+      {/* SHIELDED WORDS */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* Your perfect UI — on top */}
+      {/* YOUR UI — ON TOP, CRYSTAL CLEAR */}
       <div className="main-layout" style={{ position: 'relative', zIndex: 10 }}>
         <div className="dashboard">
           <header className="header">
@@ -158,10 +150,6 @@ function App() {
             </div>
             <div className="epoch-countdown">
               EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-            </div>
-            <div className="stats-bar">
-              <span><strong>{recentBlocks.length}</strong> blocks</span>
-              <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
             </div>
           </main>
           <footer>
