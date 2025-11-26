@@ -1,148 +1,140 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
-const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY || "preprod-your-key-here";
+const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
+  const [rainColumns, setRainColumns] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
+  const [loading, setLoading] = useState(true);
 
-  const canvasRef = useRef(null);
-  const dropsRef = useRef([]);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワンヰヱヲ0123456789';
+  const spawnDigitalRain = (txCount) => {
+    const columns = Math.min(txCount * 2, 20); // Fewer columns, max 20
+    const newColumns = [];
 
-  // Spawn new rain columns
-  const spawnRain = (txCount = 1) => {
-    const intensity = Math.min(5 + txCount * 4, 35);
-    for (let i = 0; i < intensity; i++) {
-      dropsRef.current.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * -600,
-        speed: 3 + Math.random() * 5,
-        length: 8 + Math.floor(Math.random() * 25),
+    for (let i = 0; i < columns; i++) {
+      const length = 10 + Math.floor(Math.random() * 20); // Shorter: 10-30 chars
+      const columnText = Array.from({ length }, () => 
+        chars[Math.floor(Math.random() * chars.length)]
+      ).join('');
+
+      newColumns.push({
+        id: Date.now() + i + Math.random(),
+        left: Math.random() * 100,
+        text: columnText,
+        speed: 12 + Math.random() * 8, // Slower: 12-20s
+        delay: Math.random() * 1.5,
         hue: i % 3
       });
     }
-    // Keep only last 400 drops
-    if (dropsRef.current.length > 400) {
-      dropsRef.current = dropsRef.current.slice(-400);
-    }
+    setRainColumns(prev => [...prev, ...newColumns].slice(-60)); // Max 60 columns
   };
 
-  // Initial rain
+  const spawnShielded = () => {
+    setShieldedFloats(prev => [...prev, {
+      id: Date.now() + Math.random(),
+      left: 10 + Math.random() * 80
+    }].slice(-12));
+  };
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
+      if (!res.ok) return;
+      const block = await res.json();
+      const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
+      if (!txRes.ok) return;
+      const txs = await txRes.json();
+
+      if (!latest || latest.hash !== block.hash) {
+        const txCount = txs.length;
+        setLatest(block);
+        setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
+        spawnDigitalRain(txCount);
+        if (txCount > 0) spawnShielded();
+        if (txCount > 15) {
+          confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        }
+      }
+      setLoading(false);
+    } catch (e) { console.error(e); }
+  };
+
+  // Epoch countdown
   useEffect(() => {
-    spawnRain(4);
+    let epochEnd = null;
+    const fetchEpoch = async () => {
+      try {
+        const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
+        if (r.ok) { const e = await r.json(); epochEnd = e.end_time * 1000; }
+      } catch {}
+    };
+    fetchEpoch();
+    const timer = setInterval(() => {
+      if (!epochEnd) { setTimeLeft('Loading...'); return; }
+      const diff = epochEnd - Date.now();
+      if (diff <= 0) { setTimeLeft('EPOCH ENDED'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // Block polling
+  // Initial spawn
   useEffect(() => {
-    const fetchBlock = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } });
-        const block = await res.json();
-        const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } });
-        const txs = await txRes.json();
+    spawnDigitalRain(2);
+  }, []);
 
-        if (!latest || latest.hash !== block.hash) {
-          setLatest(block);
-          setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnRain(txs.length || 2);
-          if (txs.length > 0) {
-            setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
-          }
-        }
-      } catch (e) { console.error(e); }
-    };
-    fetchBlock();
-    const interval = setInterval(fetchBlock, 8000);
-    return () => clearInterval(interval);
+  useEffect(() => {
+    fetchData();
+    const int = setInterval(fetchData, 7000);
+    return () => clearInterval(int);
   }, [latest]);
 
-  // Canvas rain — THE REAL ONE
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const colors = ['#00ffff', '#ff00ff', '#ffd700'];
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      dropsRef.current.forEach(drop => {
-        drop.y += drop.speed;
-
-        // Draw tail
-        for (let i = 1; i <= drop.length; i++) {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          const opacity = Math.max(0.1, 1 - i / drop.length);
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = colors[drop.hue];
-          ctx.shadowColor = colors[drop.hue];
-          ctx.shadowBlur = 8;
-          ctx.font = '18px monospace';
-          ctx.fillText(char, drop.x, drop.y - i * 22);
-        }
-
-        // White glowing head
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = 'white';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 40;
-        ctx.font = '26px monospace';
-        ctx.fillText('█', drop.x, drop.y);
-      });
-
-      // Remove old drops
-      dropsRef.current = dropsRef.current.filter(d => d.y < canvas.height + 600);
-
-      requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => window.removeEventListener('resize', resize);
-  }, []);
+  const getColor = (hue) => hue === 0 ? '#00ffff' : hue === 1 ? '#ff00ff' : '#ffd700';
 
   return (
     <div className="App">
-      {/* CANVAS RAIN — VISIBLE AND CINEMATIC */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      />
+      {/* PERFECT FIXED RAIN */}
+      {rainColumns.map(col => (
+        <div
+          key={col.id}
+          className="rain-column"
+          style={{
+            left: `${col.left}%`,
+            '--duration': `${col.speed}s`,
+            '--delay': `${col.delay}s`,
+            color: getColor(col.hue)
+          }}
+        >
+          <span className="head">█</span>
+          {col.text.split('').map((char, i) => (
+            <span key={i} className="char" style={{ opacity: Math.max(0.1, 1 - i / col.text.length) }}>
+              {char}
+            </span>
+          ))}
+        </div>
+      ))}
 
-      {/* SHIELDED */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* Your UI — on top */}
-      <div className="main-layout" style={{ position: 'relative', zIndex: 10 }}>
+      <div className="main-layout">
         <div className="dashboard">
           <header className="header">
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -157,6 +149,10 @@ function App() {
             </div>
             <div className="epoch-countdown">
               EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+            </div>
+            <div className="stats-bar">
+              <span><strong>{recentBlocks.length}</strong> blocks</span>
+              <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
             </div>
           </main>
           <footer>
