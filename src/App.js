@@ -21,7 +21,7 @@ function App() {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * -1800,
-        speed: 0.35 + Math.random() * 0.65,
+        speed: 0.5 + Math.random() * 0.8,
         length: 22 + Math.floor(Math.random() * 38),
         headPos: Math.random() * 10,
         hue: i % 3,
@@ -125,13 +125,13 @@ function App() {
             // EXTREME WHITE GLOW — THIS IS THE ONE
             ctx.fillStyle = 'white';
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 140;
+            ctx.shadowBlur = 90;
 
             // Multi-layer glow
             ctx.fillText(char, col.x, col.y - i * 36);
-            ctx.shadowBlur = 80;
+            ctx.shadowBlur = 50;
             ctx.fillText(char, col.x, col.y - i * 36);
-            ctx.shadowBlur = 40;
+            ctx.shadowBlur = 25;
             ctx.fillText(char, col.x, col.y - i * 36);
 
             // Radial gradient halo
@@ -140,7 +140,7 @@ function App() {
             gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = gradient;
-            ctx.globalAlpha = 0.6;
+            ctx.globalAlpha = 0.4;
             ctx.fillRect(col.x - 100, col.y - i * 36 - 100, 200, 200);
           } else {
             ctx.fillStyle = colors[col.hue];
