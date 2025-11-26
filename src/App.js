@@ -31,7 +31,7 @@ function App() {
   };
 
   useEffect(() => {
-    spawnColumns(5);
+    spawnColumns(6);
   }, []);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // THE FIXED CANVAS RAIN — PERFECT
+  // PERFECT MATRIX RAIN — BLACK BACKGROUND, NO GRAY
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -73,9 +73,8 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const draw = () => {
-      // THIS WAS THE BUG — was filling with black → gray overlay
-      // Now: only fade previous frame slightly, no gray!
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      // THE FIX: Only fade very slightly — keeps background BLACK
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
@@ -112,12 +111,12 @@ function App() {
   }, []);
 
   return (
-    <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh' }}>
-      {/* CANVAS RAIN — NOW VISIBLE, NO GRAY OVERLAY */}
+    <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      {/* CANVAS RAIN — BEHIND EVERYTHING */}
       <canvas
         ref={canvasRef}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           width: '100%',
@@ -134,35 +133,37 @@ function App() {
         </div>
       ))}
 
-      {/* YOUR UI — ON TOP, CRYSTAL CLEAR */}
-      <div className="main-layout" style={{ position: 'relative', zIndex: 10 }}>
-        <div className="dashboard">
-          <header className="header">
-            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-          </header>
-          <main>
-            <div className="card main-card">
-              <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-              <p className="block-num">#{latest?.height || '...'}</p>
-              <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-              <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
-            </div>
-            <div className="epoch-countdown">
-              EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-            </div>
-          </main>
-          <footer>
-            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-          </footer>
-        </div>
-        <div className="timeline">
-          {recentBlocks.map((b, i) => (
-            <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
-              <span className="height">#{b.height}</span>
-              <span className="txs">{b.tx_count || 0} tx</span>
-            </div>
-          ))}
+      {/* UI — ON TOP */}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        <div className="main-layout">
+          <div className="dashboard">
+            <header className="header">
+              <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+              <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+            </header>
+            <main>
+              <div className="card main-card">
+                <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+                <p className="block-num">#{latest?.height || '...'}</p>
+                <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+                <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
+              </div>
+              <div className="epoch-countdown">
+                EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+              </div>
+            </main>
+            <footer>
+              <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+            </footer>
+          </div>
+          <div className="timeline">
+            {recentBlocks.map((b, i) => (
+              <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+                <span className="height">#{b.height}</span>
+                <span className="txs">{b.tx_count || 0} tx</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
