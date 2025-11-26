@@ -19,9 +19,10 @@ function App() {
   const spawnOneColumnPerTx = (txCount) => {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
-        x: Math.random() * window.innerWidth,
-        y: -100 - Math.random() * 400,    // ← appears within 0.3–1.2 seconds
-        speed: 0.7 + Math.random() * 1.1, // ← fast enough to feel immediate
+        // FULLY ON-SCREEN with 140px safe margin for glow
+        x: 140 + Math.random() * (window.innerWidth - 280),
+        y: -100 - Math.random() * 400,
+        speed: 0.7 + Math.random() * 1.1,
         length: 22 + Math.floor(Math.random() * 32),
         headPos: Math.random() * 8,
         hue: i % 3
@@ -54,7 +55,6 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // Epoch countdown & canvas rain unchanged (still perfect)
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
