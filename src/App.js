@@ -8,36 +8,31 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [rainColumns, setRainColumns] = useState([]);
+  const [rainStreams, setRainStreams] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  const colors = ['#00ffff', '#ff00ff', '#ffd700'];
+  const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  const addDigitalRain = (txCount) => {
-    const intensity = Math.min(txCount, 40); // cap at 40 columns
-    const newColumns = [];
+  const spawnDigitalRain = (txCount) => {
+    const streamsToSpawn = Math.min(txCount * 3, 45); // 1 tx = 3 streams, cap at 45
 
-    for (let i = 0; i < intensity; i++) {
-      const length = 20 + Math.floor(txCount * 1.8) + Math.random() * 20;
-      const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let column = '';
-      for (let j = 0; j < length; j++) {
-        column += chars[Math.floor(Math.random() * chars.length)];
-      }
+    const newStreams = [];
+    for (let i = 0; i < streamsToSpawn; i++) {
+      const columnLength = 25 + Math.floor(txCount * 2) + Math.floor(Math.random() * 30);
 
-      newColumns.push({
-        id: `${Date.now()}-${i}`,
-        left: 2 + Math.random() * 96,
-        text: column,
-        color: colors[i % 3],
-        speed: 8 + Math.random() * 6, // 8–14 seconds — slow & hypnotic
-        delay: i * 0.07 // staggered start
+      newStreams.push({
+        id: `${Date.now()}-${i}-${Math.random()}`,
+        left: 1 + Math.random() * 98,
+        length: columnLength,
+        speed: 10 + Math.random() * 8, // 10–18 second fall
+        delay: i * 0.08,
+        hue: i % 3 // 0=cyan, 1=magenta, 2=gold
       });
     }
 
-    setRainColumns(prev => [...prev, ...newColumns].slice(-150));
+    setRainStreams(prev => [...prev, ...newStreams].slice(-120));
   };
 
   const spawnShielded = () => {
@@ -60,18 +55,18 @@ function App() {
         const txCount = txs.length;
         setLatest(block);
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
-        
-        addDigitalRain(txCount);
+
+        spawnDigitalRain(txCount);
         if (txCount > 0) spawnShielded();
-        if (txCount > 12) {
-          confetti({ particleCount: 500, spread: 180, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        if (txCount > 15) {
+          confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
         }
       }
       setLoading(false);
     } catch (e) { console.error(e); }
   };
 
-  // Epoch countdown (unchanged — perfect)
+  // Epoch countdown (unchanged)
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -102,32 +97,38 @@ function App() {
 
   if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
+  const getColor = (hue) => {
+    if (hue === 0) return '#00ffff';
+    if (hue === 1) return '#ff00ff';
+    return '#ffd700';
+  };
+
   return (
     <div className="App">
-      {/* DIGITAL RAIN 2.0 — transaction-powered */}
-      {rainColumns.map(col => (
+      {/* PERFECT DIGITAL RAIN 3.0 */}
+      {rainStreams.map(stream => (
         <div
-          key={col.id}
-          className="digital-rain"
+          key={stream.id}
+          className="rain-stream"
           style={{
-            left: `${col.left}%`,
-            color: col.color,
-            animationDuration: `${col.speed}s`,
-            animationDelay: `${col.delay}s`
+            left: `${stream.left}%`,
+            '--speed': `${stream.speed}s`,
+            '--delay': `${stream.delay}s`,
+            '--color': getColor(stream.hue)
           }}
         >
-          <span className="head">█</span>
-          {col.text}
+          <MatrixColumn length={stream.length} />
         </div>
       ))}
 
+      {/* SHIELDED words */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* Rest of your UI — unchanged */}
+      {/* Your existing UI */}
       <div className="main-layout">
         <div className="dashboard">
           <header className="header">
@@ -163,6 +164,25 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Live animated Matrix column component
+function MatrixColumn({ length }) {
+  const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  return (
+    <>
+      <span className="head-char">█</span>
+      {Array.from({ length }, (_, i) => (
+        <span
+          key={i}
+          className="rain-char"
+          style={{ animationDelay: `${i * 0.06}s` }}
+        >
+          {chars[Math.floor(Math.random() * chars.length)]}
+        </span>
+      ))}
+    </>
   );
 }
 
