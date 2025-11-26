@@ -20,16 +20,14 @@ function App() {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -1800,
-        speed: 0.5 + Math.random() * 0.8,
-        length: 22 + Math.floor(Math.random() * 38),
-        headPos: Math.random() * 10,
-        hue: i % 3,
-        charCache: Array(60).fill().map(() => chars[Math.floor(Math.random() * chars.length)]), // pre-generate
-        lastCharChange: Date.now()
+        y: Math.random() * -1600,
+        speed: 0.4 + Math.random() * 0.8,        // ← EVEN SLOWER, majestic
+        length: 20 + Math.floor(Math.random() * 35),
+        headPos: Math.random() * 8,
+        hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-1200);
+    columnsRef.current = columnsRef.current.slice(-1000);
   };
 
   useEffect(() => { spawnOneColumnPerTx(6); }, []);
@@ -98,61 +96,38 @@ function App() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const now = Date.now();
-
       columnsRef.current.forEach(col => {
         col.y += col.speed;
-        col.headPos += 0.25;
-
-        // Slow character change — every ~800ms instead of every frame
-        if (now - col.lastCharChange > 800) {
-          col.charCache = col.charCache.map(() => chars[Math.floor(Math.random() * chars.length)]);
-          col.lastCharChange = now;
-        }
+        col.headPos += 0.3;
 
         for (let i = 0; i <= col.length; i++) {
+          const char = chars[Math.floor(Math.random() * chars.length)];
           const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.85 : Math.max(0.07, 1 - i / col.length);
-
-          const char = col.charCache[i] || chars[0];
+          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
 
           ctx.globalAlpha = brightness;
-          ctx.font = '30px "Matrix Code NFI", monospace';
+          ctx.font = '29px "Matrix Code NFI", monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
           if (brightness > 0.9) {
-            // EXTREME WHITE GLOW — THIS IS THE ONE
+            // INTENSE WHITE GLOW — THE ONE FROM THE MOVIE
             ctx.fillStyle = 'white';
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 90;
-
-            // Multi-layer glow
-            ctx.fillText(char, col.x, col.y - i * 36);
-            ctx.shadowBlur = 50;
-            ctx.fillText(char, col.x, col.y - i * 36);
-            ctx.shadowBlur = 25;
-            ctx.fillText(char, col.x, col.y - i * 36);
-
-            // Radial gradient halo
-            const gradient = ctx.createRadialGradient(col.x, col.y - i * 36, 0, col.x, col.y - i * 36, 120);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.fillStyle = gradient;
-            ctx.globalAlpha = 0.4;
-            ctx.fillRect(col.x - 100, col.y - i * 36 - 100, 200, 200);
+            ctx.shadowBlur = 120;           // ← RETINA-BURNING GLOW
+            // Extra pass for even stronger glow
+            ctx.fillText(char, col.x, col.y - i * 34);
+            ctx.fillText(char, col.x, col.y - i * 34);
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = 22;
-            ctx.globalAlpha = brightness;
-            ctx.fillText(char, col.x, col.y - i * 36);
+            ctx.shadowBlur = 20;
+            ctx.fillText(char, col.x, col.y - i * 34);
           }
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 2000);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1800);
       requestAnimationFrame(draw);
     };
 
