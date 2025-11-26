@@ -25,7 +25,7 @@ function App() {
     for (let i = 0; i < count; i++) {
       columnsRef.current.push({
         x: Math.random() * width,
-        y: Math.random() * -1000,
+        y: Math.random() * -100,
         speed: 2 + Math.random() * 4,
         length: 10 + Math.floor(Math.random() * 25),
         hue: Math.floor(Math.random() * 3),
