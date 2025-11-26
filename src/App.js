@@ -5,10 +5,10 @@ import './App.css';
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
-// Global counters — never duplicate keys, ever
-let particleCounter = 0;
-let shieldedCounter = 0;
-let txCounter = 0;
+// Global counters — eliminate duplicate key crashes forever
+let particleId = 0;
+let shieldedId = 0;
+let txId = 0;
 
 function App() {
   const [latest, setLatest] = useState(null);
@@ -19,34 +19,31 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  // === SAFE PARTICLE SPAWN ===
+  // Safe particle rain
   const addParticles = (count) => {
-    const newOnes = [];
+    const newParticles = [];
     for (let i = 0; i < Math.min(count * 3, 30); i++) {
-      newOnes.push({ id: ++particleCounter, left: Math.random() * 100 });
+      newParticles.push({ id: ++particleId, left: Math.random() * 100 });
     }
-    setParticles(p => [...p, ...newOnes].slice(-120));
+    setParticles(p => [...p, ...newParticles].slice(-120));
   };
 
-  // === SAFE SHIELDED FLOAT ===
+  // Safe SHIELDED fall
   const spawnShielded = () => {
-    setShieldedFloats(prev => [...prev, { 
-      id: ++shieldedCounter, 
-      left: 10 + Math.random() * 80 
-    }].slice(-12));
+    setShieldedFloats(prev => [...prev, { id: ++shieldedId, left: 10 + Math.random() * 80 }].slice(-12));
   };
 
-  // === SAFE LIVE TX FLY ===
+  // Safe flying transactions
   const spawnLiveTx = (hash) => {
     setLiveTxs(prev => [...prev, {
-      id: ++txCounter,
+      id: ++txId,
       start: 5 + Math.random() * 90,
       end: 5 + Math.random() * 90,
       hash: hash.slice(0, 12)
     }].slice(-15));
   };
 
-  // === MAIN FETCH (runs every 7s) ===
+  // Main data fetch
   const fetchData = async () => {
     try {
       const blockRes = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
@@ -67,13 +64,17 @@ function App() {
           spawnShielded();
           txs.forEach(tx => spawnLiveTx(tx.hash));
         }
-        if (txCount > 10) confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700','#ff00ff','#00ffff','#39ff14'] });
+        if (txCount > 10) {
+          confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700','#ff00ff','#00ffff','#39ff14'] });
+        }
       }
       setLoading(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  // === EPOCH COUNTDOWN — ONE INTERVAL ONLY ===
+  // Epoch countdown — ONE interval only, no leaks
   useEffect(() => {
     let epochEndMs = null;
 
@@ -109,11 +110,11 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // === POLLING ===
+  // Block polling
   useEffect(() => {
     fetchData();
-    const int = setInterval(fetchData, 7000);
-    return () => clearInterval(int);
+    const interval = setInterval(fetchData, 7000);
+    return () => clearInterval(interval);
   }, [latest]);
 
   if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
