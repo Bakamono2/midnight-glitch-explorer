@@ -16,14 +16,21 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  const getScale = () => {
+    const base = Math.min(window.innerWidth, window.innerHeight);
+    return Math.max(0.7, Math.min(1.8, base / 900)); // perfect from phone → 4K
+  };
+
   const spawnOneColumnPerTx = (txCount) => {
+    const scale = getScale();
+    const safeMargin = 180 * scale; // glow-safe zone
+
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
-        // FULLY ON-SCREEN with 140px safe margin for glow
-        x: 140 + Math.random() * (window.innerWidth - 280),
+        x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -100 - Math.random() * 400,
-        speed: 0.7 + Math.random() * 1.1,
-        length: 22 + Math.floor(Math.random() * 32),
+        speed: (0.7 + Math.random() * 1.1) * scale,
+        length: 20 + Math.floor(Math.random() * 32),
         headPos: Math.random() * 8,
         hue: i % 3
       });
@@ -78,6 +85,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // RESPONSIVE + PERFECT ON EVERY DEVICE
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -95,6 +103,15 @@ function App() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const scale = getScale();
+      const baseFontSize = 29 * scale;
+      const charSpacing = 34 * scale;
+      const glowSize = 120 * scale;
+
+      ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
       columnsRef.current.forEach(col => {
         col.y += col.speed;
         col.headPos += 0.3;
@@ -105,26 +122,23 @@ function App() {
           const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
 
           ctx.globalAlpha = brightness;
-          ctx.font = '29px "Matrix Code NFI", monospace';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
 
           if (brightness > 0.9) {
             ctx.fillStyle = 'white';
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 120;
-            ctx.fillText(char, col.x, col.y - i * 34);
-            ctx.fillText(char, col.x, col.y - i * 34);
+            ctx.shadowBlur = glowSize;
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.fillText(char, col.x, col.y - i * charSpacing); // double intensity
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = 20;
-            ctx.fillText(char, col.x, col.y - i * 34);
+            ctx.shadowBlur = 20 * scale;
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
           }
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 3000);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 3000 * scale);
       requestAnimationFrame(draw);
     };
 
@@ -133,8 +147,16 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
+  // Force perfect mobile viewport
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(meta);
+  }, []);
+
   return (
-    <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+    <div className="App" style={{ background: '#000', position: 'fixed', inset: 0, overflow: 'hidden' }}>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
       <canvas
@@ -148,7 +170,7 @@ function App() {
         </div>
       ))}
 
-      <div style={{ position: 'relative', zIndex: 10 }}>
+      <div style={{ position: 'relative', zIndex: 10, padding: 'max(1rem, 3vw)' }}>
         <div className="main-layout">
           <div className="dashboard">
             <header className="header">
@@ -166,11 +188,6 @@ function App() {
 
               <div className="epoch-countdown">
                 EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-              </div>
-
-              <div className="stats-bar">
-                <span><strong>{recentBlocks.length}</strong> blocks</span>
-                <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
               </div>
             </main>
 
