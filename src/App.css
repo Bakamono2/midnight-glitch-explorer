@@ -1,4 +1,3 @@
-/* === MIDNIGHT EXPLORER — STABLE & BEAUTIFUL === */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 .App {
@@ -22,7 +21,6 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  min-height: 100vh;
 }
 
 .timeline {
@@ -60,7 +58,7 @@
 
 .header { margin-bottom: 3rem; text-align: center; }
 .glitch-title { font-size: clamp(4rem,12vw,7rem); font-weight: bold; text-shadow: 0 0 30px #00ffff,0 0 60px #ff00ff; animation: flicker 4s infinite alternate; }
-.subtitle.centered { font-size: clamp(1.6rem,6vw,2.4rem); letter-spacing: 0.6em; opacity: 0.9; margin-top: 0.5rem; }
+.subtitle { font-size: clamp(1.6rem,6vw,2.4rem); letter-spacing: 0.6em; opacity: 0.9; margin-top: 0.5rem; }
 
 .main-card {
   background: rgba(0,20,50,0.85);
@@ -76,6 +74,18 @@
 .block-num { font-size: clamp(3rem,9vw,5rem); color: #ff00ff; text-shadow: 0 0 30px #ff00ff; margin: 1.5rem 0; }
 .hash { font-size: clamp(0.9rem,3vw,1.1rem); opacity: 0.85; word-break: break-all; margin: 1rem 0; }
 .txs { font-size: clamp(1.3rem,4.5vw,1.9rem); margin-top: 2rem; }
+
+.epoch-countdown {
+  margin: 3rem 0;
+  padding: 1.5rem;
+  background: rgba(255,0,255,0.05);
+  border: 2px solid #ff00ff;
+  border-radius: 20px;
+  font-size: clamp(1.4rem,5vw,2.2rem);
+  color: #ff00ff;
+  text-shadow: 0 0 20px #ff00ff;
+}
+.timer { color: #39ff14; font-weight: bold; animation: pulse 1.5s infinite; }
 
 .stats-bar {
   margin: 4rem 0;
@@ -113,10 +123,10 @@
 
 .rain {
   position: absolute;
-  width: 3px; height: 22px;
+  width: 3px;
+  height: 22px;
   background: linear-gradient(to bottom,#00ffff,transparent);
   top: 140px;
-  left: var(--x,50%);
   border-radius: 2px;
   animation: rainFall linear forwards;
   box-shadow: 0 0 14px #00ffff;
@@ -159,8 +169,20 @@
 @keyframes flicker { 0%,100% { opacity:1; } 50% { opacity:0.92; } }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
 
-.glitch { animation: glitch 4s infinite linear; position: relative; display: inline-block; }
-.glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: #000; opacity: 0.8; }
+.glitch {
+  animation: glitch 4s infinite linear;
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  background: #000;
+  opacity: 0.8;
+}
 .glitch::before { animation: glitch 3.8s infinite reverse; clip-path: polygon(0 0,100% 0,100% 40%,0 40%); color: #ff00ff; }
 .glitch::after { animation: glitch 4.2s infinite; clip-path: polygon(0 60%,100% 60%,100% 100%,0 100%); color: #00ffff; }
 
