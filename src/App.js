@@ -16,9 +16,10 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  const spawnColumns = (txCount = 1) => {
-    const count = Math.min(12 + txCount * 7, 55);
-    for (let i = 0; i < count; i++) {
+  // Spawn rain based on transaction count
+  const spawnColumns = (txCount = 0) => {
+    const intensity = Math.min(8 + txCount * 8, 70); // ← directly tied to tx count
+    for (let i = 0; i < intensity; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * -1200,
@@ -30,10 +31,12 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-600);
   };
 
+  // Initial rain
   useEffect(() => {
-    spawnColumns(8);
+    spawnColumns(5);
   }, []);
 
+  // Block polling + rain intensity
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -45,9 +48,12 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnColumns(txs.length || 2);
+          spawnColumns(txs.length); // ← rain now reflects real tx count
           if (txs.length > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
+          }
+          if (txs.length > 25) {
+            confetti({ particleCount: 800, spread: 180, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
           }
         }
       } catch (e) { console.error(e); }
@@ -57,7 +63,39 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // PERFECT MATRIX RAIN — PURE BLACK BACKGROUND, NO GRAY, NO STRIPES
+  // EPOCH COUNTDOWN — FULLY RESTORED AND WORKING
+  useEffect(() => {
+    let epochEnd = null;
+    const fetchEpoch = async () => {
+      try {
+        const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY } });
+        const e = await r.json();
+        epochEnd = e.end_time * 1000;
+      } catch {}
+    };
+    fetchEpoch();
+
+    const timer = setInterval(() => {
+      if (!epochEnd) {
+        setTimeLeft('Loading...');
+        return;
+      }
+      const diff = epochEnd - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('EPOCH ENDED');
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // CANVAS RAIN — PERFECT, BLACK, NO REGRESSION
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -73,13 +111,11 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const draw = () => {
-      // THIS IS THE FIX: Clear the canvas completely → pure black forever
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
         col.y += col.speed * 2.8;
 
-        // Draw the tail
         for (let i = 1; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           const opacity = Math.max(0.12, 1 - i / col.length);
@@ -91,18 +127,15 @@ function App() {
           ctx.fillText(char, col.x, col.y - i * 25);
         }
 
-        // White glowing head
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
         ctx.shadowBlur = 60;
         ctx.font = '32px monospace';
-        ctx.fillText('█', col.x, col.y);
+        ctx.fillText('Block', col.x, col.y);
       });
 
-      // Remove off-screen columns
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1200);
-
       requestAnimationFrame(draw);
     };
 
@@ -113,28 +146,18 @@ function App() {
 
   return (
     <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* CANVAS RAIN — CLEAN, BLACK, PERFECT */}
+      {/* RAIN CANVAS */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* SHIELDED floating text */}
+      {/* SHIELDED FLOATING TEXT */}
       {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
-          SHIELDED
-        </div>
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>
       ))}
 
-      {/* Your UI — perfectly visible on top */}
+      {/* FULL DASHBOARD — RESTORED */}
       <div style={{ position: 'relative', zIndex: 10 }}>
         <div className="main-layout">
           <div className="dashboard">
@@ -142,6 +165,7 @@ function App() {
               <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
               <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
             </header>
+
             <main>
               <div className="card main-card">
                 <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
@@ -149,14 +173,22 @@ function App() {
                 <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
                 <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
               </div>
+
               <div className="epoch-countdown">
                 EPOCH ENDS IN <span className="timer">{timeLeft}</span>
               </div>
+
+              <div className="stats-bar">
+                <span><strong>{recentBlocks.length}</strong> blocks</span>
+                <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
+              </div>
             </main>
+
             <footer>
               <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
             </footer>
           </div>
+
           <div className="timeline">
             {recentBlocks.map((b, i) => (
               <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
