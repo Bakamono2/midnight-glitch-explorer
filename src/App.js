@@ -20,18 +20,15 @@ function App() {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: -2000 - Math.random() * 3000,
-        speed: 0.4 + Math.random() * 0.8,
-        length: 20 + Math.floor(Math.random() * 35),
-        headPos: Math.random() * 10,
+        y: -100 - Math.random() * 400,    // ← appears within 0.3–1.2 seconds
+        speed: 0.7 + Math.random() * 1.1, // ← fast enough to feel immediate
+        length: 22 + Math.floor(Math.random() * 32),
+        headPos: Math.random() * 8,
         hue: i % 3
       });
     }
     columnsRef.current = columnsRef.current.slice(-1200);
   };
-
-  // ← REMOVED: No ambient rain on startup
-  // The void is silent until the first real transaction
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +42,7 @@ function App() {
           const txCount = txs.length;
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txCount);           // ← ONLY real txs create rain
+          spawnOneColumnPerTx(txCount);
           if (txCount > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
           }
@@ -57,7 +54,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // Epoch countdown + canvas rain (unchanged, perfect)
+  // Epoch countdown & canvas rain unchanged (still perfect)
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
