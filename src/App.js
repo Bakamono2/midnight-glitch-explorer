@@ -20,7 +20,7 @@ function App() {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: -2000 - Math.random() * 3000,   // ← NOW STARTS WAY ABOVE SCREEN
+        y: -2000 - Math.random() * 3000,
         speed: 0.4 + Math.random() * 0.8,
         length: 20 + Math.floor(Math.random() * 35),
         headPos: Math.random() * 10,
@@ -98,7 +98,7 @@ function App() {
 
       columnsRef.current.forEach(col => {
         col.y += col.speed;
-       ídu headPos += 0.3;
+        col.headPos += 0.3;   // ← Fixed typo here
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
@@ -115,7 +115,7 @@ function App() {
             ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = 120;
             ctx.fillText(char, col.x, col.y - i * 34);
-            ctx.fillText(char, col.x, col.y - i * 34); // double pass for intensity
+            ctx.fillText(char, col.x, col.y - i * 34);
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
@@ -125,7 +125,6 @@ function App() {
         }
       });
 
-      // Keep only columns that haven't fallen off forever
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 3000);
       requestAnimationFrame(draw);
     };
