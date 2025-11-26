@@ -8,33 +8,33 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [particles, setParticles] = useState([]);
+  const [rainColumns, setRainColumns] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  // Matrix character set
-  const matrixChars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  // Beautiful original color cycle: cyan → magenta → gold
+  const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
-  // Generate Matrix rain columns when a new block appears
-  const addParticles = (count) => {
+  const addMatrixRain = (count) => {
     const newColumns = [];
-    for (let i = 0; i < Math.min(count * 3, 30); i++) {
-      const length = 8 + Math.floor(Math.random() * 15);
-      const text = Array.from({ length }, () => 
-        matrixChars[Math.floor(Math.random() * matrixChars.length)]
+    for (let i = 0; i < Math.min(count * 4, 35); i++) {
+      const length = 15 + Math.floor(Math.random() * 25); // long columns
+      const column = Array(length).fill(0).map(() => 
+        String.fromCharCode(0x30A0 + Math.random() * 96)
       ).join('');
-
+      
       newColumns.push({
-        id: `${Date.now()}-${i}-${Math.random()}`,
+        id: Date.now() + i + Math.random(),
         left: Math.random() * 100,
-        text: text
+        text: column,
+        color: colors[i % 3],
+        speed: 3 + Math.random() * 4 // varied fall speed
       });
     }
-    setParticles(prev => [...prev, ...newColumns].slice(-120));
+    setRainColumns(prev => [...prev, ...newColumns].slice(-120));
   };
 
-  // SHIELDED falling word
   const spawnShielded = () => {
     setShieldedFloats(prev => [...prev, {
       id: Date.now() + Math.random(),
@@ -42,13 +42,11 @@ function App() {
     }].slice(-10));
   };
 
-  // Fetch latest block + transactions
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
       if (!res.ok) return;
       const block = await res.json();
-
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
       if (!txRes.ok) return;
       const txs = await txRes.json();
@@ -57,19 +55,17 @@ function App() {
         const txCount = txs.length;
         setLatest(block);
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
-        addParticles(txCount);
+        addMatrixRain(txCount);
         if (txCount > 0) spawnShielded();
         if (txCount > 8) {
-          confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#00ff41', '#00ffff', '#ff00ff', '#ffffff'] });
+          confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
         }
       }
       setLoading(false);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  // Epoch countdown — one safe interval
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -84,26 +80,18 @@ function App() {
     fetchEpoch();
 
     const timer = setInterval(() => {
-      if (!epochEnd) {
-        setTimeLeft('Loading...');
-        return;
-      }
+      if (!epochEnd) { setTimeLeft('Loading...'); return; }
       const diff = epochEnd - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('EPOCH ENDED');
-        return;
-      }
+      if (diff <= 0) { setTimeLeft('EPOCH ENDED'); return; }
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Polling
   useEffect(() => {
     fetchData();
     const int = setInterval(fetchData, 7000);
@@ -114,10 +102,19 @@ function App() {
 
   return (
     <div className="App">
-      {/* Matrix Digital Rain */}
-      {particles.map(p => (
-        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}>
-          {p.text}
+      {/* TRUE VERTICAL MATRIX RAIN — cyan/magenta/gold */}
+      {rainColumns.map(col => (
+        <div
+          key={col.id}
+          className="matrix-rain"
+          style={{
+            left: `${col.left}%`,
+            color: col.color,
+            textShadow: `0 0 10px ${col.color}, 0 0 20px ${col.color}`,
+            animationDuration: `${col.speed}s`
+          }}
+        >
+          {col.text}
         </div>
       ))}
 
