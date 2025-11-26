@@ -5,79 +5,126 @@ import './App.css';
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
+// Global counters — never duplicate keys, ever
+let particleCounter = 0;
+let shieldedCounter = 0;
+let txCounter = 0;
+
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [particles, setParticles] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
+  const [liveTxs, setLiveTxs] = useState([]);
+  const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  const addParticle = (count) => {
-    for (let i = 0; i < Math.min(count * 3, 25); i++) {
-      setTimeout(() => {
-        setParticles(p => [...p, { 
-          id: Date.now() + i * 1000 + i, // unique IDs
-          left: Math.random() * 100 
-        }].slice(-100));
-      }, i * 100);
+  // === SAFE PARTICLE SPAWN ===
+  const addParticles = (count) => {
+    const newOnes = [];
+    for (let i = 0; i < Math.min(count * 3, 30); i++) {
+      newOnes.push({ id: ++particleCounter, left: Math.random() * 100 });
     }
+    setParticles(p => [...p, ...newOnes].slice(-120));
   };
 
-  const spawnShieldedFloat = () => {
-    const id = Date.now() + Math.random() * 1000;
-    const left = 10 + Math.random() * 80;
-    setShieldedFloats(prev => [...prev, { id, left }].slice(-10));
+  // === SAFE SHIELDED FLOAT ===
+  const spawnShielded = () => {
+    setShieldedFloats(prev => [...prev, { 
+      id: ++shieldedCounter, 
+      left: 10 + Math.random() * 80 
+    }].slice(-12));
   };
 
+  // === SAFE LIVE TX FLY ===
+  const spawnLiveTx = (hash) => {
+    setLiveTxs(prev => [...prev, {
+      id: ++txCounter,
+      start: 5 + Math.random() * 90,
+      end: 5 + Math.random() * 90,
+      hash: hash.slice(0, 12)
+    }].slice(-15));
+  };
+
+  // === MAIN FETCH (runs every 7s) ===
   const fetchData = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
-      if (!res.ok) return;
-      const block = await res.json();
+      const blockRes = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
+      if (!blockRes.ok) return;
+      const block = await blockRes.json();
+
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
       if (!txRes.ok) return;
       const txs = await txRes.json();
 
-      if (!latest || block.hash !== latest.hash) {
+      if (!latest || latest.hash !== block.hash) {
         const txCount = txs.length;
         setLatest(block);
-        setRecentBlocks(prev => {
-          const filtered = prev.filter(b => b.hash !== block.hash);
-          return [block, ...filtered].slice(0, 50);
-        });
-        addParticle(txCount);
-        if (txCount > 0) spawnShieldedFloat();
+        setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
 
-        if (txCount > 8) {
-          confetti({ particleCount: 300, spread: 160, origin: { y: 0.3 }, colors: ['#ffd700', '#ff00ff', '#00ffff'] });
+        addParticles(txCount);
+        if (txCount > 0) {
+          spawnShielded();
+          txs.forEach(tx => spawnLiveTx(tx.hash));
         }
+        if (txCount > 10) confetti({ particleCount: 400, spread: 180, origin: { y: 0.25 }, colors: ['#ffd700','#ff00ff','#00ffff','#39ff14'] });
       }
       setLoading(false);
-    } catch (e) {
-      console.error("Error:", e);
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
   };
 
+  // === EPOCH COUNTDOWN — ONE INTERVAL ONLY ===
+  useEffect(() => {
+    let epochEndMs = null;
+
+    const fetchEpoch = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
+        if (res.ok) {
+          const epoch = await res.json();
+          epochEndMs = epoch.end_time * 1000;
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    fetchEpoch();
+
+    const timer = setInterval(() => {
+      if (!epochEndMs) {
+        setTimeLeft('Loading...');
+        return;
+      }
+      const diff = epochEndMs - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('EPOCH ENDED');
+        return;
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // === POLLING ===
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 6500);
-    return () => clearInterval(interval);
+    const int = setInterval(fetchData, 7000);
+    return () => clearInterval(int);
   }, [latest]);
 
-  if (loading) return <div className="loading glitch" data-text="ENTERING THE SHADOWS...">ENTERING THE SHADOWS...</div>;
+  if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
   return (
     <div className="App">
-      {/* Rain */}
-      {particles.map(p => (
-        <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>
-      ))}
-
-      {/* SHIELDED falling */}
-      {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
-          SHIELDED
+      {particles.map(p => <div key={p.id} className="rain" style={{ left: `${p.left}%` }}></div>)}
+      {shieldedFloats.map(f => <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>)}
+      {liveTxs.map(tx => (
+        <div key={tx.id} className="live-tx" style={{ '--start': `${tx.start}%`, '--end': `${tx.end}%` }}>
+          {tx.hash}...
         </div>
       ))}
 
@@ -85,7 +132,7 @@ function App() {
         <div className="dashboard">
           <header className="header">
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-            <p className="subtitle centered" data-text="EXPLORER">EXPLORER</p>
+            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
           </header>
 
           <main>
@@ -93,13 +140,16 @@ function App() {
               <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
               <p className="block-num">#{latest?.height || '???'}</p>
               <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-              <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
+              <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded txs</p>
+            </div>
+
+            <div className="epoch-countdown">
+              EPOCH ENDS IN <span className="timer">{timeLeft}</span>
             </div>
 
             <div className="stats-bar">
-              <span>{recentBlocks.length > 1 ? ((recentBlocks[0].height - recentBlocks[recentBlocks.length-1].height) / ((recentBlocks.length-1) * 6.5)).toFixed(2) : '0.00'} tx/s</span>
-              <span>{recentBlocks.length} blocks</span>
-              <span>{shieldedFloats.length} SHIELDED events</span>
+              <span><strong>{recentBlocks.length}</strong> blocks</span>
+              <span><strong>{liveTxs.length}</strong> live txs</span>
             </div>
           </main>
 
