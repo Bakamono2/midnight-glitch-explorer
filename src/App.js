@@ -30,7 +30,8 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-1200);
   };
 
-  useEffect(() => { spawnOneColumnPerTx(8); }, []);
+  // ← REMOVED: No ambient rain on startup
+  // The void is silent until the first real transaction
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,7 +45,7 @@ function App() {
           const txCount = txs.length;
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txCount);
+          spawnOneColumnPerTx(txCount);           // ← ONLY real txs create rain
           if (txCount > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
           }
@@ -56,6 +57,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
+  // Epoch countdown + canvas rain (unchanged, perfect)
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -98,7 +100,7 @@ function App() {
 
       columnsRef.current.forEach(col => {
         col.y += col.speed;
-        col.headPos += 0.3;   // ← Fixed typo here
+        col.headPos += 0.3;
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
