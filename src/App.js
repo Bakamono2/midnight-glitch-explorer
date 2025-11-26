@@ -18,20 +18,19 @@ function App() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
   const spawnRain = (txCount) => {
-    const newDrops = [];
-    const count = Math.min(txCount * 6, 100);   // a bit more intense
+    const count = Math.max(3, txCount * 6); // minimum 3 drops, even on 0-tx blocks
 
     for (let i = 0; i < count; i++) {
-      newDrops.push({
+      dropsRef.current.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * -600,
-        speed: 2.5 + Math.random() * 4,
+        speed: 2 + Math.random() * 4,
         fontSize: 16 + Math.random() * 10,
         length: 12 + txCount * 2 + Math.random() * 25,
         hue: i % 3
       });
     }
-    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-500);
+    dropsRef.current = dropsRef.current.slice(-500); // cap at 500
   };
 
   const spawnShielded = () => {
@@ -44,10 +43,17 @@ function App() {
   const fetchData = async () => {
     try {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Fallback rain on API error
+        spawnRain(1);
+        return;
+      }
       const block = await res.json();
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
-      if (!txRes.ok) return;
+      if (!txRes.ok) {
+        spawnRain(1);
+        return;
+      }
       const txs = await txRes.json();
 
       if (!latest || latest.hash !== block.hash) {
@@ -56,12 +62,16 @@ function App() {
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
         spawnRain(txCount);
         if (txCount > 0) spawnShielded();
-        if (txCount > 15) confetti({ particleCount: 700, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        if (txCount > 15) confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
       }
       setLoading(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      spawnRain(1); // Graceful fallback
+    }
   };
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -84,7 +94,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Canvas rain — fixed z-index
+  // Canvas rain — VISIBLE
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -95,17 +105,19 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const animate = () => {
+      // Clear with slight trail
       ctx.fillStyle = 'rgba(0,0,0,0.04)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      dropsRef.current = dropsRef.current.filter(d => d.y < canvas.height + 300);
+      // Filter old drops
+      dropsRef.current = dropsRef.current.filter(drop => drop.y < canvas.height + 300);
 
       dropsRef.current.forEach(drop => {
         drop.y += drop.speed * 3;
 
         ctx.font = `${drop.fontSize}px monospace`;
 
-        // trail
+        // Trail
         for (let i = 0; i < drop.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           ctx.globalAlpha = Math.max(0, 1 - i / drop.length);
@@ -115,7 +127,7 @@ function App() {
           ctx.fillText(char, drop.x, drop.y - i * drop.fontSize * 1.2);
         }
 
-        // white head
+        // White head
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
@@ -145,7 +157,7 @@ function App() {
 
   return (
     <div className="App">
-      {/* CANVAS RAIN — now visible! */}
+      {/* CANVAS — VISIBLE RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -154,12 +166,11 @@ function App() {
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: 2,           // ← this is the fix
+          zIndex: 0,  // ← behind UI but visible
           pointerEvents: 'none'
         }}
       />
 
-      {/* Rest of your UI */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
