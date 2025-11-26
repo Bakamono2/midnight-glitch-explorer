@@ -17,21 +17,21 @@ function App() {
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   const spawnColumns = (txCount = 1) => {
-    const count = Math.min(10 + txCount * 6, 50);
+    const count = Math.min(12 + txCount * 7, 55);
     for (let i = 0; i < count; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -1000,
-        speed: 2 + Math.random() * 4,
-        length: 12 + Math.floor(Math.random() * 28),
+        y: Math.random() * -1200,
+        speed: 2.2 + Math.random() * 3.8,
+        length: 14 + Math.floor(Math.random() * 26),
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-500);
+    columnsRef.current = columnsRef.current.slice(-600);
   };
 
   useEffect(() => {
-    spawnColumns(6);
+    spawnColumns(8);
   }, []);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // PERFECT MATRIX RAIN — BLACK BACKGROUND, NO GRAY
+  // PERFECT MATRIX RAIN — PURE BLACK BACKGROUND, NO GRAY, NO STRIPES
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -73,35 +73,36 @@ function App() {
     const colors = ['#00ffff', '#ff00ff', '#ffd700'];
 
     const draw = () => {
-      // THE FIX: Only fade very slightly — keeps background BLACK
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // THIS IS THE FIX: Clear the canvas completely → pure black forever
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
         col.y += col.speed * 2.8;
 
-        // Tail
+        // Draw the tail
         for (let i = 1; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const opacity = Math.max(0.08, 1 - i / col.length);
+          const opacity = Math.max(0.12, 1 - i / col.length);
           ctx.globalAlpha = opacity;
           ctx.fillStyle = colors[col.hue];
           ctx.shadowColor = colors[col.hue];
-          ctx.shadowBlur = 12;
+          ctx.shadowBlur = 14;
           ctx.font = '20px monospace';
           ctx.fillText(char, col.x, col.y - i * 25);
         }
 
-        // White head — bright and leading
+        // White glowing head
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
-        ctx.shadowBlur = 50;
-        ctx.font = '30px monospace';
+        ctx.shadowBlur = 60;
+        ctx.font = '32px monospace';
         ctx.fillText('█', col.x, col.y);
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
+      // Remove off-screen columns
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1200);
+
       requestAnimationFrame(draw);
     };
 
@@ -112,7 +113,7 @@ function App() {
 
   return (
     <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* CANVAS RAIN — BEHIND EVERYTHING */}
+      {/* CANVAS RAIN — CLEAN, BLACK, PERFECT */}
       <canvas
         ref={canvasRef}
         style={{
@@ -126,14 +127,14 @@ function App() {
         }}
       />
 
-      {/* SHIELDED WORDS */}
+      {/* SHIELDED floating text */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* UI — ON TOP */}
+      {/* Your UI — perfectly visible on top */}
       <div style={{ position: 'relative', zIndex: 10 }}>
         <div className="main-layout">
           <div className="dashboard">
