@@ -20,17 +20,17 @@ function App() {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -1600,
-        speed: 0.4 + Math.random() * 0.8,        // ← EVEN SLOWER, majestic
+        y: -2000 - Math.random() * 3000,   // ← NOW STARTS WAY ABOVE SCREEN
+        speed: 0.4 + Math.random() * 0.8,
         length: 20 + Math.floor(Math.random() * 35),
-        headPos: Math.random() * 8,
+        headPos: Math.random() * 10,
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-1000);
+    columnsRef.current = columnsRef.current.slice(-1200);
   };
 
-  useEffect(() => { spawnOneColumnPerTx(6); }, []);
+  useEffect(() => { spawnOneColumnPerTx(8); }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,7 +98,7 @@ function App() {
 
       columnsRef.current.forEach(col => {
         col.y += col.speed;
-        col.headPos += 0.3;
+       ídu headPos += 0.3;
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
@@ -111,13 +111,11 @@ function App() {
           ctx.textBaseline = 'middle';
 
           if (brightness > 0.9) {
-            // INTENSE WHITE GLOW — THE ONE FROM THE MOVIE
             ctx.fillStyle = 'white';
             ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 120;           // ← RETINA-BURNING GLOW
-            // Extra pass for even stronger glow
+            ctx.shadowBlur = 120;
             ctx.fillText(char, col.x, col.y - i * 34);
-            ctx.fillText(char, col.x, col.y - i * 34);
+            ctx.fillText(char, col.x, col.y - i * 34); // double pass for intensity
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
@@ -127,7 +125,8 @@ function App() {
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1800);
+      // Keep only columns that haven't fallen off forever
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 3000);
       requestAnimationFrame(draw);
     };
 
