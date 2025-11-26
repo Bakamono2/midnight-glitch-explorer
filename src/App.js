@@ -16,11 +16,10 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // PERFECT SCALING BASED ON SCREEN AREA (works on tall monitors!)
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
     const referenceArea = 1920 * 1080;
-    return Math.sqrt(area / referenceArea); // area-based scaling = perfect density
+    return Math.sqrt(area / referenceArea);
   };
 
   const spawnOneColumnPerTx = (txCount) => {
@@ -37,7 +36,6 @@ function App() {
         hue: i % 3
       });
     }
-    // Keep reasonable column count — scales with screen size
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
@@ -88,7 +86,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // FINAL RESPONSIVE RAIN — PERFECT ON TALL MONITORS
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -105,7 +102,6 @@ function App() {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -146,7 +142,6 @@ function App() {
     };
 
     draw();
-
     return () => window.removeEventListener('resize', resize);
   }, []);
 
@@ -159,7 +154,7 @@ function App() {
   }, []);
 
   return (
-    <div style={{ background: '#000', position: 'fixed', inset: 0, overflow: 'hidden' }}>
+    <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
       <canvas
@@ -167,37 +162,43 @@ function App() {
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
-          SHIELDED
-        </div>
-      ))}
+      {/* FLEX COLUMN LAYOUT — GUARANTEES NOTHING IS CUT OFF */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 10,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '3vh 4vw',
+        boxSizing: 'border-box',
+        pointerEvents: 'none',
+        color: '#0ff'
+      }}>
+        {/* TOP SECTION */}
+        <div>
+          <header className="header">
+            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+          </header>
 
-      <div style={{ position: 'relative', zIndex: 10, padding: 'max(2rem, 4vh) max(2rem, 4vw)' }}>
-        <div className="main-layout">
-          <div className="dashboard">
-            <header className="header">
-              <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-              <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-            </header>
-
-            <main>
-              <div className="card main-card">
-                <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-                <p className="block-num">#{latest?.height || '...'}</p>
-                <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-                <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
-              </div>
-
-              <div className="epoch-countdown">
-                EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-              </div>
-            </main>
-
-            <footer>
-              <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-            </footer>
+          <div className="card main-card" style={{ margin: '2vh 0' }}>
+            <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+            <p className="block-num">#{latest?.height || '...'}</p>
+            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+            <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
+
+          <div className="epoch-countdown">
+            EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION — always visible */}
+        <div>
+          <footer style={{ marginBottom: '2vh' }}>
+            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+          </footer>
 
           <div className="timeline">
             {recentBlocks.map((b, i) => (
@@ -209,7 +210,14 @@ function App() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* SHIELDED floating text */}
+      {shieldedFloats.map(f => (
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
+      ))}
+    </>
   );
 }
 
