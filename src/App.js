@@ -16,27 +16,27 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // Spawn rain based on transaction count
-  const spawnColumns = (txCount = 0) => {
-    const intensity = Math.min(8 + txCount * 8, 70); // ← directly tied to tx count
-    for (let i = 0; i < intensity; i++) {
+  // ONE COLUMN PER TRANSACTION — EXACTLY
+  const spawnOneColumnPerTx = (txCount) => {
+    for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * -1200,
-        speed: 2.2 + Math.random() * 3.8,
-        length: 14 + Math.floor(Math.random() * 26),
-        hue: i % 3
+        speed: 2.5 + Math.random() * 3.5,
+        length: 16 + Math.floor(Math.random() * 24),
+        hue: i % 3,
+        born: Date.now() // for future effects if needed
       });
     }
-    columnsRef.current = columnsRef.current.slice(-600);
+    // Keep only recent columns — prevents infinite growth
+    columnsRef.current = columnsRef.current.slice(-800);
   };
 
-  // Initial rain
   useEffect(() => {
-    spawnColumns(5);
+    // Gentle ambient rain when idle
+    spawnOneColumnPerTx(5);
   }, []);
 
-  // Block polling + rain intensity
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,24 +46,33 @@ function App() {
         const txs = await txRes.json();
 
         if (!latest || latest.hash !== block.hash) {
+          const txCount = txs.length;
+
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnColumns(txs.length); // ← rain now reflects real tx count
-          if (txs.length > 0) {
+
+          // ONE DROP PER TRANSACTION — THIS IS THE TRUTH
+          spawnOneColumnPerTx(txCount);
+
+          // SHIELDED word on every tx
+          if (txCount > 0) {
             setShieldedFloats(prev => [...prev, { id: Date.now(), left: 10 + Math.random() * 80 }].slice(-12));
           }
-          if (txs.length > 25) {
-            confetti({ particleCount: 800, spread: 180, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+
+          // Big blocks get celebration
+          if (txCount > 25) {
+            confetti({ particleCount: txCount * 20, spread: 120, origin: { y: 0.4 } });
           }
         }
       } catch (e) { console.error(e); }
     };
+
     fetchData();
     const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, [latest]);
 
-  // EPOCH COUNTDOWN — FULLY RESTORED AND WORKING
+  // EPOCH COUNTDOWN — WORKING
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -76,26 +85,19 @@ function App() {
     fetchEpoch();
 
     const timer = setInterval(() => {
-      if (!epochEnd) {
-        setTimeLeft('Loading...');
-        return;
-      }
+      if (!epochEnd) return setTimeLeft('Loading...');
       const diff = epochEnd - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('EPOCH ENDED');
-        return;
-      }
+      if (diff <= 0) return setTimeLeft('EPOCH ENDED');
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // CANVAS RAIN — PERFECT, BLACK, NO REGRESSION
+  // CANVAS RAIN — PERFECT, BLACK, ONE DROP = ONE TX
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -116,6 +118,7 @@ function App() {
       columnsRef.current.forEach(col => {
         col.y += col.speed * 2.8;
 
+        // Tail
         for (let i = 1; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           const opacity = Math.max(0.12, 1 - i / col.length);
@@ -127,12 +130,13 @@ function App() {
           ctx.fillText(char, col.x, col.y - i * 25);
         }
 
+        // White head
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
         ctx.shadowBlur = 60;
         ctx.font = '32px monospace';
-        ctx.fillText('Block', col.x, col.y);
+        ctx.fillText('█', col.x, col.y);
       });
 
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1200);
@@ -146,18 +150,17 @@ function App() {
 
   return (
     <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* RAIN CANVAS */}
       <canvas
         ref={canvasRef}
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* SHIELDED FLOATING TEXT */}
       {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>SHIELDED</div>
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
       ))}
 
-      {/* FULL DASHBOARD — RESTORED */}
       <div style={{ position: 'relative', zIndex: 10 }}>
         <div className="main-layout">
           <div className="dashboard">
