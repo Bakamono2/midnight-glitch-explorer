@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
@@ -8,203 +8,157 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
+  const [rainColumns, setRainColumns] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
+  const [loading, setLoading] = useState(true);
 
-  const canvasRef = useRef(null);
-  const dropsRef = useRef([]);
-  const frameRef = useRef();
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
+  const spawnDigitalRain = (txCount) => {
+    const columns = Math.min(txCount * 4, 50); // Scale with tx count
+    const newColumns = [];
 
-  const spawnRain = (txCount = 1) => {
-    const count = Math.max(12, txCount * 10);
-    for (let i = 0; i < count; i++) {
-      dropsRef.current.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * -1000,
-        speed: 3 + Math.random() * 6,
-        fontSize: 18 + Math.random() * 14,
-        length: 18 + Math.random() * 40,
-        hue: i % 3
+    for (let i = 0; i < columns; i++) {
+      const length = 15 + Math.floor(Math.random() * 35); // Random 15-50 chars
+      const columnText = Array.from({ length }, () => 
+        chars[Math.floor(Math.random() * chars.length)]
+      ).join('');
+
+      newColumns.push({
+        id: Date.now() + i + Math.random(),
+        left: Math.random() * 100,
+        text: columnText,
+        speed: 8 + Math.random() * 7, // Slow 8-15s fall
+        delay: Math.random() * 2, // Random stagger
+        hue: i % 3 // Cycle colors
       });
     }
-    dropsRef.current = dropsRef.current.slice(-800);
+    setRainColumns(prev => [...prev, ...newColumns].slice(-120));
   };
 
-  // Immediate rain on load — you WILL see it instantly
-  useEffect(() => {
-    spawnRain(6);
-  }, []);
+  const spawnShielded = () => {
+    setShieldedFloats(prev => [...prev, {
+      id: Date.now() + Math.random(),
+      left: 10 + Math.random() * 80
+    }].slice(-12));
+  };
 
-  // Live block polling
-  useEffect(() => {
-    const fetchData = async () => {
-      fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } })
-        .then(r => r.json())
-        .then(block => {
-          fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } })
-            .then(r => r.json())
-            .then(txs => {
-              if (!latest || latest.hash !== block.hash) {
-                setLatest(block);
-                setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-                spawnRain(txs.length || 3);
-                if (txs.length > 0) {
-                  setShieldedFloats(prev => [...prev, { id: Date.now(), left: 15 + Math.random() * 70 }].slice(-15));
-                }
-              }
-            });
-        })
-        .catch(() => {});
-    };
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
+      if (!res.ok) return;
+      const block = await res.json();
+      const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
+      if (!txRes.ok) return;
+      const txs = await txRes.json();
 
-    fetchData();
-    const int = setInterval(fetchData, 8000);
-    return () => clearInterval(int);
-  }, [latest]);
+      if (!latest || latest.hash !== block.hash) {
+        const txCount = txs.length;
+        setLatest(block);
+        setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
+        spawnDigitalRain(txCount);
+        if (txCount > 0) spawnShielded();
+        if (txCount > 15) {
+          confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        }
+      }
+      setLoading(false);
+    } catch (e) { console.error(e); }
+  };
 
   // Epoch countdown
   useEffect(() => {
-    const update = async () => {
+    let epochEnd = null;
+    const fetchEpoch = async () => {
       try {
-        const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY } });
-        const e = await r.json();
-        const end = e.end_time * 1000;
-
-        const timer = setInterval(() => {
-          const diff = end - Date.now();
-          if (diff <= 0) return setTimeLeft('EPOCH ENDED');
-          const d = Math.floor(diff / 86400000);
-          const h = Math.floor((diff % 86400000) / 3600000);
-          const m = Math.floor((diff % 3600000) / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
-          setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
-        }, 1000);
-
-        return () => clearInterval(timer);
-      } catch (e) {
-        setTimeLeft('—');
-      }
+        const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY }});
+        if (r.ok) { const e = await r.json(); epochEnd = e.end_time * 1000; }
+      } catch {}
     };
-    update();
+    fetchEpoch();
+    const timer = setInterval(() => {
+      if (!epochEnd) { setTimeLeft('Loading...'); return; }
+      const diff = epochEnd - Date.now();
+      if (diff <= 0) { setTimeLeft('EPOCH ENDED'); return; }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // Canvas rain — behind UI, always visible
+  // Initial rain + polling
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    spawnDigitalRain(2); // Initial burst
+    fetchData();
+    const int = setInterval(fetchData, 7000);
+    return () => clearInterval(int);
+  }, [latest]);
 
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const colors = ['#00ffff', '#ff00ff', '#ffd700'];
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      dropsRef.current.forEach(drop => {
-        drop.y += drop.speed * 3.2;
-
-        ctx.font = `${drop.fontSize}px monospace`;
-
-        // trail
-        for (let i = 1; i < drop.length; i++) {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          ctx.globalAlpha = Math.max(0.05, 1 - i / drop.length);
-          ctx.fillStyle = colors[drop.hue];
-          ctx.shadowColor = colors[drop.hue];
-          ctx.shadowBlur = 12;
-          ctx.fillText(char, drop.x, drop.y - i * drop.fontSize * 1.4);
-        }
-
-        // white head
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = 'white';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 50;
-        ctx.fillText('█', drop.x, drop.y);
-      });
-
-      dropsRef.current = dropsRef.current.filter(d => d.y < canvas.height + 200);
-
-      frameRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', resize);
-
-    return () => {
-      cancelAnimationFrame(frameRef.current);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
+  if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
   return (
-    <>
-      {/* CANVAS — ALWAYS BEHIND */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: -10,
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      />
+    <div className="App">
+      {/* FIXED DIGITAL RAIN — VISIBLE & PERFECT */}
+      {rainColumns.map(col => (
+        <div
+          key={col.id}
+          className="rain-column"
+          style={{
+            left: `${col.left}%`,
+            '--duration': `${col.speed}s`,
+            '--delay': `${col.delay}s`,
+            color: col.hue === 0 ? '#00ffff' : col.hue === 1 ? '#ff00ff' : '#ffd700'
+          }}
+        >
+          {col.text}
+        </div>
+      ))}
 
-      {/* Your perfect UI */}
-      <div className="App">
-        {shieldedFloats.map(f => (
-          <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
-            SHIELDED
-          </div>
-        ))}
+      {shieldedFloats.map(f => (
+        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
+          SHIELDED
+        </div>
+      ))}
 
-        <div className="main-layout">
-          <div className="dashboard">
-            <header className="header">
-              <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-              <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-            </header>
-            <main>
-              <div className="card main-card">
-                <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-                <p className="block-num">#{latest?.height || '…'}</p>
-                <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}…</p>
-                <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
-              </div>
-              <div className="epoch-countdown">
-                EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-              </div>
-              <div className="stats-bar">
-                <span><strong>{recentBlocks.length}</strong> blocks</span>
-                <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
-              </div>
-            </main>
-            <footer>
-              <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-            </footer>
-          </div>
-          <div className="timeline">
-            {recentBlocks.map((b, i) => (
-              <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
-                <span className="height">#{b.height}</span>
-                <span className="txs">{b.tx_count || 0} tx</span>
-              </div>
-            ))}
-          </div>
+      <div className="main-layout">
+        <div className="dashboard">
+          <header className="header">
+            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+          </header>
+          <main>
+            <div className="card main-card">
+              <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+              <p className="block-num">#{latest?.height || '???'}</p>
+              <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+              <p className="txs">{recentBlocks[0]?.tx_count || 0} shielded transactions</p>
+            </div>
+            <div className="epoch-countdown">
+              EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+            </div>
+            <div className="stats-bar">
+              <span><strong>{recentBlocks.length}</strong> blocks</span>
+              <span><strong>{shieldedFloats.length}</strong> SHIELDED events</span>
+            </div>
+          </main>
+          <footer>
+            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+          </footer>
+        </div>
+        <div className="timeline">
+          {recentBlocks.map((b, i) => (
+            <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+              <span className="height">#{b.height}</span>
+              <span className="txs">{b.tx_count || 0} tx</span>
+            </div>
+          ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
