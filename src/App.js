@@ -16,22 +16,21 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // ONE COLUMN = ONE TRANSACTION
   const spawnOneColumnPerTx = (txCount) => {
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: Math.random() * window.innerWidth,
-        y: Math.random() * -1400,
-        speed: 0.8 + Math.random() * 1.4,        // ← SLOWER, MAJESTIC
-        length: 18 + Math.floor(Math.random() * 30),
-        headPos: Math.random() * 10,
+        y: Math.random() * -1600,
+        speed: 0.4 + Math.random() * 0.8,        // ← EVEN SLOWER, majestic
+        length: 20 + Math.floor(Math.random() * 35),
+        headPos: Math.random() * 8,
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-900);
+    columnsRef.current = columnsRef.current.slice(-1000);
   };
 
-  useEffect(() => { spawnOneColumnPerTx(7); }, []);
+  useEffect(() => { spawnOneColumnPerTx(6); }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +56,6 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // EPOCH COUNTDOWN
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -81,7 +79,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // TRUE MATRIX RAIN — FINAL CINEMATIC VERSION
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -94,34 +91,43 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    // THE EXACT MATRIX FONT FROM THE MOVIE
-    ctx.font = '28px "Matrix Code NFI", "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       columnsRef.current.forEach(col => {
-        col.y += col.speed;           // ← SLOWER SPEED
-        col.headPos += 0.35;
+        col.y += col.speed;
+        col.headPos += 0.3;
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.75 : Math.max(0.08, 1 - i / col.length);
+          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
 
           ctx.globalAlpha = brightness;
-          ctx.fillStyle = brightness > 0.9 ? 'white' : colors[col.hue];
-          ctx.shadowColor = brightness > 0.9 ? 'white' : colors[col.hue];
-          ctx.shadowBlur = brightness > 0.9 ? 90 : 18;
-          ctx.fillText(char, col.x, col.y - i * 32);
+          ctx.font = '29px "Matrix Code NFI", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          if (brightness > 0.9) {
+            // INTENSE WHITE GLOW — THE ONE FROM THE MOVIE
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 120;           // ← RETINA-BURNING GLOW
+            // Extra pass for even stronger glow
+            ctx.fillText(char, col.x, col.y - i * 34);
+            ctx.fillText(char, col.x, col.y - i * 34);
+          } else {
+            ctx.fillStyle = colors[col.hue];
+            ctx.shadowColor = colors[col.hue];
+            ctx.shadowBlur = 20;
+            ctx.fillText(char, col.x, col.y - i * 34);
+          }
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1600);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1800);
       requestAnimationFrame(draw);
     };
 
@@ -132,7 +138,6 @@ function App() {
 
   return (
     <div className="App" style={{ background: '#000', position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* LOAD THE REAL MATRIX FONT */}
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
       <canvas
