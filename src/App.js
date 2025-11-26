@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
@@ -8,25 +8,32 @@ const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [rainDrops, setRainDrops] = useState([]);
   const [shieldedFloats, setShieldedFloats] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [loading, setLoading] = useState(true);
 
-  const spawnMatrixRain = (txCount) => {
-    const drops = Math.min(txCount * 4, 50);
-    const newDrops = [];
+  const canvasRef = useRef(null);
+  const dropsRef = useRef([]);
 
-    for (let i = 0; i < drops; i++) {
+  // Real Matrix characters
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+
+  // Add new drops when a block arrives
+  const spawnRain = (txCount) => {
+    const newDrops = [];
+    const count = Math.min(txCount * 5, 80); // 1 tx = 5 drops, max 80
+
+    for (let i = 0; i < count; i++) {
       newDrops.push({
-        id: Date.now() + i,
-        left: Math.random() * 98 + 1,
-        speed: 8 + Math.random() * 10,
-        length: 15 + txCount * 2 + Math.floor(Math.random() * 30),
-        hue: i % 3   // 0=cyan, 1=magenta, 2=gold
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * -500,
+        speed: 2 + Math.random() * 4,
+        fontSize: 14 + Math.random() * 8,
+        length: 10 + Math.floor(txCount * 1.5) + Math.random() * 20,
+        hue: i % 3  // 0=cyan, 1=magenta, 2=gold
       });
     }
-    setRainDrops(prev => [...prev, ...newDrops].slice(-60)); // max 60 drops alive
+    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-400); // max 400 drops
   };
 
   const spawnShielded = () => {
@@ -46,10 +53,10 @@ function App() {
       const txs = await txRes.json();
 
       if (!latest || latest.hash !== block.hash) {
-        const txCount = txs.length;
+      const txCount = txs.length;
         setLatest(block);
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
-        spawnMatrixRain(txCount);
+        spawnRain(txCount);
         if (txCount > 0) spawnShielded();
         if (txCount > 15) confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
       }
@@ -57,6 +64,7 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -79,6 +87,59 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Canvas rain animation
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ['#00ffff', '#ff00ff', '#ffd700'];
+
+    const animate = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      dropsRef.current = dropsRef.current.filter(drop => drop.y < canvas.height + 200);
+
+      dropsRef.current.forEach(drop => {
+        drop.y += drop.speed * 2.5;
+
+        ctx.font = `${drop.fontSize}px monospace`;
+        ctx.fillStyle = colors[drop.hue];
+        ctx.shadowColor = colors[drop.hue];
+        ctx.shadowBlur = 10;
+
+        // Draw trail
+        for (let i = 0; i < drop.length; i++) {
+          const char = chars[Math.floor(Math.random() * chars.length)];
+          const opacity = 1 - i / drop.length;
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.fillText(char, drop.x, drop.y - i * drop.fontSize);
+        }
+
+        // White head
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'white';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 30;
+        ctx.fillText('█', drop.x, drop.y);
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     fetchData();
     const int = setInterval(fetchData, 7000);
@@ -87,31 +148,19 @@ function App() {
 
   if (loading) return <div className="loading">ENTERING THE SHADOWS...</div>;
 
-  const hueToColor = (h) => h === 0 ? '#00ffff' : h === 1 ? '#ff00ff' : '#ffd700';
-
   return (
     <div className="App">
-      {/* PERFECT, STABLE MATRIX RAIN — only 1 DOM node per drop */}
-      {rainDrops.map(drop => (
-        <div
-          key={drop.id}
-          className="matrix-rain"
-          style={{
-            '--x': `${drop.left}%`,
-            '--duration': `${drop.speed}s`,
-            '--length': `${drop.length * 24}px`,
-            '--color': hueToColor(drop.hue)
-          }}
-        />
-      ))}
+      {/* REAL MATRIX RAIN — canvas, no crashes, perfect */}
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* SHIELDED words */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* Your UI — unchanged */}
+      {/* Your existing UI */}
       <div className="main-layout">
         <div className="dashboard">
           <header className="header">
