@@ -16,26 +16,29 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  // PERFECT SCALING BASED ON SCREEN AREA (works on tall monitors!)
   const getScale = () => {
-    const base = Math.min(window.innerWidth, window.innerHeight);
-    return Math.max(0.7, Math.min(1.8, base / 900)); // perfect from phone → 4K
+    const area = window.innerWidth * window.innerHeight;
+    const referenceArea = 1920 * 1080;
+    return Math.sqrt(area / referenceArea); // area-based scaling = perfect density
   };
 
   const spawnOneColumnPerTx = (txCount) => {
     const scale = getScale();
-    const safeMargin = 180 * scale; // glow-safe zone
+    const safeMargin = 160 * scale;
 
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
-        y: -100 - Math.random() * 400,
+        y: -200 - Math.random() * 600,
         speed: (0.7 + Math.random() * 1.1) * scale,
-        length: 20 + Math.floor(Math.random() * 32),
+        length: Math.floor(20 + Math.random() * 35),
         headPos: Math.random() * 8,
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-1200);
+    // Keep reasonable column count — scales with screen size
+    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
   useEffect(() => {
@@ -85,7 +88,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // RESPONSIVE + PERFECT ON EVERY DEVICE
+  // FINAL RESPONSIVE RAIN — PERFECT ON TALL MONITORS
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -104,8 +107,8 @@ function App() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const scale = getScale();
-      const baseFontSize = 29 * scale;
-      const charSpacing = 34 * scale;
+      const baseFontSize = 28 * scale;
+      const charSpacing = 35 * scale;
       const glowSize = 120 * scale;
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
@@ -128,17 +131,17 @@ function App() {
             ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = glowSize;
             ctx.fillText(char, col.x, col.y - i * charSpacing);
-            ctx.fillText(char, col.x, col.y - i * charSpacing); // double intensity
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = 20 * scale;
+            ctx.shadowBlur = 22 * scale;
             ctx.fillText(char, col.x, col.y - i * charSpacing);
           }
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 3000 * scale);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
       requestAnimationFrame(draw);
     };
 
@@ -147,7 +150,7 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Force perfect mobile viewport
+  // Mobile viewport lock
   useEffect(() => {
     const meta = document.createElement('meta');
     meta.name = 'viewport';
@@ -156,7 +159,7 @@ function App() {
   }, []);
 
   return (
-    <div className="App" style={{ background: '#000', position: 'fixed', inset: 0, overflow: 'hidden' }}>
+    <div style={{ background: '#000', position: 'fixed', inset: 0, overflow: 'hidden' }}>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
       <canvas
@@ -170,7 +173,7 @@ function App() {
         </div>
       ))}
 
-      <div style={{ position: 'relative', zIndex: 10, padding: 'max(1rem, 3vw)' }}>
+      <div style={{ position: 'relative', zIndex: 10, padding: 'max(2rem, 4vh) max(2rem, 4vw)' }}>
         <div className="main-layout">
           <div className="dashboard">
             <header className="header">
