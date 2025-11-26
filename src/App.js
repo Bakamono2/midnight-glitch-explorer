@@ -15,13 +15,11 @@ function App() {
   const canvasRef = useRef(null);
   const dropsRef = useRef([]);
 
-  // Real Matrix characters
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
 
-  // Add new drops when a block arrives
   const spawnRain = (txCount) => {
     const newDrops = [];
-    const count = Math.min(txCount * 5, 80); // 1 tx = 5 drops, max 80
+    const count = Math.min(txCount * 5, 80);
 
     for (let i = 0; i < count; i++) {
       newDrops.push({
@@ -30,10 +28,10 @@ function App() {
         speed: 2 + Math.random() * 4,
         fontSize: 14 + Math.random() * 8,
         length: 10 + Math.floor(txCount * 1.5) + Math.random() * 20,
-        hue: i % 3  // 0=cyan, 1=magenta, 2=gold
+        hue: i % 3
       });
     }
-    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-400); // max 400 drops
+    dropsRef.current = [...dropsRef.current, ...newDrops].slice(-400);
   };
 
   const spawnShielded = () => {
@@ -48,20 +46,25 @@ function App() {
       const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY }});
       if (!res.ok) return;
       const block = await res.json();
+
       const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY }});
       if (!txRes.ok) return;
       const txs = await txRes.json();
 
       if (!latest || latest.hash !== block.hash) {
-      const txCount = txs.length;
-        setLatest(block);
+        const txCount = txs.length;
+        setLatest(block);                                      // ← THIS LINE WAS MISSING BEFORE
         setRecentBlocks(prev => [block, ...prev.filter(b => b.hash !== block.hash)].slice(0, 50));
         spawnRain(txCount);
         if (txCount > 0) spawnShielded();
-        if (txCount > 15) confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        if (txCount > 15) {
+          confetti({ particleCount: 600, spread: 200, origin: { y: 0.3 }, colors: ['#00ffff','#ff00ff','#ffd700','#39ff14'] });
+        }
       }
       setLoading(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Epoch countdown
@@ -87,7 +90,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Canvas rain animation
+  // Canvas Matrix rain
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -107,15 +110,15 @@ function App() {
         drop.y += drop.speed * 2.5;
 
         ctx.font = `${drop.fontSize}px monospace`;
-        ctx.fillStyle = colors[drop.hue];
-        ctx.shadowColor = colors[drop.hue];
         ctx.shadowBlur = 10;
 
-        // Draw trail
+        // Trail
         for (let i = 0; i < drop.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const opacity = 1 - i / drop.length;
-          ctx.globalAlpha = opacity * 0.8;
+          const opacity = Math.max(0, 1 - i / drop.length);
+          ctx.globalAlpha = opacity * 0.7;
+          ctx.fillStyle = colors[drop.hue];
+          ctx.shadowColor = colors[drop.hue];
           ctx.fillText(char, drop.x, drop.y - i * drop.fontSize);
         }
 
@@ -129,7 +132,6 @@ function App() {
 
       requestAnimationFrame(animate);
     };
-
     animate();
 
     const handleResize = () => {
@@ -140,6 +142,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Polling
   useEffect(() => {
     fetchData();
     const int = setInterval(fetchData, 7000);
@@ -150,17 +153,14 @@ function App() {
 
   return (
     <div className="App">
-      {/* REAL MATRIX RAIN — canvas, no crashes, perfect */}
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* SHIELDED words */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
         </div>
       ))}
 
-      {/* Your existing UI */}
       <div className="main-layout">
         <div className="dashboard">
           <header className="header">
