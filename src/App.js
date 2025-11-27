@@ -10,11 +10,12 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const canvasRef = useRef(null);
-  const columnsRef = useRef([]);
+  const dropsRef = useRef([]);           // All active rain drops
+  const animationIdRef = useRef(null);
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // Auto-collapse timeline on narrow screens
+  // Auto-collapse timeline
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1100) setIsTimelineOpen(false);
@@ -25,7 +26,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch latest block + spawn rain based on tx count
+  // Fetch new block + spawn rain based on transaction count
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -38,21 +39,17 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // SPAWN RAIN COLUMNS BASED ON TX COUNT
+          // SPAWN RAIN BASED ON TRANSACTION COUNT
           const txCount = txs.length;
+          const screenWidth = window.innerWidth;
           for (let i = 0; i < txCount; i++) {
-            columnsRef.current.push({
-              x: Math.random() * window.innerWidth,
-              y: -200 - Math.random() * 800,
-              speed: 2 + Math.random() * 4,
-              length: 15 + Math.floor(Math.random() * 20),
-              headPos: 0,
-              hue: Math.floor(Math.random() * 3)
+            dropsRef.current.push({
+              x: Math.random() * screenWidth,
+              y: -100 - Math.random() * 300,
+              speed: 4 + Math.random() * 8,
+              length: 10 + Math.floor(Math.random() * 15),
+              opacity: 1,
             });
-          }
-          // Limit total columns
-          if (columnsRef.current.length > 800) {
-            columnsRef.current = columnsRef.current.slice(-800);
           }
         }
       } catch (e) { console.error(e); }
@@ -86,54 +83,56 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // YOUR ORIGINAL TRANSACTION-DRIVEN DIGITAL RAIN
+  // CLEAN, STREAK-FREE DIGITAL RAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
 
-    const colors = ['#0ff', '#0f0', '#ff0'];
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      // Full fade-out to eliminate any streaks
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      columnsRef.current.forEach(col => {
-        col.y += col.speed;
-        col.headPos += 0.3;
+      dropsRef.current = dropsRef.current.filter(drop => {
+        drop.y += drop.speed;
 
-        for (let i = 0; i < col.length; i++) {
+        // Draw trail
+        for (let i = 0; i < drop.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const dist = Math.abs(i - col.headPos);
-          const opacity = dist < 1 ? 1 : Math.max(0.1, 1 - dist / 10);
-
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = dist < 2 ? '#fff' : colors[col.hue];
-          ctx.font = '18px monospace';
-          ctx.fillText(char, col.x, col.y + i * 25);
+          const trailY = drop.y - i * 20;
+          const opacity = Math.max(0, 1 - i / drop.length);
+          ctx.globalAlpha = opacity * drop.opacity;
+          ctx.fillStyle = i === 0 ? '#0ff' : '#0aa';
+          ctx.font = '16px monospace';
+          ctx.fillText(char, drop.x, trailY);
         }
+
+        // Remove drops that are off-screen
+        return drop.y < canvas.height + 200;
       });
 
-      // Clean up old columns
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
-      requestAnimationFrame(draw);
+      animationIdRef.current = requestAnimationFrame(draw);
     };
 
     draw();
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
     };
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
   }, []);
 
   return (
     <>
-      {/* YOUR DIGITAL RAIN — behind everything */}
+      {/* DIGITAL RAIN — perfect, no streaks */}
       <canvas
         ref={canvasRef}
         style={{
@@ -143,7 +142,7 @@ function App() {
           width: '100%',
           height: '100%',
           zIndex: 1,
-          pointerEvents: 'none'
+          pointerEvents: 'none',
         }}
       />
 
