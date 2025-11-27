@@ -38,6 +38,7 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
+  // Auto open/close on resize
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -45,6 +46,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Fetch blocks + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -60,11 +62,12 @@ function App() {
         }
       } catch (e) { console.error(e); }
     };
-    fetch περισσότεραData();
+    fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
   }, [latest]);
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -88,6 +91,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // DIGITAL RAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -153,7 +157,7 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT — untouched */}
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
@@ -178,7 +182,7 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL TIMELINE — icon-only, smaller, perfect */}
+      {/* TIMELINE + ICON-ONLY BUTTON (30px, perfect) */}
       <div style={{
         position: 'fixed',
         top: '50%',
