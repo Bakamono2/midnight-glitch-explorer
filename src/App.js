@@ -8,8 +8,21 @@ function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [timeLeft, setTimeLeft] = useState('Loading...');
-  const [txPerSecond, setTxPerSecond] = useState(0);
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
+
+  // Auto-collapse on narrow screens, but remember user choice on wide screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1100) {
+        setIsTimelineOpen(false);
+      } else {
+        setIsTimelineOpen(true); // auto-open on desktop
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch latest block
   useEffect(() => {
@@ -119,7 +132,7 @@ function App() {
         fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
         textAlign: 'center'
       }}>
-        <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>{txPerSecond.toFixed(1)}</span></div>
+        <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
         <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
         <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
       </div>
@@ -134,11 +147,11 @@ function App() {
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Timeline — original style, collapsible, 10 blocks only, hidden scrollbar */}
+      {/* Collapsible Timeline — original look */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-340px',
+        right: isTimelineOpen ? '2vw' : '-350px',
         transform: 'translateY(-50%)',
         width: '340px',
         maxHeight: '76vh',
@@ -147,21 +160,19 @@ function App() {
         padding: '1.5rem',
         border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.4)',
-        transition: 'right 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)',
         overflow: 'hidden',
         zIndex: 100
       }}>
         <div style={{
-          maxHeight: '100%',
+          height: '100%',
           overflowY: 'auto',
-          paddingRight: '10px',
-          marginRight: '-10px',
-          scrollbarWidth: 'none', /* Firefox */
-          msOverflowStyle: 'none'  /* IE/Edge */
+          paddingRight: '12px',
+          marginRight: '-12px',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
         }}>
-          <style jsx>{`
-            div::-webkit-scrollbar { display: none; }
-          `}</style>
+          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} style={{
               padding: '0.9rem 0',
@@ -178,28 +189,30 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button */}
+      {/* Sleek Toggle Button */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
           position: 'fixed',
           top: '50%',
-          right: isTimelineOpen ? '340px' : '10px',
+          right: isTimelineOpen ? '340px' : '8px',
           transform: 'translateY(-50%)',
-          width: '50px',
-          height: '100px',
-          background: 'rgba(0,255,255,0.15)',
+          width: '36px',
+          height: '80px',
+          background: 'rgba(0, 255, 255, 0.15)',
           border: '2px solid #0ff',
-          borderRadius: '25px 0 0 25px',
+          borderRadius: '20px 0 0 20px',
           color: '#0ff',
-          fontSize: '2rem',
+          fontSize: '1.6rem',
           fontWeight: 'bold',
           cursor: 'pointer',
-          boxShadow: '-10px 0 30px rgba(0,255,255,0.6)',
+          boxShadow: '-8px 0 25px rgba(0,255,255,0.5)',
           transition: 'all 0.4s ease',
           zIndex: 101,
-          outline: 'none'
+          outline: 'none',
+          backdropFilter: 'blur(4px)'
         }}
+        aria-label="Toggle timeline"
       >
         {isTimelineOpen ? '←' : '→'}
       </button>
