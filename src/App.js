@@ -11,55 +11,49 @@ function App() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const canvasRef = useRef(null);
 
-  // THE ORIGINAL, PERFECT DIGITAL RAIN — EXACTLY AS IT WAS
+  // THIS IS THE ORIGINAL DIGITAL RAIN — EXACTLY AS IT WAS
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
+    // Fixed size — just like the very first version
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const cols = Math.floor(w / 20) + 1;
-    const ypos = Array(cols).fill(0);
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    for (let i = 0; i < columns; i++) {
+      drops[i] = Math.random() * -100;
+    }
 
     const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#0ff';
-      ctx.font = '16pt monospace';
+      ctx.fillStyle = '#0f51';
+      ctx.font = fontSize + 'px monospace';
 
-      ypos.forEach((y, ind) => {
+      for (let i = 0; i < drops.length; i++) {
         const text = matrix[Math.floor(Math.random() * matrix.length)];
-        const x = ind * 20;
-        ctx.fillText(text, x, y);
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-        if (y > 100 + Math.random() * 10000) {
-          ypos[ind] = 0;
-        } else {
-          ypos[ind] = y + 20;
+        drops[i]++;
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
         }
-      });
+      }
     };
 
-    const interval = setInterval(draw, 50);
+    const interval = setInterval(draw, 35);
 
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  // Block fetching + transaction burst effect (original)
+  // Block fetching + original burst effect
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -72,20 +66,19 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // ORIGINAL TRANSACTION BURST — this is what made it feel alive
+          // ORIGINAL TRANSACTION BURST — pure magic
           const canvas = canvasRef.current;
-          if (!canvas) return;
           const ctx = canvas.getContext('2d');
-          const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789";
+          const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-          for (let i = 0; i < txs.length * 5; i++) {
+          for (let i = 0; i < txs.length * 4; i++) {
             setTimeout(() => {
               ctx.fillStyle = '#0ff';
-              ctx.font = '20pt monospace';
+              ctx.font = 'bold 20px monospace';
               const x = Math.random() * canvas.width;
               const y = Math.random() * canvas.height;
               ctx.fillText(matrix[Math.floor(Math.random() * matrix.length)], x, y);
-            }, i * 15);
+            }, i * 20);
           }
         }
       } catch (e) { console.error(e); }
@@ -95,7 +88,7 @@ function App() {
     return () => clearInterval(interval);
   }, [latest]);
 
-  // Auto-collapse timeline
+  // Timeline auto-hide on mobile
   useEffect(() => {
     const handleResize = () => setIsTimelineOpen(window.innerWidth >= 1100);
     handleResize();
@@ -131,7 +124,15 @@ function App() {
     <>
       <canvas
         ref={canvasRef}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1,
+          pointerEvents: 'none'
+        }}
       />
 
       <div style={{
@@ -148,8 +149,12 @@ function App() {
         padding: '4vh 5vw'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
+            MIDNIGHT
+          </h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>
+            EXPLORER
+          </p>
         </div>
 
         <div style={{
@@ -162,8 +167,12 @@ function App() {
           textAlign: 'center',
           backdropFilter: 'blur(6px)'
         }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
+            LATEST BLOCK
+          </h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>
+            #{latest?.height || '...'}
+          </p>
           <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
             Hash: {(latest?.hash || '').slice(0, 32)}...
           </p>
@@ -190,7 +199,12 @@ function App() {
           <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
-        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
+        <footer style={{
+          marginTop: 'auto',
+          paddingBottom: '3vh',
+          opacity: 0.7,
+          fontSize: 'clamp(1rem, 2vw, 1.4rem)'
+        }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
@@ -238,6 +252,7 @@ function App() {
         </div>
       </div>
 
+      {/* Toggle Button */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
@@ -261,7 +276,7 @@ function App() {
           backdropFilter: 'blur(8px)'
         }}
       >
-        {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
+        {isTimelineOpen ? '←' : '→'}
       </button>
     </>
   );
