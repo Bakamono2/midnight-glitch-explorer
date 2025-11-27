@@ -38,6 +38,8 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
+  // ← All useEffect blocks unchanged (fetching, epoch, canvas) — they are perfect
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -89,16 +91,11 @@ function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener('resize', resize);
 
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
-
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const scale = getScale();
@@ -113,14 +110,11 @@ function App() {
       columnsRef.current.forEach(col => {
         col.y += col.speed;
         col.headPos += 0.3;
-
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           const dist = Math.abs(i - col.headPos);
           const bright = dist < 1 ? 1 : dist < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
-
           ctx.globalAlpha = bright;
-
           if (bright > 0.9) {
             ctx.fillStyle = 'white';
             ctx.shadowColor = '#fff';
@@ -135,11 +129,9 @@ function App() {
           }
         }
       });
-
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
       requestAnimationFrame(draw);
     };
-
     draw();
     return () => window.removeEventListener('resize', resize);
   }, []);
@@ -155,55 +147,59 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+      {/* Digital Rain */}
+      <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN DASHBOARD — PERFECT ON EVERY RESOLUTION */}
+      {/* Dashboard — fixed once and for all */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10,
-        padding: '2vh 4vw',
+        padding: '3vh 4vw',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         pointerEvents: 'none'
       }}>
-        {/* TOP: Title + Main Card + Epoch */}
+        {/* TOP */}
         <div style={{ pointerEvents: 'auto', textAlign: 'center' }}>
+          {/* Title */}
           <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
           <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
 
-          <div className="main-card" style={{ margin: '3vh auto', maxWidth: '680px', padding: '2rem', borderRadius: '12px', background: 'rgba(0,0,0,0.6)', border: '2px solid #0ff', boxShadow: '0 0 30px #0ff' }}>
+          {/* Main Card */}
+          <div className="main-card" style={{ margin: '4vh auto', maxWidth: '720px' }}>
             <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
             <p className="block-num">#{latest?.height || '...'}</p>
             <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
 
-          <div className="epoch-countdown" style={{ marginTop: '2vh', fontSize: 'clamp(1.6rem, 3.5vw, 2.8rem)', color: '#0ff' }}>
+          {/* Epoch Clock — no stretching */}
+          <div className="epoch-countdown" style={{ marginTop: '2vh', fontSize: 'clamp(1.4rem, 3vw, 2.4rem)' }}>
             EPOCH ENDS IN <span className="timer">{timeLeft}</span>
           </div>
         </div>
 
-        {/* BOTTOM: Footer left + Timeline right */}
+        {/* BOTTOM */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'auto' }}>
-          <footer>
-            <p style={{ margin: 0, opacity: 0.8 }}>
+          {/* Footer — centered */}
+          <footer style={{ width: '100%', textAlign: 'center' }}>
+            <p style={{ margin: 0, opacity: 0.7 }}>
               <span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened
             </p>
           </footer>
 
-          {/* Timeline — fixed width, max height, scrollable */}
+          {/* Timeline — fixed size, no overlap */}
           <div style={{
             width: '340px',
             maxHeight: '58vh',
             overflowY: 'auto',
-            padding: '1rem',
             background: 'rgba(0,0,0,0.4)',
             borderRadius: '12px',
-            border: '1px solid #0ff33',
-            boxShadow: '0 0 20px rgba(0,255,255,0.2)'
+            padding: '1rem',
+            border: '1px solid #0ff3'
           }}>
             <div className="timeline">
               {recentBlocks.slice(0, 30).map((b, i) => (
@@ -217,7 +213,7 @@ function App() {
         </div>
       </div>
 
-      {/* SHIELDED floating words */}
+      {/* Shielded Text */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
