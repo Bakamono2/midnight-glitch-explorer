@@ -38,7 +38,7 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Smart auto-collapse: open only on large screens
+  // Smart auto-open/collapse based on screen width
   useEffect(() => {
     const checkScreenSize = () => {
       setIsTimelineOpen(window.innerWidth >= 1100);
@@ -48,7 +48,7 @@ function App() {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Fetch latest block + spawn rain
+  // Fetch + rain spawn
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -95,7 +95,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — perfect, scaling, glowing, untouched
+  // DIGITAL RAIN — untouched perfection
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -159,7 +159,6 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -188,13 +187,10 @@ function App() {
         gap: '4vh',
         padding: '4vh 5vw'
       }}>
+        {/* ... your perfect content ... */}
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
-            MIDNIGHT
-          </h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>
-            EXPLORER
-          </p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
         <div style={{
@@ -207,12 +203,8 @@ function App() {
           textAlign: 'center',
           backdropFilter: 'blur(6px)'
         }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
-            LATEST BLOCK
-          </h2>
-          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>
-            #{latest?.height || '...'}
-          </p>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
             Hash: {(latest?.hash || '').slice(0, 32)}...
           </p>
@@ -239,17 +231,12 @@ function App() {
           <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
-        <footer style={{
-          marginTop: 'auto',
-          paddingBottom: '3vh',
-          opacity: 0.7,
-          fontSize: 'clamp(1rem, 2vw, 1.4rem)'
-        }}>
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
 
-      {/* Collapsible Timeline */}
+      {/* TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -292,7 +279,7 @@ function App() {
         </div>
       </div>
 
-      {/* SMART TOGGLE BUTTON — perfect on every device */}
+      {/* PERFECT TOGGLE BUTTON — arrow now correct */}
       <button
         onClick={() => setIsTimelineOpen(prev => !prev)}
         style={{
@@ -300,19 +287,19 @@ function App() {
           top: '50%',
           transform: 'translateY(-50%)',
           right: isTimelineOpen
-            ? 'max(12px, calc(50vw - 170px))'   // pulls back on narrow screens
-            : '12px',                             // hugs edge when closed
+            ? 'max(12px, calc(50vw - 170px))'
+            : '12px',
           width: '42px',
           height: '80px',
           background: 'rgba(0, 255, 255, 0.28)',
           border: '2px solid #0ff',
           borderRadius: '20px 0 0 20px',
           color: '#0ff',
-          fontSize: '2.2rem',
+          fontSize: '2.4rem',
           fontWeight: 'bold',
           cursor: 'pointer',
           boxShadow: isTimelineOpen 
-            ? '-10px 0 40px rgba(0,255,255,0.8)' 
+            ? '-12px 0 45px rgba(0,255,255,0.9)' 
             : '-6px 0 25px rgba(0,255,255,0.6)',
           transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
           zIndex: 101,
@@ -324,9 +311,9 @@ function App() {
           userSelect: 'none',
           touchAction: 'manipulation'
         }}
-        aria-label={isTimelineOpen ? 'Collapse timeline' : 'Expand timeline'}
+        aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
       >
-        {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
+        {isTimelineOpen ? '←' : '→'}
       </button>
     </>
   );
