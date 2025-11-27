@@ -156,7 +156,7 @@ function App() {
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* MAIN CONTENT — untouched */}
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
@@ -181,40 +181,40 @@ function App() {
         </footer>
       </div>
 
-      {/* SLIM, CORRECT, FINAL TIMELINE */}
+      {/* FINAL RESPONSIVE TIMELINE – slim, perfect, no more bugs */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-30px',   // Only hides content, button stays visible
+        right: isTimelineOpen ? '2vw' : '0',           // button stays visible
         transform: 'translateY(-50%)',
-        width: '330px',
+        width: 'clamp(300px, 22vw, 320px)',           // responsive slim width
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
         borderRadius: '16px',
         border: '2px solid #0ff',
-        boxShadow: '0 0 40px rgba(0,255,255,0.4)',
+        boxShadow: '0 0 40px rgba(0,255,255,0.5)',
         transition: 'right 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
         zIndex: 100,
         backdropFilter: 'blur(8px)',
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* CLEAN ICON-ONLY BUTTON — always visible */}
+        {/* ICON-ONLY ARROW BUTTON – always visible */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
-            width: '30px',
+            width: '32px',
             height: '100%',
-            background: 'rgba(0, 255, 255, 0.35)',
+            background: 'rgba(0, 255, 255, 0.38)',
             border: 'none',
             borderRight: '2px solid #0ff',
             borderRadius: '16px 0 0 16px',
             color: '#0ff',
-            fontSize: '1.8rem',
+            fontSize: '1.9rem',
             fontWeight: 'bold',
             cursor: 'pointer',
-            boxShadow: '-12px 0 40px rgba(0,255,255,1)',
+            boxShadow: '-14px 0 45px rgba(0,255,255,1)',
             transition: 'all 0.4s ease',
             display: 'flex',
             alignItems: 'center',
@@ -229,22 +229,22 @@ function App() {
           {isTimelineOpen ? 'Right Arrow' : 'Left Arrow'}
         </button>
 
-        {/* SLIM TIMELINE CONTENT */}
-        <div style={{ 
-          width: '300px',
-          padding: '1.5rem',
+        {/* TIMELINE CONTENT */}
+        <div style={{
+          flex: 1,
+          padding: '1.4rem 1.2rem',
           overflowY: 'auto',
           scrollbarWidth: 'none'
         }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} style={{
-              padding: '0.9rem 0',
+              padding: '0.85rem 0',
               borderBottom: i < 9 ? '1px dashed #033' : 'none',
               color: i === 0 ? '#0f0' : '#0ff',
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '1.1rem'
+              fontSize: '1.05rem'
             }}>
               <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
               <span>{b.tx_count || 0} tx</span>
