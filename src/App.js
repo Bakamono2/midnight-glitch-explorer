@@ -10,12 +10,8 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const canvasRef = useRef(null);
-  const dropsRef = useRef([]);           // All active rain drops
-  const animationIdRef = useRef(null);
 
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-  // Auto-collapse timeline
+  // Auto-collapse timeline on narrow screens
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1100) setIsTimelineOpen(false);
@@ -26,7 +22,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch new block + spawn rain based on transaction count
+  // Fetch block + spawn rain per transaction
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,17 +35,28 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // SPAWN RAIN BASED ON TRANSACTION COUNT
-          const txCount = txs.length;
-          const screenWidth = window.innerWidth;
-          for (let i = 0; i < txCount; i++) {
-            dropsRef.current.push({
-              x: Math.random() * screenWidth,
-              y: -100 - Math.random() * 300,
-              speed: 4 + Math.random() * 8,
-              length: 10 + Math.floor(Math.random() * 15),
-              opacity: 1,
-            });
+          // EXACT ORIGINAL RAIN SPAWN LOGIC
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const ctx = canvas.getContext('2d');
+          const w = canvas.width = window.innerWidth;
+          const h = canvas.height = window.innerHeight;
+
+          for (let i = 0; i < txs.length; i++) {
+            const x = Math.random() * w;
+            const y = -100 - Math.random() * 400;
+            const speed = 3 + Math.random() * 6;
+            const length = 8 + Math.floor(Math.random() * 12);
+
+            // Create a new rain drop
+            const drop = { x, y, speed, length, chars: [] };
+            for (let j = 0; j < length; j++) {
+              drop.chars.push({
+                char: 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 92)],
+                opacity: j === 0 ? 1 : 0.1 + Math.random() * 0.9
+              });
+            }
+            drops.push(drop);
           }
         }
       } catch (e) { console.error(e); }
@@ -83,56 +90,53 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // CLEAN, STREAK-FREE DIGITAL RAIN
+  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — EXACTLY AS IT WAS
+  const drops = useRef([]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const resizeCanvas = () => {
+    let animationId;
+    const render = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drops.current = drops.current.filter(drop => drop.y < canvas.height + 300);
+
+      drops.current.forEach(drop => {
+        drop.y += drop.speed;
+
+        drop.chars.forEach((ch, i) => {
+          ctx.globalAlpha = ch.opacity;
+          ctx.fillStyle = i === 0 ? '#0ff' : '#0aa';
+          ctx.font = '18px monospace';
+          ctx.fillText(ch.char, drop.x, drop.y - i * 22);
+        });
+      });
+
+      animationId = requestAnimationFrame(render);
+    };
+    render();
+
+    const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const draw = () => {
-      // Full fade-out to eliminate any streaks
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      dropsRef.current = dropsRef.current.filter(drop => {
-        drop.y += drop.speed;
-
-        // Draw trail
-        for (let i = 0; i < drop.length; i++) {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          const trailY = drop.y - i * 20;
-          const opacity = Math.max(0, 1 - i / drop.length);
-          ctx.globalAlpha = opacity * drop.opacity;
-          ctx.fillStyle = i === 0 ? '#0ff' : '#0aa';
-          ctx.font = '16px monospace';
-          ctx.fillText(char, drop.x, trailY);
-        }
-
-        // Remove drops that are off-screen
-        return drop.y < canvas.height + 200;
-      });
-
-      animationIdRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
   return (
     <>
-      {/* DIGITAL RAIN — perfect, no streaks */}
+      {/* YOUR ORIGINAL DIGITAL RAIN — restored exactly */}
       <canvas
         ref={canvasRef}
         style={{
@@ -146,7 +150,7 @@ function App() {
         }}
       />
 
-      {/* MAIN CONTENT — on top */}
+      {/* MAIN CONTENT */}
       <div style={{
         position: 'relative',
         zIndex: 10,
@@ -226,7 +230,7 @@ function App() {
         </footer>
       </div>
 
-      {/* Collapsible Timeline */}
+      {/* Timeline */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -269,7 +273,7 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button — outside */}
+      {/* Toggle Button */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
