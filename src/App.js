@@ -155,10 +155,9 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</1>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
           <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
@@ -180,7 +179,7 @@ function App() {
         </footer>
       </div>
 
-      {/* PERFECT TIMELINE – ONLY TAB VISIBLE WHEN CLOSED */}
+      {/* FINAL TIMELINE – ONLY TAB VISIBLE WHEN CLOSED */}
       <div style={{
         position: 'fixed',
         top: '50%',
