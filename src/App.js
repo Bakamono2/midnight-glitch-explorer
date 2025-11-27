@@ -10,7 +10,6 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [txPerSecond, setTxPerSecond] = useState(0);
 
-  // Fetch blocks
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,7 +29,6 @@ function App() {
     return () => clearInterval(interval);
   }, [latest, recentBlocks]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -66,7 +64,7 @@ function App() {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: '4vh',                     // ← dynamic gap between elements
+      gap: '4vh',
       padding: '4vh 4vw'
     }}>
 
@@ -104,7 +102,7 @@ function App() {
         </p>
       </div>
 
-      {/* DASHBOARD — automatically spaced below Main Card */}
+      {/* Dashboard — perfectly spaced below */}
       <div style={{
         width: 'min(720px, 90vw)',
         padding: '1.4rem 2rem',
@@ -132,31 +130,33 @@ function App() {
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Timeline — fixed on right, never interferes */}
+      {/* Timeline — now fully responsive, never overlaps anything */}
       <div style={{
         position: 'fixed',
-        top: '10vh',
+        top: '50%',
         right: '2vw',
-        width: '340px',
+        transform: 'translateY(-50%)',
+        width: 'clamp(280px, 28vw, 380px)',
         maxHeight: '80vh',
         overflowY: 'auto',
-        background: 'rgba(0,10,30,0.9)',
+        background: 'rgba(0,10,30,0.92)',
         borderRadius: '16px',
         padding: '1.5rem',
         border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.4)',
-        zIndex: 10,
-        fontSize: '1.1rem'
+        fontSize: 'clamp(0.9rem, 1.4vw, 1.2rem)',
+        zIndex: 10
       }}>
         {recentBlocks.slice(0, 30).map((b, i) => (
           <div key={b.hash} style={{
             padding: '0.8rem 0',
             borderBottom: i < 29 ? '1px dashed #033' : 'none',
-            color: i === 0 ? '#0f0' : '#0ff'
+            color: i === 0 ? '#0f0' : '#0ff',
+            display: 'flex',
+            justifyContent: 'space-between'
           }}>
-            <span style={{ float: 'left', fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
-            <span style={{ float: 'right' }}>{b.tx_count || 0} tx</span>
-            <div style={{ clear: 'both' }}></div>
+            <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
+            <span>{b.tx_count || 0} tx</span>
           </div>
         ))}
       </div>
