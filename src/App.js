@@ -10,6 +10,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [txPerSecond, setTxPerSecond] = useState(0);
 
+  // Fetching logic unchanged
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,18 +55,18 @@ function App() {
 
   return (
     <div style={{
-      position: 'fixed',
-      inset: 0,
+      minHeight: '100vh',
       background: '#000',
       color: '#0ff',
       fontFamily: '"Courier New", monospace',
-      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: '4vh',
-      padding: '4vh 4vw'
+      padding: '4vh 5vw',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
 
       {/* Title */}
@@ -102,7 +103,7 @@ function App() {
         </p>
       </div>
 
-      {/* Dashboard — perfectly spaced below */}
+      {/* Dashboard */}
       <div style={{
         width: 'min(720px, 90vw)',
         padding: '1.4rem 2rem',
@@ -123,37 +124,42 @@ function App() {
       {/* Footer */}
       <footer style={{
         marginTop: 'auto',
+        paddingBottom: '3vh',
         opacity: 0.7,
-        fontSize: 'clamp(1rem, 2vw, 1.4rem)',
-        paddingBottom: '2vh'
+        fontSize: 'clamp(1rem, 2vw, 1.4rem)'
       }}>
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Timeline — now fully responsive, never overlaps anything */}
+      {/* TIMELINE — only visible when screen is wide enough */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: '2vw',
+        right: 0,
         transform: 'translateY(-50%)',
-        width: 'clamp(280px, 28vw, 380px)',
-        maxHeight: '80vh',
+        width: 'clamp(300px, 28vw, 380px)',
+        maxHeight: '85vh',
+        background: 'rgba(0,10,30,0.94)',
+        borderLeft: '2px solid #0ff',
+        borderTop: '2px solid #0ff',
+        borderBottom: '2px solid #0ff',
+        borderRadius: '16px 0 0 16px',
+        padding: '2rem 1.5rem',
+        boxShadow: '-10px 0 40px rgba(0,255,255,0.5)',
         overflowY: 'auto',
-        background: 'rgba(0,10,30,0.92)',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        border: '2px solid #0ff',
-        boxShadow: '0 0 40px rgba(0,255,255,0.4)',
-        fontSize: 'clamp(0.9rem, 1.4vw, 1.2rem)',
-        zIndex: 10
+        zIndex: 10,
+        transition: 'transform 0.4s ease',
+        // Hide completely on screens narrower than ~1000px
+        ...(window.innerWidth < 1000 && { transform: 'translateX(100%) translateY(-50%)' })
       }}>
         {recentBlocks.slice(0, 30).map((b, i) => (
           <div key={b.hash} style={{
-            padding: '0.8rem 0',
+            padding: '0.9rem 0',
             borderBottom: i < 29 ? '1px dashed #033' : 'none',
             color: i === 0 ? '#0f0' : '#0ff',
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            fontSize: '1rem'
           }}>
             <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
             <span>{b.tx_count || 0} tx</span>
