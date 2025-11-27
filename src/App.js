@@ -38,7 +38,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Auto open on large screens
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -46,7 +45,6 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch latest block + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -59,8 +57,9 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
-        200;
-        } catch (e) { console.error(e); }
+        }
+      } catch (e) {
+        console.error(e);
       }
     };
     fetchData();
@@ -68,7 +67,6 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -92,7 +90,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Digital rain
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -161,7 +158,7 @@ function App() {
       {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</1>
           <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
@@ -183,11 +180,11 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL FIXED TIMELINE – ONLY BUTTON VISIBLE WHEN CLOSED */}
+      {/* PERFECT TIMELINE – ONLY TAB VISIBLE WHEN CLOSED */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-288px',   // 320px total – 32px button = 288px hidden
+        right: isTimelineOpen ? '2vw' : '-288px',
         transform: 'translateY(-50%)',
         width: '320px',
         height: '76vh',
@@ -202,7 +199,6 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* GLOWING TAB – ALWAYS VISIBLE */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
@@ -229,7 +225,6 @@ function App() {
           {isTimelineOpen ? 'Right Arrow' : 'Left Arrow'}
         </button>
 
-        {/* TIMELINE CONTENT */}
         <div style={{
           flex: 1,
           padding: '1.5rem',
