@@ -179,7 +179,7 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL TIMELINE – ONLY TAB VISIBLE WHEN CLOSED */}
+      {/* FINAL TIMELINE – PURE ARROWS ONLY */}
       <div style={{
         position: 'fixed',
         top: '50%',
