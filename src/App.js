@@ -37,8 +37,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // ← All useEffects unchanged (fetching, epoch, canvas) — only z-index fixed below
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -134,85 +132,60 @@ function App() {
   }, []);
 
   return (
-    <>
+    <div style={{ position: 'fixed', inset: 0, background: '#000', color: '#0ff', fontFamily: '"Matrix Code NFI", monospace' }}>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* Digital Rain — background */}
-      <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
+      {/* Digital Rain — always background */}
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
 
-      {/* Dashboard — foreground, zIndex 10 */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-        {/* Title */}
-        <h1 className="glitch-title" data-text="MIDNIGHT" style={{ position: 'absolute', top: '6vh', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'auto' }}>
-          MIDNIGHT
-        </h1>
-        <p className="subtitle" data-text="EXPLORER" style={{ position: 'absolute', top: '18vh', left: '50%', transform: 'translateX(-50%)' }}>
-          EXPLORER
-        </p>
+      {/* Everything else — always on top */}
+      <div style={{ position: 'relative', zIndex: 10, height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '2vh 4vw' }}>
 
-        {/* Main Card */}
-        <div className="main-card" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(720px, 88vw)', pointerEvents: 'auto' }}>
-          <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
-          <p className="block-num">#{latest?.height || '...'}</p>
-          <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
-          <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
+        {/* Top: Title + Main Card + Epoch Clock */}
+        <div style={{ textAlign: 'center' }}>
+          <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+          <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+
+          <div className="main-card" style={{ margin: '4vh auto', maxWidth: '720px' }}>
+            <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
+            <p className="block-num">#{latest?.height || '...'}</p>
+            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+            <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
+          </div>
+
+          <div style={{ marginTop: '3vh', fontSize: 'clamp(1.6rem, 3.5vw, 2.6rem)' }}>
+            <div style={{ display: 'inline-block', padding: '0.8rem 3rem', background: 'rgba(0,0,0,0.7)', border: '2px solid #f0f', borderRadius: '50px', boxShadow: '0 0 30px #f0f' }}>
+              EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Epoch Clock */}
-        <div style={{
-          position: 'absolute',
-          bottom: '14vh',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.7)',
-          padding: '0.8rem 2.5rem',
-          borderRadius: '50px',
-          border: '2px solid #f0f',
-          boxShadow: '0 0 30px #f0f',
-          fontSize: 'clamp(1.4rem, 3vw, 2.4rem)',
-          whiteSpace: 'nowrap'
-        }}>
-          EPOCH ENDS IN <span className="timer">{timeLeft}</span>
-        </div>
+        {/* Bottom: Footer + Timeline */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <footer style={{ opacity: 0.7 }}>
+            <p style={{ margin: 0 }}><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+          </footer>
 
-        {/* Footer */}
-        <footer style={{ position: 'absolute', bottom: '4vh', left: '50%', transform: 'translateX(-50%)', opacity: 0.7 }}>
-          <p style={{ margin: 0 }}><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-        </footer>
-
-        {/* Timeline — fixed width, no overlap */}
-        <div style={{
-          position: 'absolute',
-          top: '12vh',
-          right: '3vw',
-          width: '340px',
-          maxHeight: '72vh',
-          overflowY: 'auto',
-          background: 'rgba(0,10,30,0.7)',
-          borderRadius: '12px',
-          padding: '1rem',
-          border: '1px solid #0ff',
-          boxShadow: '0 0 25px rgba(0,255,255,0.3)',
-          pointerEvents: 'auto'
-        }}>
-          <div className="timeline">
-            {recentBlocks.slice(0, 30).map((b, i) => (
-              <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
-                <span className="height">#{b.height}</span>
-                <span className="txs">{b.tx_count || 0} tx</span>
-              </div>
-            ))}
+          <div style={{ width: '340px', maxHeight: '60vh', overflowY: 'auto', background: 'rgba(0,10,30,0.8)', borderRadius: '12px', padding: '1rem', border: '1px solid #0ff', boxShadow: '0 0 25px rgba(0,255,255,0.4)' }}>
+            <div className="timeline">
+              {recentBlocks.slice(0, 30).map((b, i) => (
+                <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+                  <span className="height">#{b.height}</span>
+                  <span className="txs">{b.tx_count || 0} tx</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Shielded Text */}
       {shieldedFloats.map(f => (
-        <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%`, zIndex: 5 }}>
+        <div key={f.id} className="shielded-fall" style={{ position: 'fixed', left: `${f.left}%`, zIndex: 5 }}>
           SHIELDED
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
