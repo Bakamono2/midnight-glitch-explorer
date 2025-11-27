@@ -38,8 +38,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // ← All useEffect blocks unchanged (fetching, epoch, canvas) — they are perfect
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -150,21 +148,20 @@ function App() {
       {/* Digital Rain */}
       <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* Dashboard — fixed once and for all */}
+      {/* Dashboard — FINAL FIXED LAYOUT */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10,
-        padding: '3vh 4vw',
+        padding: '3vh 5vw',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         pointerEvents: 'none'
       }}>
-        {/* TOP */}
+        {/* TOP SECTION */}
         <div style={{ pointerEvents: 'auto', textAlign: 'center' }}>
-          {/* Title */}
           <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
           <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
 
@@ -176,30 +173,36 @@ function App() {
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
 
-          {/* Epoch Clock — no stretching */}
-          <div className="epoch-countdown" style={{ marginTop: '2vh', fontSize: 'clamp(1.4rem, 3vw, 2.4rem)' }}>
-            EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+          {/* Epoch Clock — contained, no stretch */}
+          <div style={{ marginTop: '3vh', fontSize: 'clamp(1.6rem, 3.5vw, 2.8rem)', color: '#0ff' }}>
+            <div style={{ display: 'inline-block', padding: '0.5rem 2rem', background: 'rgba(0,0,0,0.6)', border: '2px solid #f0f', borderRadius: '50px', boxShadow: '0 0 30px #f0f' }}>
+              EPOCH ENDS IN <span className="timer">{timeLeft}</span>
+            </div>
           </div>
         </div>
 
-        {/* BOTTOM */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'auto' }}>
+        {/* BOTTOM SECTION — Footer + Timeline */}
+        <div style={{ pointerEvents: 'auto' }}>
           {/* Footer — centered */}
-          <footer style={{ width: '100%', textAlign: 'center' }}>
-            <p style={{ margin: 0, opacity: 0.7 }}>
+          <footer style={{ textAlign: 'center', marginBottom: '2vh' }}>
+            <p style={{ margin: 0, opacity: 0.7, fontSize: '1.1rem' }}>
               <span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened
             </p>
           </footer>
 
-          {/* Timeline — fixed size, no overlap */}
+          {/* Timeline — right side, fixed size */}
           <div style={{
+            position: 'absolute',
+            right: '4vw',
+            bottom: '8vh',
             width: '340px',
-            maxHeight: '58vh',
+            maxHeight: '55vh',
             overflowY: 'auto',
-            background: 'rgba(0,0,0,0.4)',
+            background: 'rgba(0,10,20,0.7)',
             borderRadius: '12px',
             padding: '1rem',
-            border: '1px solid #0ff3'
+            border: '1px solid #0ff',
+            boxShadow: '0 0 20px rgba(0,255,255,0.3)'
           }}>
             <div className="timeline">
               {recentBlocks.slice(0, 30).map((b, i) => (
