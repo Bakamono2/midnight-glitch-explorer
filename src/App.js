@@ -38,17 +38,15 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Smart auto-open/collapse
+  // Auto open/close on resize
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsTimelineOpen(window.innerWidth >= 1100);
-    };
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch + rain spawn
+  // Fetch blocks + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,16 +56,15 @@ function App() {
         const txs = await txRes.json();
 
         if (!latest || latest.hash !== block.hash) {
-          const txCount = txs.length;
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txCount);
+          spawnOneColumnPerTx(txs.length);
         }
       } catch (e) { console.error(e); }
     };
     fetchData();
-    const interval = setInterval(fetchData, 8000);
-    return () => clearInterval(interval);
+    const id = setInterval(fetchData, 8000);
+    return () => clearInterval(id);
   }, [latest]);
 
   // Epoch countdown
@@ -81,7 +78,6 @@ function App() {
       } catch {}
     };
     fetchEpoch();
-
     const timer = setInterval(() => {
       if (!epochEnd) return;
       const diff = epochEnd - Date.now();
@@ -159,60 +155,29 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* MAIN CONTENT */}
+      {/* MAIN CONTENT — unchanged perfection */}
       <div style={{
-        position: 'relative',
-        zIndex: 10,
-        minHeight: '100vh',
-        background: 'transparent',
-        color: '#0ff',
-        fontFamily: '"Courier New", monospace',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '4vh',
-        padding: '4vh 5vw'
+        position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff',
+        fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
-            MIDNIGHT
-          </h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>
-            EXPLORER
-          </p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
         <div style={{
-          width: 'min(720px, 90vw)',
-          padding: '3rem',
-          background: 'rgba(0,15,30,0.95)',
-          border: '2px solid #0ff',
-          borderRadius: '20px',
-          boxShadow: '0 0 50px #0ff',
-          textAlign: 'center',
-          backdropFilter: 'blur(6px)'
+          width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)',
+          border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff',
+          textAlign: 'center', backdropFilter: 'blur(6px)'
         }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
-            LATEST BLOCK
-          </h2>
-          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>
-            #{latest?.height || '...'}
-          </p>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
             Hash: {(latest?.hash || '').slice(0, 32)}...
           </p>
@@ -222,40 +187,28 @@ function App() {
         </div>
 
         <div style={{
-          width: 'min(720px, 90vw)',
-          padding: '1.4rem 2rem',
-          background: 'rgba(0,20,40,0.95)',
-          border: '2px solid #0ff',
-          borderRadius: '16px',
-          boxShadow: '0 0 35px #0ff',
-          display: 'flex',
-          justifyContent: 'space-around',
-          fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
-          textAlign: 'center',
-          backdropFilter: 'blur(6px)'
+          width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)',
+          border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff',
+          display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
+          textAlign: 'center', backdropFilter: 'blur(6px)'
         }}>
           <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
           <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
-        <footer style={{
-          marginTop: 'auto',
-          paddingBottom: '3vh',
-          opacity: 0.7,
-          fontSize: 'clamp(1rem, 2vw, 1.4rem)'
-        }}>
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
 
-      {/* TIMELINE + ATTACHED BUTTON — ONE SEAMLESS UNIT */}
+      {/* TIMELINE + BUTTON ON THE CORRECT (LEFT) SIDE */}
       <div style={{
         position: 'fixed',
         top: '50%',
         right: isTimelineOpen ? '2vw' : '-360px',
         transform: 'translateY(-50%)',
-        width: '340px',
+        width: '382px',                    // 340px panel + 42px button
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
@@ -266,18 +219,17 @@ function App() {
         zIndex: 100,
         backdropFilter: 'blur(8px)',
         overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'row-reverse'
+        display: 'flex'
       }}>
-        {/* ATTACHED TOGGLE BUTTON */}
+        {/* BUTTON — now correctly on the LEFT side of the panel */}
         <button
-          onClick={() => setIsTimelineOpen(prev => !prev)}
+          onClick={() => setIsTimelineOpen(p => !p)}
           style={{
             width: '42px',
             height: '100%',
             background: 'rgba(0, 255, 255, 0.28)',
             border: 'none',
-            borderLeft: '2px solid #0ff',
+            borderRight: '2px solid #0ff',         // border on the right side of button
             borderRadius: '16px 0 0 16px',
             color: '#0ff',
             fontSize: '2.4rem',
@@ -305,8 +257,7 @@ function App() {
           flex: 1,
           padding: '1.5rem',
           overflowY: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          scrollbarWidth: 'none'
         }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
