@@ -38,16 +38,14 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Auto-collapse timeline on mobile + handle resize
+  // Smart auto-collapse: open only on large screens
   useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 900; // safe threshold
-      setIsTimelineOpen(!isMobile); // open on desktop, closed on mobile
+    const checkScreenSize = () => {
+      setIsTimelineOpen(window.innerWidth >= 1100);
     };
-
-    handleResize(); // initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   // Fetch latest block + spawn rain
@@ -97,7 +95,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — perfect as always
+  // DIGITAL RAIN — perfect, scaling, glowing, untouched
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -161,6 +159,7 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
+      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -250,7 +249,7 @@ function App() {
         </footer>
       </div>
 
-      {/* Timeline — starts collapsed on mobile */}
+      {/* Collapsible Timeline */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -293,37 +292,41 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button — always visible, never cut off */}
+      {/* SMART TOGGLE BUTTON — perfect on every device */}
       <button
-        onClick={() => setIsTimelineOpen(!isTimelineOpen)}
+        onClick={() => setIsTimelineOpen(prev => !prev)}
         style={{
           position: 'fixed',
           top: '50%',
-          right: isTimelineOpen 
-            ? 'max(12px, calc(50vw - 170px))'  // stays inside on narrow screens
-            : '12px',
           transform: 'translateY(-50%)',
-          width: '38px',
-          height: '70px',
-          background: 'rgba(0, 255, 255, 0.25)',
+          right: isTimelineOpen
+            ? 'max(12px, calc(50vw - 170px))'   // pulls back on narrow screens
+            : '12px',                             // hugs edge when closed
+          width: '42px',
+          height: '80px',
+          background: 'rgba(0, 255, 255, 0.28)',
           border: '2px solid #0ff',
-          borderRadius: '18px 0 0 18px',
+          borderRadius: '20px 0 0 20px',
           color: '#0ff',
-          fontSize: '2rem',
+          fontSize: '2.2rem',
           fontWeight: 'bold',
           cursor: 'pointer',
-          boxShadow: '-8px 0 30px rgba(0,255,255,0.7)',
-          transition: 'all 0.4s ease',
+          boxShadow: isTimelineOpen 
+            ? '-10px 0 40px rgba(0,255,255,0.8)' 
+            : '-6px 0 25px rgba(0,255,255,0.6)',
+          transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
           zIndex: 101,
           outline: 'none',
-          backdropFilter: 'blur(10px)',
+          backdropFilter: 'blur(12px)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          userSelect: 'none',
+          touchAction: 'manipulation'
         }}
-        aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
+        aria-label={isTimelineOpen ? 'Collapse timeline' : 'Expand timeline'}
       >
-        {isTimelineOpen ? '←' : '→'}
+        {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
       </button>
     </>
   );
