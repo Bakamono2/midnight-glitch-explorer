@@ -33,7 +33,7 @@ function App() {
         const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } });
         const txs = await txRes.json();
 
-        if (!latest || latest.hash !== block.hash) {
+        if (!latest || latest  block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
         }
@@ -147,7 +147,7 @@ function App() {
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Timeline — slides in/out from the right */}
+      {/* Timeline — slides in/out */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -189,13 +189,13 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button — OUTSIDE the timeline, slim & elegant */}
+      {/* Toggle Button — NOW TRULY OUTSIDE THE TIMELINE */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
           position: 'fixed',
           top: '50%',
-          right: isTimelineOpen ? '352px' : '6px',   // sits just outside the panel
+          right: isTimelineOpen ? 'calc(2vw + 340px + 8px)' : '8px',
           transform: 'translateY(-50%)',
           width: '28px',
           height: '60px',
