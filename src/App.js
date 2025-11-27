@@ -162,44 +162,46 @@ function App() {
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* FLEX COLUMN LAYOUT — GUARANTEES NOTHING IS CUT OFF */}
+      {/* MAIN LAYOUT — GUARANTEED TO FIT 1920×1080 */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto',
+        gridTemplateRows: 'auto 1fr auto',
         padding: '3vh 4vw',
+        gap: '2vh',
         boxSizing: 'border-box',
-        pointerEvents: 'none',
         color: '#0ff'
       }}>
-        {/* TOP SECTION */}
-        <div>
-          <header className="header">
-            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-          </header>
+        {/* HEADER */}
+        <header className="header" style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
+          <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+          <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+        </header>
 
-          <div className="card main-card" style={{ margin: '2vh 0' }}>
+        {/* MAIN CARD + EPOCH */}
+        <div style={{ gridColumn: 1, display: 'flex', flexDirection: 'column', gap: '2vh' }}>
+          <div className="card main-card">
             <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
             <p className="block-num">#{latest?.height || '...'}</p>
             <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
-
           <div className="epoch-countdown">
             EPOCH ENDS IN <span className="timer">{timeLeft}</span>
           </div>
         </div>
 
-        {/* BOTTOM SECTION — always visible */}
-        <div>
-          <footer style={{ marginBottom: '2vh' }}>
-            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-          </footer>
-
+        {/* TIMELINE — scrollable, never breaks layout */}
+        <div style={{
+          gridColumn: 2,
+          gridRow: '2 / 4',
+          maxHeight: '100%',
+          overflowY: 'auto',
+          paddingLeft: '1vw'
+        }}>
           <div className="timeline">
             {recentBlocks.map((b, i) => (
               <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
@@ -209,6 +211,11 @@ function App() {
             ))}
           </div>
         </div>
+
+        {/* FOOTER — always at bottom */}
+        <footer style={{ gridColumn: '1 / 2', textAlign: 'center' }}>
+          <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+        </footer>
       </div>
 
       {/* SHIELDED floating text */}
