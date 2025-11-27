@@ -181,11 +181,11 @@ function App() {
         </footer>
       </div>
 
-      {/* PERFECT TIMELINE — ONLY BUTTON VISIBLE WHEN COLLAPSED */}
+      {/* FINAL, PERFECT, BULLETPROOF TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-calc(100% - 32px)',  // hides everything except 32px button
+        right: isTimelineOpen ? '2vw' : '0',
         transform: 'translateY(-50%)',
         width: 'clamp(300px, 22vw, 340px)',
         height: '76vh',
@@ -200,7 +200,7 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* REAL ARROW ICON ONLY */}
+        {/* ARROW BUTTON — ONLY THIS IS VISIBLE WHEN CLOSED */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
@@ -229,11 +229,14 @@ function App() {
           {isTimelineOpen ? 'Right Arrow' : 'Left Arrow'}
         </button>
 
+        {/* CONTENT — HIDDEN WHEN CLOSED */}
         <div style={{
           flex: 1,
           padding: '1.4rem 1.2rem',
           overflowY: 'auto',
-          scrollbarWidth: 'none'
+          scrollbarWidth: 'none',
+          opacity: isTimelineOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease'
         }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
