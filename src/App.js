@@ -38,7 +38,7 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Smart auto-open/collapse based on screen width
+  // Smart auto-open/collapse
   useEffect(() => {
     const checkScreenSize = () => {
       setIsTimelineOpen(window.innerWidth >= 1100);
@@ -159,6 +159,7 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
+      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -187,10 +188,13 @@ function App() {
         gap: '4vh',
         padding: '4vh 5vw'
       }}>
-        {/* ... your perfect content ... */}
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
+            MIDNIGHT
+          </h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>
+            EXPLORER
+          </p>
         </div>
 
         <div style={{
@@ -203,8 +207,12 @@ function App() {
           textAlign: 'center',
           backdropFilter: 'blur(6px)'
         }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
+            LATEST BLOCK
+          </h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>
+            #{latest?.height || '...'}
+          </p>
           <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
             Hash: {(latest?.hash || '').slice(0, 32)}...
           </p>
@@ -231,34 +239,72 @@ function App() {
           <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
-        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
+        <footer style={{
+          marginTop: 'auto',
+          paddingBottom: '3vh',
+          opacity: 0.7,
+          fontSize: 'clamp(1rem, 2vw, 1.4rem)'
+        }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
 
-      {/* TIMELINE */}
+      {/* TIMELINE + ATTACHED BUTTON — ONE SEAMLESS UNIT */}
       <div style={{
         position: 'fixed',
         top: '50%',
         right: isTimelineOpen ? '2vw' : '-360px',
         transform: 'translateY(-50%)',
         width: '340px',
+        height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
         borderRadius: '16px',
-        padding: '1.5rem',
         border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.4)',
-        transition: 'right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)',
-        overflow: 'hidden',
+        transition: 'right 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
         zIndex: 100,
-        backdropFilter: 'blur(8px)'
+        backdropFilter: 'blur(8px)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'row-reverse'
       }}>
+        {/* ATTACHED TOGGLE BUTTON */}
+        <button
+          onClick={() => setIsTimelineOpen(prev => !prev)}
+          style={{
+            width: '42px',
+            height: '100%',
+            background: 'rgba(0, 255, 255, 0.28)',
+            border: 'none',
+            borderLeft: '2px solid #0ff',
+            borderRadius: '16px 0 0 16px',
+            color: '#0ff',
+            fontSize: '2.4rem',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            boxShadow: '-10px 0 30px rgba(0,255,255,0.7)',
+            transition: 'all 0.4s ease',
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            outline: 'none',
+            backdropFilter: 'blur(10px)',
+            flexShrink: 0
+          }}
+          aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
+        >
+          {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
+        </button>
+
+        {/* TIMELINE CONTENT */}
         <div style={{
-          height: '100%',
+          flex: 1,
+          padding: '1.5rem',
           overflowY: 'auto',
-          paddingRight: '12px',
-          marginRight: '-12px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}>
@@ -278,43 +324,6 @@ function App() {
           ))}
         </div>
       </div>
-
-      {/* PERFECT TOGGLE BUTTON — arrow now correct */}
-      <button
-        onClick={() => setIsTimelineOpen(prev => !prev)}
-        style={{
-          position: 'fixed',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          right: isTimelineOpen
-            ? 'max(12px, calc(50vw - 170px))'
-            : '12px',
-          width: '42px',
-          height: '80px',
-          background: 'rgba(0, 255, 255, 0.28)',
-          border: '2px solid #0ff',
-          borderRadius: '20px 0 0 20px',
-          color: '#0ff',
-          fontSize: '2.4rem',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          boxShadow: isTimelineOpen 
-            ? '-12px 0 45px rgba(0,255,255,0.9)' 
-            : '-6px 0 25px rgba(0,255,255,0.6)',
-          transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-          zIndex: 101,
-          outline: 'none',
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          userSelect: 'none',
-          touchAction: 'manipulation'
-        }}
-        aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
-      >
-        {isTimelineOpen ? '←' : '→'}
-      </button>
     </>
   );
 }
