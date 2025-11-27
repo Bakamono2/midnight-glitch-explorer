@@ -181,11 +181,11 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL, RESPONSIVE, PERFECT TIMELINE */}
+      {/* PERFECT TIMELINE — ONLY BUTTON VISIBLE WHEN COLLAPSED */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '0',
+        right: isTimelineOpen ? '2vw' : '-calc(100% - 32px)',  // hides everything except 32px button
         transform: 'translateY(-50%)',
         width: 'clamp(300px, 22vw, 340px)',
         height: '76vh',
@@ -200,13 +200,13 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* REAL ARROW ICON ONLY — NO TEXT */}
+        {/* REAL ARROW ICON ONLY */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
             width: '32px',
             height: '100%',
-            background: 'rgba(0, 255, 255, 0.38)',
+            background: 'rgba(0, 255, 255, 0.4)',
             border: 'none',
             borderRight: '2px solid #0ff',
             borderRadius: '16px 0 0 16px',
@@ -214,7 +214,7 @@ function App() {
             fontSize: '1.9rem',
             fontWeight: 'bold',
             cursor: 'pointer',
-            boxShadow: '-14px 0 45px rgba(0,255,255,1)',
+            boxShadow: '-14px 0 50px rgba(0,255,255,1)',
             transition: 'all 0.4s ease',
             display: 'flex',
             alignItems: 'center',
