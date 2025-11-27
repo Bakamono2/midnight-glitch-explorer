@@ -38,7 +38,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Auto open/close on resize
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -46,7 +45,6 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch blocks + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,12 +60,11 @@ function App() {
         }
       } catch (e) { console.error(e); }
     };
-    fetchData();
+    fetch περισσότεραData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -91,7 +88,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — untouched perfection
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -155,43 +151,23 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas
-        ref={canvasRef}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT — unchanged perfection */}
-      <div style={{
-        position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff',
-        fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw'
-      }}>
+      {/* MAIN CONTENT — untouched */}
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
           <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
-        <div style={{
-          width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)',
-          border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff',
-          textAlign: 'center', backdropFilter: 'blur(6px)'
-        }}>
+        <div style={{ width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
           <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
-            Hash: {(latest?.hash || '').slice(0, 32)}...
-          </p>
-          <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>
-            {recentBlocks[0]?.tx_count || 0} transactions
-          </p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+          <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        <div style={{
-          width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)',
-          border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff',
-          display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
-          textAlign: 'center', backdropFilter: 'blur(6px)'
-        }}>
+        <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
           <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
@@ -202,13 +178,13 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE + BUTTON ON THE CORRECT (LEFT) SIDE */}
+      {/* FINAL TIMELINE — icon-only, smaller, perfect */}
       <div style={{
         position: 'fixed',
         top: '50%',
         right: isTimelineOpen ? '2vw' : '-360px',
         transform: 'translateY(-50%)',
-        width: '382px',                    // 340px panel + 42px button
+        width: '370px',
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
@@ -221,30 +197,26 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* BUTTON — now correctly on the LEFT side of the panel */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
-            width: '42px',
+            width: '30px',
             height: '100%',
-            background: 'rgba(0, 255, 255, 0.28)',
+            background: 'rgba(0, 255, 255, 0.3)',
             border: 'none',
-            borderRight: '2px solid #0ff',         // border on the right side of button
+            borderRight: '2px solid #0ff',
             borderRadius: '16px 0 0 16px',
             color: '#0ff',
-            fontSize: '2.4rem',
-            fontWeight: 'bold',
+            fontSize: '1.4rem',
             cursor: 'pointer',
-            boxShadow: '-10px 0 30px rgba(0,255,255,0.7)',
+            boxShadow: '-8px 0 25px rgba(0,255,255,0.8)',
             transition: 'all 0.4s ease',
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10,
             outline: 'none',
-            backdropFilter: 'blur(10px)',
+            backdropFilter: 'blur(12px)',
             flexShrink: 0
           }}
           aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
@@ -252,13 +224,7 @@ function App() {
           {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
         </button>
 
-        {/* TIMELINE CONTENT */}
-        <div style={{
-          flex: 1,
-          padding: '1.5rem',
-          overflowY: 'auto',
-          scrollbarWidth: 'none'
-        }}>
+        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} style={{
