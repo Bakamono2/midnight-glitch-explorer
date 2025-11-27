@@ -145,7 +145,6 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Mobile viewport lock
   useEffect(() => {
     const meta = document.createElement('meta');
     meta.name = 'viewport';
@@ -162,7 +161,6 @@ function App() {
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* PERFECT LAYOUT — NO CUTOFF ON 1920×1080 */}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -174,7 +172,7 @@ function App() {
         boxSizing: 'border-box',
         pointerEvents: 'none'
       }}>
-        {/* TOP: Header + Card + Epoch */}
+        {/* TOP */}
         <div style={{ pointerEvents: 'auto' }}>
           <header className="header" style={{ textAlign: 'center', marginBottom: '1vh' }}>
             <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
@@ -184,7 +182,7 @@ function App() {
           <div className="card main-card" style={{ margin: '2vh auto', maxWidth: '600px' }}>
             <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
             <p className="block-num">#{latest?.height || '...'}</p>
-            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24Length)}...</p>
+            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
 
@@ -193,13 +191,12 @@ function App() {
           </div>
         </div>
 
-        {/* BOTTOM: Footer + Timeline (limited height) */}
+        {/* BOTTOM */}
         <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '1vh' }}>
           <footer style={{ textAlign: 'center' }}>
             <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
           </footer>
 
-          {/* Timeline — max 60vh so it never pushes anything off */}
           <div style={{
             maxHeight: '58vh',
             overflowY: 'auto',
@@ -219,7 +216,6 @@ function App() {
         </div>
       </div>
 
-      {/* SHIELDED floating text */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
