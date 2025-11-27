@@ -162,60 +162,61 @@ function App() {
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* MAIN LAYOUT — GUARANTEED TO FIT 1920×1080 */}
+      {/* PERFECT LAYOUT — NO CUTOFF ON 1920×1080 */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10,
-        display: 'grid',
-        gridTemplateColumns: '1fr auto',
-        gridTemplateRows: 'auto 1fr auto',
-        padding: '3vh 4vw',
-        gap: '2vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '2vh 3vw',
         boxSizing: 'border-box',
-        color: '#0ff'
+        pointerEvents: 'none'
       }}>
-        {/* HEADER */}
-        <header className="header" style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
-          <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-          <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-        </header>
+        {/* TOP: Header + Card + Epoch */}
+        <div style={{ pointerEvents: 'auto' }}>
+          <header className="header" style={{ textAlign: 'center', marginBottom: '1vh' }}>
+            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
+          </header>
 
-        {/* MAIN CARD + EPOCH */}
-        <div style={{ gridColumn: 1, display: 'flex', flexDirection: 'column', gap: '2vh' }}>
-          <div className="card main-card">
+          <div className="card main-card" style={{ margin: '2vh auto', maxWidth: '600px' }}>
             <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
             <p className="block-num">#{latest?.height || '...'}</p>
-            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
+            <p className="hash">Hash: {(latest?.hash || '').slice(0, 24Length)}...</p>
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
-          <div className="epoch-countdown">
+
+          <div className="epoch-countdown" style={{ textAlign: 'center', fontSize: '1.8em' }}>
             EPOCH ENDS IN <span className="timer">{timeLeft}</span>
           </div>
         </div>
 
-        {/* TIMELINE — scrollable, never breaks layout */}
-        <div style={{
-          gridColumn: 2,
-          gridRow: '2 / 4',
-          maxHeight: '100%',
-          overflowY: 'auto',
-          paddingLeft: '1vw'
-        }}>
-          <div className="timeline">
-            {recentBlocks.map((b, i) => (
-              <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
-                <span className="height">#{b.height}</span>
-                <span className="txs">{b.tx_count || 0} tx</span>
-              </div>
-            ))}
+        {/* BOTTOM: Footer + Timeline (limited height) */}
+        <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '1vh' }}>
+          <footer style={{ textAlign: 'center' }}>
+            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+          </footer>
+
+          {/* Timeline — max 60vh so it never pushes anything off */}
+          <div style={{
+            maxHeight: '58vh',
+            overflowY: 'auto',
+            alignSelf: 'flex-end',
+            width: '280px',
+            padding: '0 1vw'
+          }}>
+            <div className="timeline">
+              {recentBlocks.slice(0, 30).map((b, i) => (
+                <div key={b.hash} className={`timeline-item ${i === 0 ? 'latest' : ''}`}>
+                  <span className="height">#{b.height}</span>
+                  <span className="txs">{b.tx_count || 0} tx</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* FOOTER — always at bottom */}
-        <footer style={{ gridColumn: '1 / 2', textAlign: 'center' }}>
-          <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
-        </footer>
       </div>
 
       {/* SHIELDED floating text */}
