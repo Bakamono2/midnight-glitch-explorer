@@ -10,6 +10,9 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const canvasRef = useRef(null);
+  const columnsRef = useRef([]);
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   // Auto-collapse timeline on narrow screens
   useEffect(() => {
@@ -22,7 +25,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch latest block
+  // Fetch latest block + spawn rain based on tx count
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -34,13 +37,30 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
+
+          // SPAWN RAIN COLUMNS BASED ON TX COUNT
+          const txCount = txs.length;
+          for (let i = 0; i < txCount; i++) {
+            columnsRef.current.push({
+              x: Math.random() * window.innerWidth,
+              y: -200 - Math.random() * 800,
+              speed: 2 + Math.random() * 4,
+              length: 15 + Math.floor(Math.random() * 20),
+              headPos: 0,
+              hue: Math.floor(Math.random() * 3)
+            });
+          }
+          // Limit total columns
+          if (columnsRef.current.length > 800) {
+            columnsRef.current = columnsRef.current.slice(-800);
+          }
         }
       } catch (e) { console.error(e); }
     };
     fetchData();
     const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
-  }, [latest, recentBlocks]);
+  }, [latest]);
 
   // Epoch countdown
   useEffect(() => {
@@ -66,7 +86,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — Matrix-style background
+  // YOUR ORIGINAL TRANSACTION-DRIVEN DIGITAL RAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -74,44 +94,46 @@ function App() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const fontSize = 16;
-    const columns = Math.floor(canvas.width / fontSize);
-    const drops = Array(columns).fill(1);
+    const colors = ['#0ff', '#0f0', '#ff0'];
 
     const draw = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#0ff';
-      ctx.font = `${fontSize}px monospace`;
 
-      for (let i = 0; i < drops.length; i++) {
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        const x = i * fontSize;
-        const y = drops[i] * fontSize;
-        ctx.fillText(text, x, y);
+      columnsRef.current.forEach(col => {
+        col.y += col.speed;
+        col.headPos += 0.3;
 
-        if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      }
+        for (let i = 0; i < col.length; i++) {
+          const char = chars[Math.floor(Math.random() * chars.length)];
+          const dist = Math.abs(i - col.headPos);
+          const opacity = dist < 1 ? 1 : Math.max(0.1, 1 - dist / 10);
+
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = dist < 2 ? '#fff' : colors[col.hue];
+          ctx.font = '18px monospace';
+          ctx.fillText(char, col.x, col.y + i * 25);
+        }
+      });
+
+      // Clean up old columns
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
+      requestAnimationFrame(draw);
     };
 
-    const interval = setInterval(draw, 50);
+    draw();
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', resize);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', resize);
-    };
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
   return (
     <>
-      {/* DIGITAL RAIN — always behind everything */}
+      {/* YOUR DIGITAL RAIN — behind everything */}
       <canvas
         ref={canvasRef}
         style={{
@@ -125,7 +147,7 @@ function App() {
         }}
       />
 
-      {/* MAIN CONTENT — on top of rain */}
+      {/* MAIN CONTENT — on top */}
       <div style={{
         position: 'relative',
         zIndex: 10,
@@ -140,7 +162,6 @@ function App() {
         gap: '4vh',
         padding: '4vh 5vw'
       }}>
-
         {/* Title */}
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
@@ -160,7 +181,7 @@ function App() {
           borderRadius: '20px',
           boxShadow: '0 0 50px #0ff',
           textAlign: 'center',
-          backdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(6px)'
         }}>
           <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
             LATEST BLOCK
@@ -188,7 +209,7 @@ function App() {
           justifyContent: 'space-around',
           fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
           textAlign: 'center',
-          backdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(6px)'
         }}>
           <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
@@ -222,7 +243,7 @@ function App() {
         transition: 'right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)',
         overflow: 'hidden',
         zIndex: 100,
-        backdropFilter: 'blur(6px)'
+        backdropFilter: 'blur(8px)'
       }}>
         <div style={{
           height: '100%',
@@ -249,7 +270,7 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button — outside, slim, perfect */}
+      {/* Toggle Button — outside */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
@@ -272,7 +293,6 @@ function App() {
           outline: 'none',
           backdropFilter: 'blur(8px)'
         }}
-        aria-label="Toggle timeline"
       >
         {isTimelineOpen ? '←' : '→'}
       </button>
