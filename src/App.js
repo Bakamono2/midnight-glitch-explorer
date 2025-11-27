@@ -85,7 +85,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // EXACT DIGITAL RAIN FROM YOUR CODE — 100% unchanged
+  // DIGITAL RAIN — untouched, perfect, scaling-aware
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -147,10 +147,9 @@ function App() {
 
   return (
     <>
-      {/* Font for Matrix Code NFI */}
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — exactly as you gave me */}
+      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -164,7 +163,7 @@ function App() {
         }}
       />
 
-      {/* MAIN CONTENT — unchanged */}
+      {/* MAIN CONTENT */}
       <div style={{
         position: 'relative',
         zIndex: 10,
@@ -283,7 +282,7 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button */}
+      {/* Toggle Button — ONLY ARROWS */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
@@ -297,17 +296,21 @@ function App() {
           border: '2px solid #0ff',
           borderRadius: '14px 0 0 14px',
           color: '#0ff',
-          fontSize: '1.4rem',
+          fontSize: '1.6rem',
           fontWeight: 'bold',
           cursor: 'pointer',
           boxShadow: '-6px 0 20px rgba(0,255,255,0.6)',
           transition: 'all 0.4s ease',
           zIndex: 101,
           outline: 'none',
-          backdropFilter: 'blur(8px)'
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
+        aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
       >
-        {isTimelineOpen ? 'Left Arrow' : 'Right Arrow'}
+        {isTimelineOpen ? '←' : '→'}
       </button>
     </>
   );
