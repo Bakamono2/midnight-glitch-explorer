@@ -10,7 +10,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [txPerSecond, setTxPerSecond] = useState(0);
 
-  // Fetch latest block + tx count
+  // Fetch blocks
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,9 +23,7 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) { console.error(e); }
     };
     fetchData();
     const interval = setInterval(fetchData, 8000);
@@ -43,7 +41,6 @@ function App() {
       } catch {}
     };
     fetchEpoch();
-
     const timer = setInterval(() => {
       if (!epochEnd) return;
       const diff = epochEnd - Date.now();
@@ -58,47 +55,57 @@ function App() {
   }, []);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000', color: '#0ff', fontFamily: '"Courier New", monospace', overflow: 'hidden' }}>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: '#000',
+      color: '#0ff',
+      fontFamily: '"Courier New", monospace',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '4vh',                     // ← dynamic gap between elements
+      padding: '4vh 4vw'
+    }}>
 
       {/* Title */}
-      <h1 className="glitch-title" style={{ textAlign: 'center', margin: '4vh 0 1vh', fontSize: '6vw' }}>
-        MIDNIGHT
-      </h1>
-      <p style={{ textAlign: 'center', margin: '0 0 4vh', fontSize: '2.8vw', opacity: 0.9 }}>
-        EXPLORER
-      </p>
+      <div style={{ textAlign: 'center' }}>
+        <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>
+          MIDNIGHT
+        </h1>
+        <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>
+          EXPLORER
+        </p>
+      </div>
 
-      {/* Main Card — upper half */}
+      {/* Main Card */}
       <div style={{
-        position: 'absolute',
-        top: '42%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
         width: 'min(720px, 90vw)',
         padding: '3rem',
         background: 'rgba(0,15,30,0.95)',
         border: '2px solid #0ff',
         borderRadius: '20px',
         boxShadow: '0 0 50px #0ff',
-        textAlign: 'center',
-        zIndex: 20
+        textAlign: 'center'
       }}>
-        <h2 className="glitch" style={{ fontSize: '2.4rem', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-        <p style={{ fontSize: '4rem', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-        <p style={{ margin: '1rem 0', fontSize: '1rem', wordBreak: 'break-all' }}>
+        <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>
+          LATEST BLOCK
+        </h2>
+        <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>
+          #{latest?.height || '...'}
+        </p>
+        <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>
           Hash: {(latest?.hash || '').slice(0, 32)}...
         </p>
-        <p style={{ fontSize: '2rem', color: '#0f0' }}>
+        <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>
           {recentBlocks[0]?.tx_count || 0} transactions
         </p>
       </div>
 
-      {/* DASHBOARD — safely below Main Card, zero overlap */}
+      {/* DASHBOARD — automatically spaced below Main Card */}
       <div style={{
-        position: 'absolute',
-        top: '64%',
-        left: '50%',
-        transform: 'translateX(-50%)',
         width: 'min(720px, 90vw)',
         padding: '1.4rem 2rem',
         background: 'rgba(0,20,40,0.95)',
@@ -107,8 +114,7 @@ function App() {
         boxShadow: '0 0 35px #0ff',
         display: 'flex',
         justifyContent: 'space-around',
-        fontSize: 'clamp(1.3rem, 2.2vw, 1.8rem)',
-        zIndex: 20,
+        fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)',
         textAlign: 'center'
       }}>
         <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>{txPerSecond.toFixed(1)}</span></div>
@@ -118,31 +124,29 @@ function App() {
 
       {/* Footer */}
       <footer style={{
-        position: 'absolute',
-        bottom: '3vh',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        marginTop: 'auto',
         opacity: 0.7,
-        fontSize: '1.2rem',
-        zIndex: 10
+        fontSize: 'clamp(1rem, 2vw, 1.4rem)',
+        paddingBottom: '2vh'
       }}>
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Timeline — right side */}
+      {/* Timeline — fixed on right, never interferes */}
       <div style={{
-        position: 'absolute',
-        top: '12vh',
+        position: 'fixed',
+        top: '10vh',
         right: '2vw',
         width: '340px',
-        maxHeight: '76vh',
+        maxHeight: '80vh',
         overflowY: 'auto',
         background: 'rgba(0,10,30,0.9)',
         borderRadius: '16px',
         padding: '1.5rem',
         border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.4)',
-        zIndex: 10
+        zIndex: 10,
+        fontSize: '1.1rem'
       }}>
         {recentBlocks.slice(0, 30).map((b, i) => (
           <div key={b.hash} style={{
