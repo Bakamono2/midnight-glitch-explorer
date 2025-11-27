@@ -181,13 +181,13 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL RESPONSIVE TIMELINE – slim, perfect, no more bugs */}
+      {/* FINAL, RESPONSIVE, PERFECT TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '0',           // button stays visible
+        right: isTimelineOpen ? '2vw' : '0',
         transform: 'translateY(-50%)',
-        width: 'clamp(300px, 22vw, 320px)',           // responsive slim width
+        width: 'clamp(300px, 22vw, 340px)',
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
@@ -200,7 +200,7 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* ICON-ONLY ARROW BUTTON – always visible */}
+        {/* REAL ARROW ICON ONLY — NO TEXT */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
@@ -229,7 +229,6 @@ function App() {
           {isTimelineOpen ? 'Right Arrow' : 'Left Arrow'}
         </button>
 
-        {/* TIMELINE CONTENT */}
         <div style={{
           flex: 1,
           padding: '1.4rem 1.2rem',
