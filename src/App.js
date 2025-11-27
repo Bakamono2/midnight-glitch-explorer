@@ -10,13 +10,13 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
-  // Auto-collapse on narrow screens, but remember user choice on wide screens
+  // Auto-collapse on narrow screens
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1100) {
         setIsTimelineOpen(false);
       } else {
-        setIsTimelineOpen(true); // auto-open on desktop
+        setIsTimelineOpen(true);
       }
     };
     handleResize();
@@ -147,11 +147,11 @@ function App() {
         <span className="glitch">shhh...</span> nothing ever happened
       </footer>
 
-      {/* Collapsible Timeline — original look */}
+      {/* Timeline — slides in/out from the right */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-350px',
+        right: isTimelineOpen ? '2vw' : '-360px',
         transform: 'translateY(-50%)',
         width: '340px',
         maxHeight: '76vh',
@@ -189,28 +189,28 @@ function App() {
         </div>
       </div>
 
-      {/* Sleek Toggle Button */}
+      {/* Toggle Button — OUTSIDE the timeline, slim & elegant */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
           position: 'fixed',
           top: '50%',
-          right: isTimelineOpen ? '340px' : '8px',
+          right: isTimelineOpen ? '352px' : '6px',   // sits just outside the panel
           transform: 'translateY(-50%)',
-          width: '36px',
-          height: '80px',
-          background: 'rgba(0, 255, 255, 0.15)',
+          width: '28px',
+          height: '60px',
+          background: 'rgba(0, 255, 255, 0.18)',
           border: '2px solid #0ff',
-          borderRadius: '20px 0 0 20px',
+          borderRadius: '14px 0 0 14px',
           color: '#0ff',
-          fontSize: '1.6rem',
+          fontSize: '1.4rem',
           fontWeight: 'bold',
           cursor: 'pointer',
-          boxShadow: '-8px 0 25px rgba(0,255,255,0.5)',
+          boxShadow: '-6px 0 20px rgba(0,255,255,0.6)',
           transition: 'all 0.4s ease',
           zIndex: 101,
           outline: 'none',
-          backdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(6px)'
         }}
         aria-label="Toggle timeline"
       >
