@@ -38,7 +38,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Auto open/close on resize
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -46,7 +45,6 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch blocks + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -67,7 +65,6 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -91,7 +88,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -202,13 +198,13 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE + PURE ARROW ICON BUTTON */}
+      {/* SLIMMER TIMELINE + VISIBLE COLLAPSED BUTTON + CORRECT ARROWS */}
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-360px',
+        right: isTimelineOpen ? '2vw' : '-330px',  // matches new width
         transform: 'translateY(-50%)',
-        width: '370px',
+        width: '330px',                    // Slimmer: 300px content + 30px button
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
@@ -221,21 +217,23 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* ICON-ONLY ARROW BUTTON */}
+        {/* ICON-ONLY BUTTON — more visible when collapsed */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
             width: '30px',
             height: '100%',
-            background: 'rgba(0, 255, 255, 0.3)',
+            background: 'rgba(0, 255, 255, 0.35)',
             border: 'none',
             borderRight: '2px solid #0ff',
             borderRadius: '16px 0 0 16px',
             color: '#0ff',
-            fontSize: '1.6rem',
+            fontSize: '1.8rem',
             fontWeight: 'bold',
             cursor: 'pointer',
-            boxShadow: '-8px 0 25px rgba(0,255,255,0.8)',
+            boxShadow: isTimelineOpen 
+              ? '-8px 0 25px rgba(0,255,255,0.8)' 
+              : '-12px 0 40px rgba(0,255,255,1)',   // STRONGER GLOW when collapsed
             transition: 'all 0.4s ease',
             display: 'flex',
             alignItems: 'center',
@@ -247,11 +245,16 @@ function App() {
           }}
           aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
         >
-          {isTimelineOpen ? '←' : '→'}
+          {isTimelineOpen ? 'Right Arrow' : 'Left Arrow'}   {/* CORRECT DIRECTION */}
         </button>
 
         {/* TIMELINE CONTENT */}
-        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+        <div style={{ 
+          width: '300px', 
+          padding: '1.5rem', 
+          overflowY: 'auto', 
+          scrollbarWidth: 'none' 
+        }}>
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} style={{
