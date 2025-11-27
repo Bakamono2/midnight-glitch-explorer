@@ -38,7 +38,19 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Fetch latest block + spawn rain per transaction
+  // Auto-collapse timeline on mobile + handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 900; // safe threshold
+      setIsTimelineOpen(!isMobile); // open on desktop, closed on mobile
+    };
+
+    handleResize(); // initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fetch latest block + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -85,7 +97,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — untouched, perfect, scaling-aware
+  // DIGITAL RAIN — perfect as always
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -149,7 +161,6 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN */}
       <canvas
         ref={canvasRef}
         style={{
@@ -239,7 +250,7 @@ function App() {
         </footer>
       </div>
 
-      {/* Collapsible Timeline */}
+      {/* Timeline — starts collapsed on mobile */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -282,28 +293,30 @@ function App() {
         </div>
       </div>
 
-      {/* Toggle Button — ONLY ARROWS */}
+      {/* Toggle Button — always visible, never cut off */}
       <button
         onClick={() => setIsTimelineOpen(!isTimelineOpen)}
         style={{
           position: 'fixed',
           top: '50%',
-          right: isTimelineOpen ? 'calc(2vw + 340px + 12px)' : '12px',
+          right: isTimelineOpen 
+            ? 'max(12px, calc(50vw - 170px))'  // stays inside on narrow screens
+            : '12px',
           transform: 'translateY(-50%)',
-          width: '28px',
-          height: '60px',
-          background: 'rgba(0, 255, 255, 0.2)',
+          width: '38px',
+          height: '70px',
+          background: 'rgba(0, 255, 255, 0.25)',
           border: '2px solid #0ff',
-          borderRadius: '14px 0 0 14px',
+          borderRadius: '18px 0 0 18px',
           color: '#0ff',
-          fontSize: '1.6rem',
+          fontSize: '2rem',
           fontWeight: 'bold',
           cursor: 'pointer',
-          boxShadow: '-6px 0 20px rgba(0,255,255,0.6)',
+          boxShadow: '-8px 0 30px rgba(0,255,255,0.7)',
           transition: 'all 0.4s ease',
           zIndex: 101,
           outline: 'none',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
