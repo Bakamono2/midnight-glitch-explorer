@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import confetti from 'canvas-confetti';
 import './App.css';
 
 const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
@@ -18,20 +17,20 @@ function App() {
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
-    const referenceArea = 1920 * 1080;
-    return Math.sqrt(area / referenceArea);
+    const ref = 1920 * 1080;
+    return Math.sqrt(area / ref);
   };
 
   const spawnOneColumnPerTx = (txCount) => {
     const scale = getScale();
-    const safeMargin = 160 * scale;
+    const margin = 160 * scale;
 
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
-        x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
+        x: margin + Math.random() * (window.innerWidth - 2 * margin),
         y: -200 - Math.random() * 600,
         speed: (0.7 + Math.random() * 1.1) * scale,
-        length: Math.floor(20 + Math.random() * 35),
+        length: 20 + Math.floor(Math.random() * 35),
         headPos: Math.random() * 8,
         hue: i % 3
       });
@@ -103,11 +102,11 @@ function App() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const scale = getScale();
-      const baseFontSize = 28 * scale;
-      const charSpacing = 35 * scale;
-      const glowSize = 120 * scale;
+      const fontSize = 28 * scale;
+      const spacing = 35 * scale;
+      const glow = 120 * scale;
 
-      ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
+      ctx.font = `${fontSize}px "Matrix Code NFI", monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
@@ -117,22 +116,22 @@ function App() {
 
         for (let i = 0; i <= col.length; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
+          const dist = Math.abs(i - col.headPos);
+          const bright = dist < 1 ? 1 : dist < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
 
-          ctx.globalAlpha = brightness;
+          ctx.globalAlpha = bright;
 
-          if (brightness > 0.9) {
+          if (bright > 0.9) {
             ctx.fillStyle = 'white';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = glowSize;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = glow;
+            ctx.fillText(char, col.x, col.y - i * spacing);
+            ctx.fillText(char, col.x, col.y - i * spacing);
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
             ctx.shadowBlur = 22 * scale;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.fillText(char, col.x, col.y - i * spacing);
           }
         }
       });
@@ -148,7 +147,7 @@ function App() {
   useEffect(() => {
     const meta = document.createElement('meta');
     meta.name = 'viewport';
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
     document.head.appendChild(meta);
   }, []);
 
@@ -156,53 +155,55 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas
-        ref={canvasRef}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* MAIN DASHBOARD — PERFECT ON EVERY RESOLUTION */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 10,
+        padding: '2vh 4vw',
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '2vh 3vw',
-        boxSizing: 'border-box',
         pointerEvents: 'none'
       }}>
-        {/* TOP */}
-        <div style={{ pointerEvents: 'auto' }}>
-          <header className="header" style={{ textAlign: 'center', marginBottom: '1vh' }}>
-            <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
-            <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
-          </header>
+        {/* TOP: Title + Main Card + Epoch */}
+        <div style={{ pointerEvents: 'auto', textAlign: 'center' }}>
+          <h1 className="glitch-title" data-text="MIDNIGHT">MIDNIGHT</h1>
+          <p className="subtitle" data-text="EXPLORER">EXPLORER</p>
 
-          <div className="card main-card" style={{ margin: '2vh auto', maxWidth: '600px' }}>
+          <div className="main-card" style={{ margin: '3vh auto', maxWidth: '680px', padding: '2rem', borderRadius: '12px', background: 'rgba(0,0,0,0.6)', border: '2px solid #0ff', boxShadow: '0 0 30px #0ff' }}>
             <h2 className="glitch" data-text="LATEST BLOCK">LATEST BLOCK</h2>
             <p className="block-num">#{latest?.height || '...'}</p>
             <p className="hash">Hash: {(latest?.hash || '').slice(0, 24)}...</p>
             <p className="txs">{recentBlocks[0]?.tx_count || 0} transactions</p>
           </div>
 
-          <div className="epoch-countdown" style={{ textAlign: 'center', fontSize: '1.8em' }}>
+          <div className="epoch-countdown" style={{ marginTop: '2vh', fontSize: 'clamp(1.6rem, 3.5vw, 2.8rem)', color: '#0ff' }}>
             EPOCH ENDS IN <span className="timer">{timeLeft}</span>
           </div>
         </div>
 
-        {/* BOTTOM */}
-        <div style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '1vh' }}>
-          <footer style={{ textAlign: 'center' }}>
-            <p><span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened</p>
+        {/* BOTTOM: Footer left + Timeline right */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'auto' }}>
+          <footer>
+            <p style={{ margin: 0, opacity: 0.8 }}>
+              <span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened
+            </p>
           </footer>
 
+          {/* Timeline — fixed width, max height, scrollable */}
           <div style={{
+            width: '340px',
             maxHeight: '58vh',
             overflowY: 'auto',
-            alignSelf: 'flex-end',
-            width: '280px',
-            padding: '0 1vw'
+            padding: '1rem',
+            background: 'rgba(0,0,0,0.4)',
+            borderRadius: '12px',
+            border: '1px solid #0ff33',
+            boxShadow: '0 0 20px rgba(0,255,255,0.2)'
           }}>
             <div className="timeline">
               {recentBlocks.slice(0, 30).map((b, i) => (
@@ -216,6 +217,7 @@ function App() {
         </div>
       </div>
 
+      {/* SHIELDED floating words */}
       {shieldedFloats.map(f => (
         <div key={f.id} className="shielded-fall" style={{ left: `${f.left}%` }}>
           SHIELDED
