@@ -58,9 +58,7 @@ function App() {
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) { console.error(e); }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -169,10 +167,27 @@ function App() {
           <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
-          <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
-          <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
+        {/* COMPACT, INFORMATION-DENSE, CYBERPUNK DASHBOARD */}
+        <div style={{
+          width: 'min(720px, 90vw)',
+          padding: '1rem 2rem',
+          background: 'rgba(0,20,40,0.92)',
+          border: '1px solid #0ff',
+          borderRadius: '12px',
+          boxShadow: '0 0 25px rgba(0,255,255,0.3)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '1rem',
+          fontSize: 'clamp(0.9rem, 1.6vw, 1.3rem)',
+          textAlign: 'center',
+          backdropFilter: 'blur(8px)'
+        }}>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Total Blocks</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
+          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
+          <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
@@ -180,7 +195,7 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL TIMELINE — OUTWARD WHEN COLLAPSED, INWARD WHEN OPEN */}
+      {/* TIMELINE — perfect as before */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -221,9 +236,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />  // ← Inward when open
+              <path d="M15 18l-6-6 6-6" />  // ← Inward
             ) : (
-              <path d="M9 18l6-6-6-6" />    // → Outward when closed
+              <path d="M9 18l6-6-6-6" />    // → Outward
             )}
           </svg>
         </button>
