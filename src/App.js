@@ -10,6 +10,11 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
+  // Real-time stats
+  const [txPerSecond, setTxPerSecond] = useState('0.0');
+  const [tpsPeak, setTpsPeak] = useState('0.0');
+  const [avgBlockTime, setAvgBlockTime] = useState('20s');
+
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
@@ -38,6 +43,7 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
+  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -45,7 +51,11 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // MAIN FETCH + REAL-TIME STATS
   useEffect(() => {
+    let lastBlockTime = 0;
+    let recentBlockTimes = [];
+
     const fetchData = async () => {
       try {
         const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } });
@@ -54,17 +64,38 @@ function App() {
         const txs = await txRes.json();
 
         if (!latest || latest.hash !== block.hash) {
+          const now = Date.now();
+          const timeDiff = lastBlockTime ? (now - lastBlockTime) / 1000 : 20;
+
+          // Real-time Tx/s
+          const currentTps = txs.length / timeDiff;
+          setTxPerSecond(currentTps.toFixed(1));
+
+          // TPS Peak
+          setTpsPeak(prev => Math.max(prev, currentTps).toFixed(1));
+
+          // Avg Block Time (last 10 blocks)
+          recentBlockTimes.push(timeDiff);
+          if (recentBlockTimes.length > 10) recentBlockTimes.shift();
+          const avg = recentBlockTimes.reduce((a, b) => a + b, 0) / recentBlockTimes.length;
+          setAvgBlockTime(avg.toFixed(1) + 's');
+
+          lastBlockTime = now;
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
+
     fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
   }, [latest]);
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -88,6 +119,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // DIGITAL RAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -153,76 +185,36 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT — PERFECT ON ALL SCREENS */}
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        minHeight: '100vh',
-        color: '#0ff',
-        fontFamily: '"Courier New", monospace',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '3vh',                    // reduced gap
-        padding: '3vh 4vw',              // reduced padding
-      }}>
+      {/* MAIN CONTENT */}
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
           <p style={{ margin: 0, fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
-        {/* Main Card */}
-        <div style={{
-          width: 'min(680px, 88vw)',
-          padding: '2.5rem',
-          background: 'rgba(0,15,30,0.95)',
-          border: '2px solid #0ff',
-          borderRadius: '20px',
-          boxShadow: '0 0 50px #0ff',
-          textAlign: 'center',
-          backdropFilter: 'blur(6px)'
-        }}>
+        <div style={{ width: 'min(680px, 88vw)', padding: '2.5rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <h2 className="glitch" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
           <p style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>
-            Hash: {(latest?.hash || '').slice(0, 32)}...
-          </p>
-          <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>
-            {recentBlocks[0]?.tx_count || 0} transactions
-          </p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+          <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* Compact Dashboard */}
-        <div style={{
-          width: 'min(680px, 88vw)',
-          padding: '1rem 1.8rem',
-          background: 'rgba(0,20,40,0.92)',
-          border: '1px solid #0ff',
-          borderRadius: '12px',
-          boxShadow: '0 0 25px rgba(0,255,255,0.3)',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: '0.8rem',
-          fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)',
-          textAlign: 'center',
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
-          <div><span style={{ opacity: 0.7 }}>Total Blocks</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
-          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
-          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
+        {/* REAL-TIME DASHBOARD */}
+        <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>{txPerSecond}</span></div>
+          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>{tpsPeak}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>{avgBlockTime}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Total Blocks</span><br /><span style={{ color: '#0ff' }}>{latest?.height || '-'}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0' }}>{timeLeft}</span></div>
           <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
-        {/* Footer */}
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
 
-      {/* TIMELINE — unchanged perfection */}
+      {/* TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
