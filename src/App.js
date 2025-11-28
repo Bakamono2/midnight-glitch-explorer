@@ -221,9 +221,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />  {/* ← Inward when open */}
+              <path d="M15 18l-6-6 6-6" />  // ← Inward when open
             ) : (
-              <path d="M9 18l6-6-6-6" />    {/* → Outward when closed */}
+              <path d="M9 18l6-6-6-6" />    // → Outward when closed
             )}
           </svg>
         </button>
