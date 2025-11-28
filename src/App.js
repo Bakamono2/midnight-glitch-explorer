@@ -202,7 +202,7 @@ function App() {
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
             width: '32px',
-            height: '100%',
+            height: '30%',
             background: 'rgba(0, 255, 255, 0.38)',
             border: 'none',
             borderRight: '2px solid #0ff',
@@ -219,9 +219,9 @@ function App() {
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0ff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />
+              <path d="M9 18l-6-6 6-6" />
             ) : (
-              <path d="M9 18l6-6-6-6" />
+              <path d="M15 18l6-6-6-6" />
             )}
           </svg>
         </button>
