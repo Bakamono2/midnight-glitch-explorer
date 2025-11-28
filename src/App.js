@@ -13,7 +13,7 @@ function App() {
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -58,7 +58,9 @@ function App() {
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -197,7 +199,6 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
-        {/* BUTTON — OUTSIDE, SMALLER, CORRECT ARROWS */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
