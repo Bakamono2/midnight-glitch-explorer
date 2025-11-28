@@ -58,7 +58,9 @@ function App() {
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -147,8 +149,10 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // CORRECT Blocks This Epoch
-  const blocksThisEpoch = latest ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1) : '-';
+  // CORRECT Blocks This Epoch — no more negatives
+  const blocksThisEpoch = latest
+    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
+    : '-';
 
   return (
     <>
@@ -159,4 +163,97 @@ function App() {
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.4rem
+          <p style={{ margin: 0, fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)', opacity: 0.9 }}>EXPLORER</p>
+        </div>
+
+        <div style={{ width: 'min(680px, 88vw)', padding: '2.5rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+          <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
+        </div>
+
+        {/* PERFECT DASHBOARD */}
+        <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
+          <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
+        </div>
+
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
+          <span className="glitch">shhh...</span> nothing ever happened
+        </footer>
+      </div>
+
+      {/* TIMELINE */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        right: isTimelineOpen ? '2vw' : '-288px',
+        transform: 'translateY(-50%)',
+        width: '320px',
+        height: '76vh',
+        maxHeight: '76vh',
+        background: 'rgba(0,10,30,0.96)',
+        borderRadius: '16px',
+        border: '2px solid #0ff',
+        boxShadow: '0 0 40px rgba(0,255,255,0.5)',
+        transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+        zIndex: 100,
+        backdropFilter: 'blur(8px)',
+        overflow: 'hidden',
+        display: 'flex'
+      }}>
+        <button
+          onClick={() => setIsTimelineOpen(p => !p)}
+          style={{
+            width: '32px',
+            height: '100%',
+            background: 'rgba(0, 255, 255, 0.38)',
+            border: 'none',
+            borderRight: '2px solid #0ff',
+            borderRadius: '16px 0 0 16px',
+            color: '#0ff',
+            cursor: 'pointer',
+            boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            outline: 'none'
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            {isTimelineOpen ? (
+              <path d="M15 18l-6-6 6-6" />
+            ) : (
+              <path d="M9 18l6-6-6-6" />
+            )}
+          </svg>
+        </button>
+
+        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
+          {recentBlocks.slice(0, 10).map((b, i) => (
+            <div key={b.hash} style={{
+              padding: '0.9rem 0',
+              borderBottom: i < 9 ? '1px dashed rgba(0,255,255,0.2)' : 'none',
+              color: i === 0 ? '#0f0' : '#0ff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '1.05rem'
+            }}>
+              <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
+              <span>{b.tx_count || 0} tx</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default App;
