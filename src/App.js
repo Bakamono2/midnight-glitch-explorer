@@ -58,9 +58,7 @@ function App() {
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
           spawnOneColumnPerTx(txs.length);
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) { console.error(e); }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -155,6 +153,7 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
@@ -179,7 +178,7 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL TIMELINE – PURE ARROWS ONLY */}
+      {/* TIMELINE + SVG ARROW BUTTON */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -198,6 +197,7 @@ function App() {
         overflow: 'hidden',
         display: 'flex'
       }}>
+        {/* SVG ARROW ICON — crisp, perfect, no font issues */}
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
@@ -207,21 +207,23 @@ function App() {
             border: 'none',
             borderRight: '2px solid #0ff',
             borderRadius: '16px 0 0 16px',
-            color: '#0ff',
-            fontSize: '20px',
             cursor: 'pointer',
             boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
             transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
             outline: 'none'
           }}
           aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
         >
-          {isTimelineOpen ? '&#8678;' : 'U+1F842'}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0ff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            {isTimelineOpen ? (
+              <path d="M15 18l-6-6 6-6" />
+            ) : (
+              <path d="M9 18l6-6-6-6" />
+            )}
+          </svg>
         </button>
 
         <div style={{
