@@ -153,32 +153,58 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT */}
-      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
+      {/* MAIN CONTENT — PERFECT ON ALL SCREENS */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        minHeight: '100vh',
+        color: '#0ff',
+        fontFamily: '"Courier New", monospace',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '3vh',                    // reduced gap
+        padding: '3vh 4vw',              // reduced padding
+      }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
-        <div style={{ width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
-          <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
-        </div>
-
-        {/* COMPACT, INFORMATION-DENSE, CYBERPUNK DASHBOARD */}
+        {/* Main Card */}
         <div style={{
-          width: 'min(720px, 90vw)',
-          padding: '1rem 2rem',
+          width: 'min(680px, 88vw)',
+          padding: '2.5rem',
+          background: 'rgba(0,15,30,0.95)',
+          border: '2px solid #0ff',
+          borderRadius: '20px',
+          boxShadow: '0 0 50px #0ff',
+          textAlign: 'center',
+          backdropFilter: 'blur(6px)'
+        }}>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>
+            Hash: {(latest?.hash || '').slice(0, 32)}...
+          </p>
+          <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>
+            {recentBlocks[0]?.tx_count || 0} transactions
+          </p>
+        </div>
+
+        {/* Compact Dashboard */}
+        <div style={{
+          width: 'min(680px, 88vw)',
+          padding: '1rem 1.8rem',
           background: 'rgba(0,20,40,0.92)',
           border: '1px solid #0ff',
           borderRadius: '12px',
           boxShadow: '0 0 25px rgba(0,255,255,0.3)',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: '1rem',
-          fontSize: 'clamp(0.9rem, 1.6vw, 1.3rem)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '0.8rem',
+          fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)',
           textAlign: 'center',
           backdropFilter: 'blur(8px)'
         }}>
@@ -190,12 +216,13 @@ function App() {
           <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
+        {/* Footer */}
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
 
-      {/* TIMELINE — perfect as before */}
+      {/* TIMELINE — unchanged perfection */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -232,7 +259,6 @@ function App() {
             justifyContent: 'center',
             outline: 'none'
           }}
-          aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
