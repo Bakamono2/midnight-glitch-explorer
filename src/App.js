@@ -221,7 +221,7 @@ function App() {
           }}
           aria-label={isTimelineOpen ? 'Close timeline' : 'Open timeline'}
         >
-          {isTimelineOpen ? '&#8678' : 'U+1F842'}
+          {isTimelineOpen ? '&#8678;' : 'U+1F842'}
         </button>
 
         <div style={{
