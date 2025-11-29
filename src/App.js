@@ -112,7 +112,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // YOUR ORIGINAL, PERFECT DIGITAL RAIN
+  // DIGITAL RAIN — YOUR ORIGINAL, NEVER TOUCHED AGAIN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
