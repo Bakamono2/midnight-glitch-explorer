@@ -13,7 +13,7 @@ function App() {
   // Privacy stats
   const [shieldedTps, setShieldedTps] = useState('0.0');
   const [privacyScore, setPrivacyScore] = useState(0);
-  const recentTxsRef = useRef([]); // stores { hash, shielded }
+  const recentTxsRef = useRef([]); // stores { shielded: true/false }
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -51,7 +51,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // MAIN FETCH + PRIVACY STATS
+  // MAIN FETCH + PRIVACY STATS + RAIN SPAWNING
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,19 +74,18 @@ function App() {
 
           // Update recent transactions for privacy score
           const newTxs = txs.map(tx => ({
-            hash: tx.hash,
             shielded: tx.outputs.some(o => o.plutus_data || o.data_hash)
           }));
           recentTxsRef.current = [...newTxs, ...recentTxsRef.current].slice(0, 100);
 
-          // Privacy Score
+          // Privacy Score — NEVER NaN
           const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
           const score = recentTxsRef.current.length > 0
             ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
             : 0;
           setPrivacyScore(score);
 
-          // Only spawn rain when tab is visible
+          // Spawn rain only when tab is visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
           }
@@ -95,6 +94,7 @@ function App() {
         console.error(e);
       }
     };
+
     fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
@@ -124,7 +124,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — perfect
+  // DIGITAL RAIN — 100% WORKING
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -195,6 +195,7 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
@@ -208,7 +209,7 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* FINAL DASHBOARD — WITH PERFECT PRIVACY SCORE */}
+        {/* FINAL DASHBOARD — NO NaN EVER */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
@@ -216,11 +217,7 @@ function App() {
           <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
           <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
           <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br />
-            <span style={{ color: '#ff0', fontWeight: 'bold' }}>
-              {privacyScore}%
-            </span>
-          </div>
+          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</span></div>
           <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
