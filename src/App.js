@@ -10,9 +10,6 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
-  // This remembers the last block we saw while the tab was visible
-  const lastVisibleBlockHash = useRef(null);
-
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
@@ -27,9 +24,8 @@ function App() {
   const spawnOneColumnPerTx = (txCount) => {
     const scale = getScale();
     const safeMargin = 160 * scale;
-    const maxNewDrops = Math.min(txCount, 30); // safety cap per block
 
-    for (let i = 0; i < maxNewDrops; i++) {
+    for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
@@ -39,10 +35,7 @@ function App() {
         hue: i % 3
       });
     }
-    // Hard cap — never more than 600 drops
-    if (columnsRef.current.length > 600) {
-      columnsRef.current = columnsRef.current.slice(-600);
-    }
+    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
   // Auto open/close timeline
@@ -53,7 +46,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // MAIN FETCH — ONLY SPAWN RAIN WHEN TAB IS VISIBLE
+  // Fetch + spawn rain (only when visible)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,18 +59,13 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // ONLY spawn rain if tab is currently visible
+          // Only spawn rain if tab is visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
-            lastVisibleBlockHash.current = block.hash; // remember this one
           }
-          // If tab is hidden → we update data but spawn ZERO drops
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) { console.error(e); }
     };
-
     fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
@@ -107,7 +95,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — smooth & capped
+  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — 100% RESTORED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -122,11 +110,8 @@ function App() {
 
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
-    let animationId;
     const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -162,21 +147,18 @@ function App() {
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
-      animationId = requestAnimationFrame(draw);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
+      requestAnimationFrame(draw);
     };
 
     draw();
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
-    };
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
   // Correct Blocks This Epoch
   const blocksThisEpoch = latest
-   ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
-   : '-';
+    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
+    : '-';
 
   return (
     <>
@@ -212,7 +194,7 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE */}
+      {/* TIMELINE — perfect */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -252,9 +234,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />
+              <path d="M15 18l-6-6 6-6" />  // ← Inward
             ) : (
-              <path d="M9 18l6-6-6-6" />
+              <path d="M9 18l6-6-6-6" />    // → Outward
             )}
           </svg>
         </button>
