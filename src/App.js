@@ -15,7 +15,7 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // YOUR ORIGINAL, PERFECT TRANSACTION RAIN — ONE DROP PER TX
+  // ONE DROP PER TRANSACTION — YOUR ORIGINAL, PERFECT RAIN
   const spawnDrop = () => {
     drops.current.push({
       x: Math.random() * window.innerWidth,
@@ -26,7 +26,7 @@ function App() {
     });
   };
 
-  // Draw loop — smooth fade + glowing drops
+  // DIGITAL RAIN — EXACTLY AS IT WAS WHEN IT WORKED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -66,7 +66,7 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Fetch + spawn ONE DROP PER TRANSACTION
+  // Fetch blocks + spawn ONE DROP PER TRANSACTION
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -123,7 +123,19 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+      {/* DIGITAL RAIN — 100% VISIBLE */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1,
+          pointerEvents: 'none'
+        }}
+      />
 
       {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
@@ -163,8 +175,8 @@ function App() {
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
+        borderRadius: '2px solid #0ff',
         borderRadius: '16px',
-        border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.5)',
         transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
         zIndex: 100,
