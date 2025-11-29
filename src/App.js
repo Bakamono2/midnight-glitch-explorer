@@ -13,7 +13,7 @@ function App() {
   // Privacy stats
   const [shieldedTps, setShieldedTps] = useState('0.0');
   const [privacyScore, setPrivacyScore] = useState(0);
-  const recentTxsRef = useRef([]); // stores { shielded: true/false }
+  const recentTxsRef = useRef([]);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -40,10 +40,12 @@ function App() {
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
+    // Hard cap
+    if (columnsRef.current.length > 1200) {
+      columnsRef.current = columnsRef.current.slice(-1200);
+    }
   };
 
-  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -51,7 +53,6 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // MAIN FETCH + PRIVACY STATS + RAIN SPAWNING
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,28 +65,21 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // Count shielded transactions
+          // Shielded stats
           const shieldedCount = txs.filter(tx =>
             tx.outputs.some(o => o.plutus_data || o.data_hash)
           ).length;
-
-          // Shielded Tx/s
           setShieldedTps((shieldedCount / 8).toFixed(1));
 
-          // Update recent transactions for privacy score
-          const newTxs = txs.map(tx => ({
+          recentTxsRef.current = [...txs.map(tx => ({
             shielded: tx.outputs.some(o => o.plutus_data || o.data_hash)
-          }));
-          recentTxsRef.current = [...newTxs, ...recentTxsRef.current].slice(0, 100);
-
-          // Privacy Score — NEVER NaN
+          })), ...recentTxsRef.current].slice(0, 100);
           const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
-          const score = recentTxsRef.current.length > 0
+          setPrivacyScore(recentTxsRef.current.length > 0
             ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
-            : 0;
-          setPrivacyScore(score);
+            : 0);
 
-          // Spawn rain only when tab is visible
+          // Only spawn rain when visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
           }
@@ -94,13 +88,11 @@ function App() {
         console.error(e);
       }
     };
-
     fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -124,7 +116,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — 100% WORKING
+  // DIGITAL RAIN — NOW 100% VISIBLE AND WORKING
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -140,7 +132,10 @@ function App() {
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Subtle fade instead of clearRect — this was the fix!
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -181,10 +176,12 @@ function App() {
     };
 
     draw();
-    return () => window.removeEventListener('resize', resize);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
-  // Blocks This Epoch
   const blocksThisEpoch = latest
     ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
     : '-';
@@ -193,7 +190,20 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+      {/* DIGITAL RAIN — NOW VISIBLE */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1,
+          pointerEvents: 'none',
+          opacity: 1
+        }}
+      />
 
       {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
@@ -209,9 +219,9 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* FINAL DASHBOARD — NO NaN EVER */}
+        {/* FINAL DASHBOARD */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>{shieldedTps}</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
           <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
