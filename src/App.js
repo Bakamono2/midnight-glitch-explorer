@@ -88,7 +88,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — EXACTLY AS IT WAS WHEN IT WORKED
+  // DIGITAL RAIN — THE ONE THAT WORKED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -104,7 +104,9 @@ function App() {
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -156,8 +158,22 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+      {/* DIGITAL RAIN — NOW 100% VISIBLE */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1,
+          pointerEvents: 'none',
+          opacity: 1
+        }}
+      />
 
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
@@ -177,9 +193,82 @@ function App() {
           <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
           <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
           <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</span></div>
+          <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>0%</span></div>
           <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
-        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
+          <span className="glitch">shhh...</span> nothing ever happened
+        </footer>
+      </div>
+
+      {/* TIMELINE */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        right: isTimelineOpen ? '2vw' : '-288px',
+        transform: 'translateY(-50%)',
+        width: '320px',
+        height: '76vh',
+        maxHeight: '76vh',
+        background: 'rgba(0,10,30,0.96)',
+        borderRadius: '16px',
+        border: '2px solid #0ff',
+        boxShadow: '0 0 40px rgba(0,255,255,0.5)',
+        transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+        zIndex: 100,
+        backdropFilter: 'blur(8px)',
+        overflow: 'hidden',
+        display: 'flex'
+      }}>
+        <button
+          onClick={() => setIsTimelineOpen(p => !p)}
+          style={{
+            width: '32px',
+            height: '100%',
+            background: 'rgba(0, 255, 255, 0.38)',
+            border: 'none',
+            borderRight: '2px solid #0ff',
+            borderRadius: '16px 0 0 16px',
+            color: '#0ff',
+            cursor: 'pointer',
+            boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            outline: 'none'
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            {isTimelineOpen ? (
+              <path d="M15 18l-6-6 6-6" />
+            ) : (
+              <path d="M9 18l6-6-6-6" />
+            )}
+          </svg>
+        </button>
+
+        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
+          {recentBlocks.slice(0, 10).map((b, i) => (
+            <div key={b.hash} style={{
+              padding: '0.9rem 0',
+              borderBottom: i < 9 ? '1px dashed rgba(0,255,255,0.2)' : 'none',
+              color: i === 0 ? '#0f0' : '#0ff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '1.05rem'
+            }}>
+              <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
+              <span>{b.tx_count || 0} tx</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default App;
