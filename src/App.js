@@ -116,7 +116,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — NEVER TOUCHED AGAIN
+  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — UNTOUCHED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -210,7 +210,6 @@ function App() {
         gap: '4vh',
         padding: '4vh 5vw'
       }}>
-        {/* TITLE */}
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3.5rem, 9vw, 9rem)' }}>
             MIDNIGHT
@@ -220,7 +219,6 @@ function App() {
           </p>
         </div>
 
-        {/* LATEST BLOCK CARD */}
         <div style={{
           width: 'min(780px, 92vw)',
           padding: '3.2rem',
@@ -245,7 +243,7 @@ function App() {
           </p>
         </div>
 
-        {/* NEW DASHBOARD — BUILT FROM SCRATCH */}
+        {/* FINAL 8-STAT DASHBOARD — CLEAN & BEAUTIFUL */}
         <div style={{
           width: 'min(900px, 94vw)',
           padding: '2rem 2.5rem',
@@ -260,38 +258,14 @@ function App() {
           textAlign: 'center',
           backdropFilter: 'blur(10px)'
         }}>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Tx/s</div>
-            <div style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>TPS Peak</div>
-            <div style={{ color: '#0f0' }}>0.0</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Avg Block Time</div>
-            <div style={{ color: '#0ff' }}>20s</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Blocks This Epoch</div>
-            <div style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Epoch Ends In</div>
-            <div style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Shielded Tx/s</div>
-            <div style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Privacy Score</div>
-            <div style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</div>
-          </div>
-          <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9em' }}>Network</div>
-            <div style={{ color: '#0ff' }}>Preprod</div>
-          </div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Tx/s</div><div style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>TPS Peak</div><div style={{ color: '#0f0' }}>0.0</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Avg Block Time</div><div style={{ color: '#0ff' }}>20s</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Blocks This Epoch</div><div style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Epoch Ends In</div><div style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Shielded Tx/s</div><div style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Privacy Score</div><div style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</div></div>
+          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Network</div><div style={{ color: '#0ff' }}>Preprod</div></div>
         </div>
 
         <footer style={{ marginTop: 'auto', paddingBottom: '4vh', opacity: 0.7, fontSize: 'clamp(1.1rem, 2.2vw, 1.6rem)' }}>
@@ -338,7 +312,7 @@ function App() {
           </svg>
         </button>
         <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-          <style jsx>{`::-webkit-scrollbar { display: none; }</style>
+          <style>{`::-webkit-scrollbar { display: none; }`}</style>
           {recentBlocks.slice(0, 12).map((b, i) => (
             <div key={b.hash} style={{
               padding: '1rem 0',
