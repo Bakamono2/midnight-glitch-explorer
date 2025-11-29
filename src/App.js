@@ -11,40 +11,56 @@ function App() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
   const canvasRef = useRef(null);
-  const columnsRef = useRef([]);
 
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-  const getScale = () => {
-    const area = window.innerWidth * window.innerHeight;
-    const referenceArea = 1920 * 1080;
-    return Math.sqrt(area / referenceArea);
-  };
-
-  const spawnOneColumnPerTx = (txCount) => {
-    const scale = getScale();
-    const safeMargin = 160 * scale;
-
-    for (let i = 0; i < txCount; i++) {
-      columnsRef.current.push({
-        x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
-        y: -200 - Math.random() * 600,
-        speed: (0.7 + Math.random() * 1.1) * scale,
-        length: Math.floor(20 + Math.random() * 35),
-        headPos: Math.random() * 8,
-        hue: i % 3
-      });
-    }
-    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
-  };
-
+  // THE ORIGINAL, PERFECT DIGITAL RAIN — RESTORED 100%
   useEffect(() => {
-    const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+
+    const cols = Math.floor(w / 20) + 1;
+    const ypos = Array(cols).fill(0);
+
+    const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.fillStyle = '#0ff';
+      ctx.font = '16pt monospace';
+
+      ypos.forEach((y, ind) => {
+        const text = matrix[Math.floor(Math.random() * matrix.length)];
+        const x = ind * 20;
+        ctx.fillText(text, x, y);
+
+        if (y > 100 + Math.random() * 10000) {
+          ypos[ind] = 0;
+        } else {
+          ypos[ind] = y + 20;
+        }
+      });
+    };
+
+    const interval = setInterval(draw, 50);
+
+    const handleResize = () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
+  // Block fetching + transaction burst (your original magic)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,15 +72,40 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txs.length);
+
+          // ORIGINAL BURST EFFECT — this is what made it feel alive
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            for (let i = 0; i < txs.length * 5; i++) {
+              setTimeout(() => {
+                ctx.fillStyle = '#0ff';
+                ctx.font = 'bold 20px monospace';
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillText(matrix[Math.floor(Math.random() * matrix.length)], x, y);
+              }, i * 15);
+            }
+          }
         }
       } catch (e) { console.error(e); }
     };
     fetchData();
-    const id = setInterval(fetchData, 8000);
-    return () => clearInterval(id);
+    const interval = setInterval(fetchData, 8000);
+    return () => clearInterval(interval);
   }, [latest]);
 
+  // Timeline auto-collapse
+  useEffect(() => {
+    const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -88,77 +129,10 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — THE ONE THAT WORKED
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const colors = ['#00ff99', '#00ffcc', '#00ffff'];
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const scale = getScale();
-      const baseFontSize = 28 * scale;
-      const charSpacing = 35 * scale;
-      const glowSize = 120 * scale;
-
-      ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      columnsRef.current.forEach(col => {
-        col.y += col.speed;
-        col.headPos += 0.3;
-
-        for (let i = 0; i <= col.length; i++) {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
-
-          ctx.globalAlpha = brightness;
-
-          if (brightness > 0.9) {
-            ctx.fillStyle = 'white';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = glowSize;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
-          } else {
-            ctx.fillStyle = colors[col.hue];
-            ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = 22 * scale;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
-          }
-        }
-      });
-
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
-      requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => window.removeEventListener('resize', resize);
-  }, []);
-
-  const blocksThisEpoch = latest
-    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
-    : '-';
-
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — NOW 100% VISIBLE */}
       <canvas
         ref={canvasRef}
         style={{
@@ -168,8 +142,7 @@ function App() {
           width: '100%',
           height: '100%',
           zIndex: 1,
-          pointerEvents: 'none',
-          opacity: 1
+          pointerEvents: 'none'
         }}
       />
 
@@ -182,7 +155,7 @@ function App() {
 
         <div style={{ width: 'min(680px, 88vw)', padding: '2.5rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <h2 className="glitch" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-          <p style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <p style={{ fontSize: 'clamp(2.2rem, 6vw,4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
