@@ -10,11 +10,6 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
-  // Privacy stats
-  const [shieldedTps, setShieldedTps] = useState('0.0');
-  const [privacyScore, setPrivacyScore] = useState(0);
-  const recentTxsRef = useRef([]);
-
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
@@ -43,7 +38,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Responsive timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -51,7 +45,6 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch latest block + spawn rain
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,25 +56,7 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-
-          // Privacy stats
-          const shieldedCount = txs.filter(tx =>
-            tx.outputs.some(o => o.plutus_data || o.data_hash)
-          ).length;
-          setShieldedTps((shieldedCount / 8).toFixed(1));
-
-          recentTxsRef.current = [...txs.map(tx => ({
-            shielded: tx.outputs.some(o => o.plutus_data || o.data_hash)
-          })), ...recentTxsRef.current].slice(0, 100);
-
-          const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
-          setPrivacyScore(recentTxsRef.current.length > 0
-            ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
-            : 0);
-
-          if (!document.hidden) {
-            spawnOneColumnPerTx(txs.length);
-          }
+          spawnOneColumnPerTx(txs.length);
         }
       } catch (e) {
         console.error(e);
@@ -92,7 +67,6 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -116,7 +90,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — UNTOUCHED
+  // YOUR ORIGINAL, WORKING DIGITAL RAIN — 100% UNCHANGED FROM WHEN IT WORKED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -176,99 +150,32 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  const blocksThisEpoch = latest
-    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
-    : '-';
-
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        minHeight: '100vh',
-        color: '#0ff',
-        fontFamily: '"Courier New", monospace',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '4vh',
-        padding: '4vh 5vw'
-      }}>
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3.5rem, 9vw, 9rem)' }}>
-            MIDNIGHT
-          </h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.8rem, 4.5vw, 3.5rem)', opacity: 0.9 }}>
-            EXPLORER
-          </p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
-        <div style={{
-          width: 'min(780px, 92vw)',
-          padding: '3.2rem',
-          background: 'rgba(0,15,30,0.96)',
-          border: '2px solid #0ff',
-          borderRadius: '24px',
-          boxShadow: '0 0 60px #0ff',
-          textAlign: 'center',
-          backdropFilter: 'blur(8px)'
-        }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', margin: '0 0 1.2rem' }}>
-            LATEST BLOCK
-          </h2>
-          <p style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', margin: '0.6rem 0', color: '#f0f' }}>
-            #{latest?.height || '...'}
-          </p>
-          <p style={{ margin: '1.2rem 0', fontSize: 'clamp(0.9rem, 2vw, 1.4rem)', wordBreak: 'break-all', opacity: 0.8 }}>
-            Hash: {(latest?.hash || '').slice(0, 40)}...
-          </p>
-          <p style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', color: '#0f0' }}>
-            {recentBlocks[0]?.tx_count || 0} transactions
-          </p>
+        <div style={{ width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+          <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* FINAL 8-STAT DASHBOARD — CLEAN & BEAUTIFUL */}
-        <div style={{
-          width: 'min(900px, 94vw)',
-          padding: '2rem 2.5rem',
-          background: 'rgba(0,20,50,0.92)',
-          border: '2px solid #0ff',
-          borderRadius: '20px',
-          boxShadow: '0 0 50px rgba(0,255,255,0.6)',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '1.4rem',
-          fontSize: 'clamp(1rem, 2vw, 1.5rem)',
-          textAlign: 'center',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Tx/s</div><div style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>TPS Peak</div><div style={{ color: '#0f0' }}>0.0</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Avg Block Time</div><div style={{ color: '#0ff' }}>20s</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Blocks This Epoch</div><div style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Epoch Ends In</div><div style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Shielded Tx/s</div><div style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Privacy Score</div><div style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</div></div>
-          <div><div style={{ opacity: 0.7, fontSize: '0.9em' }}>Network</div><div style={{ color: '#0ff' }}>Preprod</div></div>
+        <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+          <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
+          <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
-        <footer style={{ marginTop: 'auto', paddingBottom: '4vh', opacity: 0.7, fontSize: 'clamp(1.1rem, 2.2vw, 1.6rem)' }}>
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
           <span className="glitch">shhh...</span> nothing ever happened
         </footer>
       </div>
@@ -277,50 +184,59 @@ function App() {
       <div style={{
         position: 'fixed',
         top: '50%',
-        right: isTimelineOpen ? '2vw' : '-300px',
+        right: isTimelineOpen ? '2vw' : '-288px',
         transform: 'translateY(-50%)',
-        width: '340px',
-        height: '78vh',
-        background: 'rgba(0,10,30,0.97)',
-        borderRadius: '20px',
+        width: '320px',
+        height: '76vh',
+        maxHeight: '76vh',
+        background: 'rgba(0,10,30,0.96)',
+        borderRadius: '16px',
         border: '2px solid #0ff',
-        boxShadow: '0 0 50px rgba(0,255,255,0.7)',
-        transition: 'right 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: '0 0 40px rgba(0,255,255,0.5)',
+        transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
         zIndex: 100,
-        backdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(8px)',
         overflow: 'hidden',
         display: 'flex'
       }}>
         <button
           onClick={() => setIsTimelineOpen(p => !p)}
           style={{
-            width: '36px',
-            background: 'rgba(0,255,255,0.4)',
+            width: '32px',
+            height: '100%',
+            background: 'rgba(0, 255, 255, 0.38)',
             border: 'none',
             borderRight: '2px solid #0ff',
-            borderRadius: '20px 0 0 20px',
+            borderRadius: '16px 0 0 16px',
             color: '#0ff',
             cursor: 'pointer',
-            boxShadow: '-12px 0 40px rgba(0,255,255,1)',
+            boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
+            transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            outline: 'none'
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5">
-            {isTimelineOpen ? <path d="M15 18l-6-6 6-6"/> : <path d="M9 18l6-6-6-6"/>}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            {isTimelineOpen ? (
+              <path d="M15 18l-6-6 6-6" />
+            ) : (
+              <path d="M9 18l6-6-6-6" />
+            )}
           </svg>
         </button>
-        <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-          <style>{`::-webkit-scrollbar { display: none; }`}</style>
-          {recentBlocks.slice(0, 12).map((b, i) => (
+
+        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
+          {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} style={{
-              padding: '1rem 0',
-              borderBottom: i < 11 ? '1px dashed rgba(0,255,255,0.25)' : 'none',
+              padding: '0.9rem 0',
+              borderBottom: i < 9 ? '1px dashed rgba(0,255,255,0.2)' : 'none',
               color: i === 0 ? '#0f0' : '#0ff',
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '1.15rem'
+              fontSize: '1.05rem'
             }}>
               <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
               <span>{b.tx_count || 0} tx</span>
