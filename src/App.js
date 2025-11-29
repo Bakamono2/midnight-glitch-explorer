@@ -10,6 +10,11 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
+  // NEW REAL-TIME PRIVACY STATS
+  const [shieldedTps, setShieldedTps] = useState('0.0');
+  const [privacyScore, setPrivacyScore] = useState(0);
+  const recentTxsRef = useRef([]); // last 100 tx hashes
+
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
@@ -38,7 +43,6 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
-  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -46,7 +50,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch + spawn rain (only when visible)
+  // MAIN FETCH + PRIVACY STATS
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -59,12 +63,27 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // Only spawn rain if tab is visible
+          // Count shielded transactions (has plutus_data or data_hash)
+          const shieldedCount = txs.filter(tx =>
+            tx.outputs.some(o => o.plutus_data || o.data_hash)
+          ).length;
+
+          // Shielded Tx/s (over 8-second interval)
+          const currentShieldedTps = (shieldedCount / 8).toFixed(1);
+          setShieldedTps(currentShieldedTps);
+
+          // Privacy Score — % of last 100 txs that are shielded
+          recentTxsRef.current = [...txs.map(tx => ({ hash: tx.hash, shielded: shieldedCount > 0 })), ...recentTxsRef.current].slice(0, 100);
+          const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
+          setPrivacyScore(Math.round((shieldedInWindow / recentTxsRef.current.length) * 100));
+
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
           }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -95,7 +114,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — 100% RESTORED
+  // DIGITAL RAIN — perfect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -155,7 +174,6 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Correct Blocks This Epoch
   const blocksThisEpoch = latest
     ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
     : '-';
@@ -166,7 +184,6 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
@@ -180,12 +197,15 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
+        {/* FINAL DASHBOARD — WITH YOUR TWO NEW KILLER STATS */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
           <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
           <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</span></div>
           <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
         </div>
 
@@ -194,7 +214,7 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE — perfect */}
+      {/* TIMELINE — unchanged perfection */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -234,9 +254,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />  // ← Inward
+              <path d="M15 18l-6-6 6-6" />
             ) : (
-              <path d="M9 18l6-6-6-6" />    // → Outward
+              <path d="M9 18l6-6-6-6" />
             )}
           </svg>
         </button>
