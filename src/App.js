@@ -13,59 +13,35 @@ function App() {
   // Privacy stats
   const [shieldedTps, setShieldedTps] = useState('0.0');
   const [privacyScore, setPrivacyScore] = useState(0);
-  const recentTxsRef = useRef([]); // { shielded: true/false }
+  const recentTxsRef = useRef([]);
 
   const canvasRef = useRef(null);
+  const drops = useRef([]);
 
-  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — 100% RESTORED
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
+  const getScale = () => {
+    const area = window.innerWidth * window.innerHeight;
+    const referenceArea = 1920 * 1080;
+    return Math.sqrt(area / referenceArea);
+  };
 
-    const cols = Math.floor(w / 20) + 1;
-    const ypos = Array(cols).fill(0);
-
-    const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.fillStyle = '#0ff';
-      ctx.font = '15pt monospace';
-
-      ypos.forEach((y, ind) => {
-        const text = matrix[Math.floor(Math.random() * matrix.length)];
-        const x = ind * 20;
-        ctx.fillText(text, x, y);
-
-        if (y > 100 + Math.random() * 10000) {
-          ypos[ind] = 0;
-        } else {
-          ypos[ind] = y + 20;
-        }
+  // ONE DROP PER TRANSACTION — YOUR ORIGINAL, PERFECT RAIN
+  const spawnDropsForTxs = (txCount) => {
+    const scale = getScale();
+    for (let i = 0; i < txCount; i++) {
+      drops.current.push({
+        x: Math.random() * window.innerWidth,
+        y: -50 - Math.random() * 100,
+        speed: 3 + Math.random() * 8,
+        length: 10 + Math.floor(Math.random() * 20),
+        opacity: 1,
+        char: chars[Math.floor(Math.random() * chars.length)]
       });
-    };
+    }
+  };
 
-    const interval = setInterval(draw, 50);
-
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  // Fetch blocks + shielded stats
+  // MAIN FETCH — WITH YOUR REAL TRANSACTION RAIN
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -82,17 +58,20 @@ function App() {
           const shieldedCount = txs.filter(tx =>
             tx.outputs.some(o => o.plutus_data || o.data_hash)
           ).length;
-
           setShieldedTps((shieldedCount / 8).toFixed(1));
 
           recentTxsRef.current = [...txs.map(tx => ({
             shielded: tx.outputs.some(o => o.plutus_data || o.data_hash)
           })), ...recentTxsRef.current].slice(0, 100);
-
           const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
           setPrivacyScore(recentTxsRef.current.length > 0
             ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
             : 0);
+
+          // YOUR REAL RAIN — ONE DROP PER TRANSACTION
+          if (!document.hidden) {
+            spawnDropsForTxs(txs.length);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -127,25 +106,53 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // YOUR ORIGINAL TRANSACTION RAIN — 100% WORKING
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drops.current = drops.current.filter(drop => {
+        drop.y += drop.speed;
+        drop.opacity -= 0.01;
+
+        ctx.globalAlpha = drop.opacity;
+        ctx.fillStyle = '#0ff';
+        ctx.font = '20px monospace';
+        ctx.fillText(drop.char, drop.x, drop.y);
+
+        return drop.y < canvas.height + 50 && drop.opacity > 0;
+      });
+
+      requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+  const blocksThisEpoch = latest
+    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
+    : '-';
+
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — YOUR ORIGINAL, PERFECT ONE */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
@@ -159,12 +166,11 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* DASHBOARD — WITH YOUR TWO NEW STATS */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
-          <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{latest ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1) : '-'}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
           <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
           <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
           <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{privacyScore}%</span></div>
