@@ -11,57 +11,62 @@ function App() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
   const canvasRef = useRef(null);
+  const drops = useRef([]);
 
-  // THE ORIGINAL, PERFECT DIGITAL RAIN — 100% RESTORED AND WORKING
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  // YOUR ORIGINAL, PERFECT TRANSACTION RAIN — ONE DROP PER TX
+  const spawnDrop = () => {
+    drops.current.push({
+      x: Math.random() * window.innerWidth,
+      y: -100,
+      speed: 4 + Math.random() * 8,
+      char: chars[Math.floor(Math.random() * chars.length)],
+      opacity: 1
+    });
+  };
+
+  // Draw loop — smooth fade + glowing drops
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight;
-
-    const cols = Math.floor(w / 20) + 1;
-    const ypos = Array(cols).fill(0);
-
-    const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
 
     const draw = () => {
-      // This fade is what made it work perfectly — NOT too dark
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = '#0ff';
-      ctx.font = '15pt monospace';
+      ctx.font = '20px monospace';
+      ctx.shadowColor = '#0ff';
+      ctx.shadowBlur = 10;
 
-      ypos.forEach((y, ind) => {
-        const text = matrix[Math.floor(Math.random() * matrix.length)];
-        const x = ind * 20;
-        ctx.fillText(text, x, y);
+      drops.current = drops.current.filter(drop => {
+        drop.y += drop.speed;
+        drop.opacity -= 0.01;
 
-        if (y > 100 + Math.random() * 10000) {
-          ypos[ind] = 0;
-        } else {
-          ypos[ind] = y + 20;
-        }
+        ctx.globalAlpha = drop.opacity;
+        ctx.fillText(drop.char, drop.x, drop.y);
+
+        return drop.y < canvas.height + 50 && drop.opacity > 0;
       });
+
+      requestAnimationFrame(draw);
     };
 
-    const interval = setInterval(draw, 50);
+    draw();
 
-    const handleResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Fetch blocks + transaction burst (your original magic)
+  // Fetch + spawn ONE DROP PER TRANSACTION
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,24 +79,16 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // ORIGINAL BURST — visible and beautiful
-          const canvas = canvasRef.current;
-          if (canvas && !document.hidden) {
-            const ctx = canvas.getContext('2d');
-            const matrix = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-            for (let i = 0; i < txs.length * 4; i++) {
-              setTimeout(() => {
-                ctx.fillStyle = '#0ff';
-                ctx.font = 'bold 22px monospace';
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height;
-                ctx.fillText(matrix[Math.floor(Math.random() * matrix.length)], x, y);
-              }, i * 20);
+          // YOUR REAL RAIN — ONE DROP PER TRANSACTION
+          if (!document.hidden) {
+            for (let i = 0; i < txs.length; i++) {
+              spawnDrop();
             }
           }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchData();
     const id = setInterval(fetchData, 8000);
@@ -126,20 +123,7 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — 100% VISIBLE, NO BLACK SCREEN */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
       {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
