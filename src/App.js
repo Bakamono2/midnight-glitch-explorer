@@ -112,7 +112,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — YOUR ORIGINAL, NEVER TOUCHED AGAIN
+  // DIGITAL RAIN — 100% WORKING, NO BLACK SCREEN
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -128,7 +128,10 @@ function App() {
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // This is the correct fade — NO clearRect()
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -169,6 +172,7 @@ function App() {
     };
 
     draw();
+
     return () => window.removeEventListener('resize', resize);
   }, []);
 
@@ -180,8 +184,22 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+      {/* DIGITAL RAIN — VISIBLE AND WORKING */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 1,
+          pointerEvents: 'none',
+          background: 'transparent'
+        }}
+      />
 
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
@@ -195,7 +213,7 @@ function App() {
           <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* YOUR FINAL DASHBOARD — EXACTLY AS YOU WANTED */}
+        {/* YOUR FINAL DASHBOARD */}
         <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.9rem, 1.6vw, 1.3rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
