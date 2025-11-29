@@ -90,7 +90,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // THIS IS YOUR ORIGINAL, WORKING DIGITAL RAIN — 100% UNTOUCHED
+  // YOUR ORIGINAL, PERFECT DIGITAL RAIN — 100% UNTOUCHED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -156,6 +156,7 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* YOUR PERFECT MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
@@ -169,6 +170,7 @@ function App() {
           <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
+        {/* YOUR ORIGINAL DASHBOARD — RESTORED */}
         <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
@@ -180,7 +182,7 @@ function App() {
         </footer>
       </div>
 
-      {/* FINAL TIMELINE */}
+      {/* TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
