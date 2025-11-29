@@ -40,7 +40,6 @@ function App() {
         hue: i % 3
       });
     }
-    // Hard cap
     if (columnsRef.current.length > 1200) {
       columnsRef.current = columnsRef.current.slice(-1200);
     }
@@ -65,7 +64,6 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // Shielded stats
           const shieldedCount = txs.filter(tx =>
             tx.outputs.some(o => o.plutus_data || o.data_hash)
           ).length;
@@ -79,7 +77,6 @@ function App() {
             ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
             : 0);
 
-          // Only spawn rain when visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
           }
@@ -131,8 +128,9 @@ function App() {
 
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
+    let animationId;
     const draw = () => {
-      // Subtle fade instead of clearRect — this was the fix!
+      // This is the correct way — fade instead of clear
       ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -172,12 +170,13 @@ function App() {
       });
 
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
-      requestAnimationFrame(draw);
+      animationId = requestAnimationFrame(draw);
     };
 
     draw();
 
     return () => {
+      cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
     };
   }, []);
@@ -190,7 +189,7 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — NOW VISIBLE */}
+      {/* DIGITAL RAIN — NOW 100% VISIBLE */}
       <canvas
         ref={canvasRef}
         style={{
@@ -201,7 +200,7 @@ function App() {
           height: '100%',
           zIndex: 1,
           pointerEvents: 'none',
-          opacity: 1
+          background: 'transparent'
         }}
       />
 
@@ -219,9 +218,8 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* FINAL DASHBOARD */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>{shieldedTps}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
           <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
