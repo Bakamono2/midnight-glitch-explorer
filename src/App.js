@@ -10,10 +10,10 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
-  // NEW REAL-TIME PRIVACY STATS
+  // Privacy stats
   const [shieldedTps, setShieldedTps] = useState('0.0');
   const [privacyScore, setPrivacyScore] = useState(0);
-  const recentTxsRef = useRef([]); // last 100 tx hashes
+  const recentTxsRef = useRef([]); // stores { hash, shielded }
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -43,6 +43,7 @@ function App() {
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
+  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -63,20 +64,29 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // Count shielded transactions (has plutus_data or data_hash)
+          // Count shielded transactions
           const shieldedCount = txs.filter(tx =>
             tx.outputs.some(o => o.plutus_data || o.data_hash)
           ).length;
 
-          // Shielded Tx/s (over 8-second interval)
-          const currentShieldedTps = (shieldedCount / 8).toFixed(1);
-          setShieldedTps(currentShieldedTps);
+          // Shielded Tx/s
+          setShieldedTps((shieldedCount / 8).toFixed(1));
 
-          // Privacy Score — % of last 100 txs that are shielded
-          recentTxsRef.current = [...txs.map(tx => ({ hash: tx.hash, shielded: shieldedCount > 0 })), ...recentTxsRef.current].slice(0, 100);
+          // Update recent transactions for privacy score
+          const newTxs = txs.map(tx => ({
+            hash: tx.hash,
+            shielded: tx.outputs.some(o => o.plutus_data || o.data_hash)
+          }));
+          recentTxsRef.current = [...newTxs, ...recentTxsRef.current].slice(0, 100);
+
+          // Privacy Score
           const shieldedInWindow = recentTxsRef.current.filter(t => t.shielded).length;
-          setPrivacyScore(Math.round((shieldedInWindow / recentTxsRef.current.length) * 100));
+          const score = recentTxsRef.current.length > 0
+            ? Math.round((shieldedInWindow / recentTxsRef.current.length) * 100)
+            : 0;
+          setPrivacyScore(score);
 
+          // Only spawn rain when tab is visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
           }
@@ -174,6 +184,7 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, []);
 
+  // Blocks This Epoch
   const blocksThisEpoch = latest
     ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
     : '-';
@@ -197,25 +208,28 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* FINAL DASHBOARD — WITH YOUR TWO NEW KILLER STATS */}
-<div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-  <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
-  <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
-  <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
-  <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
-  <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
-  <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
-  <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br />
-    <span style={{ color: '#ff0', fontWeight: 'bold' }}>
-      {recentTxsRef.current.length > 0 
-        ? Math.round((recentTxsRef.current.filter(t => t.shielded).length / recentTxsRef.current.length) * 100)
-        : 0}%
-    </span>
-  </div>
-  <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
-</div>
+        {/* FINAL DASHBOARD — WITH PERFECT PRIVACY SCORE */}
+        <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
+          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
+          <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{blocksThisEpoch}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Shielded Tx/s</span><br /><span style={{ color: '#f0f', fontWeight: 'bold' }}>{shieldedTps}</span></div>
+          <div><span style={{ opacity: 0.7 }}>Privacy Score</span><br />
+            <span style={{ color: '#ff0', fontWeight: 'bold' }}>
+              {privacyScore}%
+            </span>
+          </div>
+          <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
+        </div>
 
-      {/* TIMELINE — unchanged perfection */}
+        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
+          <span className="glitch">shhh...</span> nothing ever happened
+        </footer>
+      </div>
+
+      {/* TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
