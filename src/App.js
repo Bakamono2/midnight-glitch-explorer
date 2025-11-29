@@ -15,6 +15,8 @@ function App() {
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  const MAX_DROPS = 600; // Performance cap
+
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
     const referenceArea = 1920 * 1080;
@@ -22,10 +24,13 @@ function App() {
   };
 
   const spawnOneColumnPerTx = (txCount) => {
+    if (columnsRef.current.length >= MAX_DROPS) return;
+
     const scale = getScale();
     const safeMargin = 160 * scale;
+    const toSpawn = Math.min(txCount, MAX_DROPS - columnsRef.current.length);
 
-    for (let i = 0; i < txCount; i++) {
+    for (let i = 0; i < toSpawn; i++) {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
@@ -35,9 +40,9 @@ function App() {
         hue: i % 3
       });
     }
-    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
   };
 
+  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -45,6 +50,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Fetch blocks + safe rain spawning
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,7 +62,11 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txs.length);
+
+          // Only spawn rain if tab is visible and we have capacity
+          if (!document.hidden) {
+            spawnOneColumnPerTx(txs.length);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -67,6 +77,7 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -90,6 +101,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // DIGITAL RAIN — performance-perfect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -104,8 +116,11 @@ function App() {
 
     const colors = ['#00ff99', '#00ffcc', '#00ffff'];
 
+    let animationId;
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       const scale = getScale();
       const baseFontSize = 28 * scale;
       const charSpacing = 35 * scale;
@@ -141,18 +156,20 @@ function App() {
         }
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
-      requestAnimationFrame(draw);
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 1000);
+      animationId = requestAnimationFrame(draw);
     };
 
     draw();
-    return () => window.removeEventListener('resize', resize);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
-  // CORRECT Blocks This Epoch — no more negatives
-  const blocksThisEpoch = latest
-    ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
-    : '-';
+  // CORRECT Blocks This Epoch
+  const blocksThisEpoch = latest ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1) : '-';
 
   return (
     <>
@@ -173,7 +190,6 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        {/* PERFECT DASHBOARD */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
@@ -188,7 +204,7 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE */}
+      {/* TIMELINE + PERFECT BUTTON */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -228,9 +244,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />
+              <path d="M15 18l-6-6 6-6" />  {/* ← Inward */}
             ) : (
-              <path d="M9 18l6-6-6-6" />
+              <path d="M9 18l6-6-6-6" />    {/* → Outward */}
             )}
           </svg>
         </button>
