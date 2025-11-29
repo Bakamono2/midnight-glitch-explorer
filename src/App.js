@@ -10,12 +10,13 @@ function App() {
   const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
+  // This remembers the last block we saw while the tab was visible
+  const lastVisibleBlockHash = useRef(null);
+
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-  const MAX_DROPS = 600; // Performance cap
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -24,13 +25,11 @@ function App() {
   };
 
   const spawnOneColumnPerTx = (txCount) => {
-    if (columnsRef.current.length >= MAX_DROPS) return;
-
     const scale = getScale();
     const safeMargin = 160 * scale;
-    const toSpawn = Math.min(txCount, MAX_DROPS - columnsRef.current.length);
+    const maxNewDrops = Math.min(txCount, 30); // safety cap per block
 
-    for (let i = 0; i < toSpawn; i++) {
+    for (let i = 0; i < maxNewDrops; i++) {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
@@ -39,6 +38,10 @@ function App() {
         headPos: Math.random() * 8,
         hue: i % 3
       });
+    }
+    // Hard cap — never more than 600 drops
+    if (columnsRef.current.length > 600) {
+      columnsRef.current = columnsRef.current.slice(-600);
     }
   };
 
@@ -50,7 +53,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch blocks + safe rain spawning
+  // MAIN FETCH — ONLY SPAWN RAIN WHEN TAB IS VISIBLE
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,15 +66,18 @@ function App() {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
 
-          // Only spawn rain if tab is visible and we have capacity
+          // ONLY spawn rain if tab is currently visible
           if (!document.hidden) {
             spawnOneColumnPerTx(txs.length);
+            lastVisibleBlockHash.current = block.hash; // remember this one
           }
+          // If tab is hidden → we update data but spawn ZERO drops
         }
       } catch (e) {
         console.error(e);
       }
     };
+
     fetchData();
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
@@ -101,7 +107,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — performance-perfect
+  // DIGITAL RAIN — smooth & capped
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -161,15 +167,16 @@ function App() {
     };
 
     draw();
-
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
     };
   }, []);
 
-  // CORRECT Blocks This Epoch
-  const blocksThisEpoch = latest ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1) : '-';
+  // Correct Blocks This Epoch
+  const blocksThisEpoch = latest
+   ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1)
+   : '-';
 
   return (
     <>
@@ -177,6 +184,7 @@ function App() {
 
       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
+      {/* MAIN CONTENT */}
       <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
@@ -204,7 +212,7 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE + PERFECT BUTTON */}
+      {/* TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
@@ -244,9 +252,9 @@ function App() {
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
             {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />  {/* ← Inward */}
+              <path d="M15 18l-6-6 6-6" />
             ) : (
-              <path d="M9 18l6-6-6-6" />    {/* → Outward */}
+              <path d="M9 18l6-6-6-6" />
             )}
           </svg>
         </button>
