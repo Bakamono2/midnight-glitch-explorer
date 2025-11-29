@@ -45,6 +45,7 @@ function App() {
     }
   };
 
+  // Auto open/close timeline
   useEffect(() => {
     const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
     check();
@@ -52,6 +53,7 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Fetch + privacy stats
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -90,6 +92,7 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
+  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -113,7 +116,7 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // DIGITAL RAIN — NOW 100% VISIBLE AND WORKING
+  // DIGITAL RAIN — NOW 100% VISIBLE (correct fade, no clearRect!)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -130,7 +133,7 @@ function App() {
 
     let animationId;
     const draw = () => {
-      // This is the correct way — fade instead of clear
+      // CORRECT: gentle fade instead of clearRect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -218,6 +221,7 @@ function App() {
           <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
+        {/* DASHBOARD */}
         <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
           <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
           <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
