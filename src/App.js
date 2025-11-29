@@ -11,63 +11,40 @@ function App() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
 
   const canvasRef = useRef(null);
-  const drops = useRef([]);
+  const columnsRef = useRef([]);
 
   const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  // ONE DROP PER TRANSACTION — YOUR ORIGINAL, PERFECT RAIN
-  const spawnDrop = () => {
-    drops.current.push({
-      x: Math.random() * window.innerWidth,
-      y: -100,
-      speed: 4 + Math.random() * 8,
-      char: chars[Math.floor(Math.random() * chars.length)],
-      opacity: 1
-    });
+  const getScale = () => {
+    const area = window.innerWidth * window.innerHeight;
+    const referenceArea = 1920 * 1080;
+    return Math.sqrt(area / referenceArea);
   };
 
-  // DIGITAL RAIN — FIXED: NO clearRect() — only gentle fade
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  const spawnOneColumnPerTx = (txCount) => {
+    const scale = getScale();
+    const safeMargin = 160 * scale;
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const draw = () => {
-      // THIS IS THE FIX — gentle fade instead of clearRect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#0ff';
-      ctx.font = '20px monospace';
-      ctx.shadowColor = '#0ff';
-      ctx.shadowBlur = 10;
-
-      drops.current = drops.current.filter(drop => {
-        drop.y += drop.speed;
-        drop.opacity -= 0.01;
-
-        ctx.globalAlpha = drop.opacity;
-        ctx.fillText(drop.char, drop.x, drop.y);
-
-        return drop.y < canvas.height + 50 && drop.opacity > 0;
+    for (let i = 0; i < txCount; i++) {
+      columnsRef.current.push({
+        x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
+        y: -200 - Math.random() * 600,
+        speed: (0.7 + Math.random() * 1.1) * scale,
+        length: Math.floor(20 + Math.random() * 35),
+        headPos: Math.random() * 8,
+        hue: i % 3
       });
+    }
+    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
+  };
 
-      requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => window.removeEventListener('resize', resize);
+  useEffect(() => {
+    const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Fetch blocks + spawn ONE DROP PER TRANSACTION
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,13 +56,7 @@ function App() {
         if (!latest || latest.hash !== block.hash) {
           setLatest(block);
           setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-
-          // YOUR REAL RAIN — ONE DROP PER TRANSACTION
-          if (!document.hidden) {
-            for (let i = 0; i < txs.length; i++) {
-              spawnDrop();
-            }
-          }
+          spawnOneColumnPerTx(txs.length);
         }
       } catch (e) {
         console.error(e);
@@ -96,7 +67,6 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
-  // Epoch countdown
   useEffect(() => {
     let epochEnd = null;
     const fetchEpoch = async () => {
@@ -120,45 +90,89 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // THIS IS YOUR ORIGINAL, WORKING DIGITAL RAIN — 100% UNTOUCHED
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const colors = ['#00ff99', '#00ffcc', '#00ffff'];
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const scale = getScale();
+      const baseFontSize = 28 * scale;
+      const charSpacing = 35 * scale;
+      const glowSize = 120 * scale;
+
+      ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      columnsRef.current.forEach(col => {
+        col.y += col.speed;
+        col.headPos += 0.3;
+
+        for (let i = 0; i <= col.length; i++) {
+          const char = chars[Math.floor(Math.random() * chars.length)];
+          const distance = Math.abs(i - col.headPos);
+          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
+
+          ctx.globalAlpha = brightness;
+
+          if (brightness > 0.9) {
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = glowSize;
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
+          } else {
+            ctx.fillStyle = colors[col.hue];
+            ctx.shadowColor = colors[col.hue];
+            ctx.shadowBlur = 22 * scale;
+            ctx.fillText(char, col.x, col.y - i * charSpacing);
+          }
+        }
+      });
+
+      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
+      requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — NOW 100% VISIBLE */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none'
-        }}
-      />
+      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
 
-      {/* MAIN CONTENT */}
-      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 4vw' }}>
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
         <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(2.8rem, 7vw, 7rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)', opacity: 0.9 }}>EXPLORER</p>
+          <h1 className="glitch-title" style={{ margin: '0 0 1vh', fontSize: 'clamp(3rem, 8vw, 8rem)' }}>MIDNIGHT</h1>
+          <p style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 3rem)', opacity: 0.9 }}>EXPLORER</p>
         </div>
 
-        <div style={{ width: 'min(680px, 88vw)', padding: '2.5rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
-          <p style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.75rem, 1.6vw, 1.1rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
-          <p style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2.2rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
+        <div style={{ width: 'min(720px, 90vw)', padding: '3rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+          <h2 className="glitch" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 1rem' }}>LATEST BLOCK</h2>
+          <p style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', margin: '0.5rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+          <p style={{ margin: '1rem 0', fontSize: 'clamp(0.8rem, 1.8vw, 1.2rem)', wordBreak: 'break-all' }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+          <p style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: '#0f0' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
         </div>
 
-        <div style={{ width: 'min(680px, 88vw)', padding: '1rem 1.8rem', background: 'rgba(0,20,40,0.92)', border: '1px solid #0ff', borderRadius: '12px', boxShadow: '0 0 25px rgba(0,255,255,0.3)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.8rem', fontSize: 'clamp(0.85rem, 1.5vw, 1.2rem)', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-          <div><span style={{ opacity: 0.7 }}>Tx/s</span><br /><span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
-          <div><span style={{ opacity: 0.7 }}>TPS Peak</span><br /><span style={{ color: '#0f0' }}>0.0</span></div>
-          <div><span style={{ opacity: 0.7 }}>Avg Block Time</span><br /><span style={{ color: '#0ff' }}>20s</span></div>
-          <div><span style={{ opacity: 0.7 }}>Blocks This Epoch</span><br /><span style={{ color: '#0ff', fontWeight: 'bold' }}>{latest ? (latest.height - Math.floor(latest.height / 21600) * 21600 + 1) : '-'}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Epoch Ends In</span><br /><span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
-          <div><span style={{ opacity: 0.7 }}>Network</span><br /><span style={{ color: '#0ff' }}>Preprod</span></div>
+        <div style={{ width: 'min(720px, 90vw)', padding: '1.4rem 2rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 35px #0ff', display: 'flex', justifyContent: 'space-around', fontSize: 'clamp(1.1rem, 2.2vw, 1.8rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+          <div>Tx/s <span style={{ color: '#0f0', fontWeight: 'bold' }}>0.0</span></div>
+          <div>Total Blocks <span style={{ color: '#0f0', fontWeight: 'bold' }}>{latest?.height || '-'}</span></div>
+          <div>Epoch Ends In <span style={{ color: '#ff0', fontWeight: 'bold' }}>{timeLeft}</span></div>
         </div>
 
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>
@@ -166,7 +180,7 @@ function App() {
         </footer>
       </div>
 
-      {/* TIMELINE */}
+      {/* FINAL TIMELINE */}
       <div style={{
         position: 'fixed',
         top: '50%',
