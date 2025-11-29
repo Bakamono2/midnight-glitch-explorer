@@ -26,7 +26,7 @@ function App() {
     });
   };
 
-  // DIGITAL RAIN — EXACTLY AS IT WAS WHEN IT WORKED
+  // DIGITAL RAIN — FIXED: NO clearRect() — only gentle fade
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -40,6 +40,7 @@ function App() {
     window.addEventListener('resize', resize);
 
     const draw = () => {
+      // THIS IS THE FIX — gentle fade instead of clearRect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -123,7 +124,7 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      {/* DIGITAL RAIN — 100% VISIBLE */}
+      {/* DIGITAL RAIN — NOW 100% VISIBLE */}
       <canvas
         ref={canvasRef}
         style={{
@@ -175,8 +176,8 @@ function App() {
         height: '76vh',
         maxHeight: '76vh',
         background: 'rgba(0,10,30,0.96)',
-        borderRadius: '2px solid #0ff',
         borderRadius: '16px',
+        border: '2px solid #0ff',
         boxShadow: '0 0 40px rgba(0,255,255,0.5)',
         transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
         zIndex: 100,
