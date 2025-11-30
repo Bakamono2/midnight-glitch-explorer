@@ -161,7 +161,7 @@ function App() {
       // Fade previous frame using destination-out so trails gently decay without tint buildup.
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.02)' : `rgba(0, 0, 0, ${overlayAlpha})`;
+      ctx.fillStyle = overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.06)' : `rgba(0, 0, 0, ${overlayAlpha})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
       ctx.shadowBlur = 0;
@@ -192,13 +192,13 @@ function App() {
         for (let i = 0; i < columnLength; i++) {
           const glyph = col.glyphs[i] || nextGlyph();
           const distanceFromHead = i;
-          const trailAlpha = Math.max(0, 1 - (distanceFromHead / columnLength) * 0.95);
+          const trailAlpha = Math.max(0, 1 - distanceFromHead / columnLength);
           const depthFade = Math.max(0, 1 - distanceFromHead * col.fadeRate);
           const opacity = Math.max(0, Math.min(trailAlpha * depthFade, 1));
 
-          if (opacity <= 0.04) continue;
+          if (opacity <= 0.05) continue;
 
-          // Reset per-glyph shadow to avoid glow carryover on tails.
+          // Reset per-glyph shadow/blur so tails stay sharp with no glow bleed.
           ctx.shadowBlur = 0;
           ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
@@ -206,10 +206,11 @@ function App() {
           const isHead = distanceFromHead === 0;
           if (isHead) {
             // Slightly brighter cyan/green head with subtle glow (no pure white).
-            ctx.fillStyle = 'rgba(0, 235, 210, 0.95)';
-            ctx.shadowColor = 'rgba(0, 235, 210, 0.5)';
+            ctx.fillStyle = 'rgba(0, 235, 210, 0.9)';
+            ctx.shadowColor = 'rgba(0, 235, 210, 0.45)';
             ctx.shadowBlur = headGlow;
           } else {
+            // Tail glyphs: green→cyan hue with fading opacity, no glow.
             ctx.fillStyle = colors[col.hue];
           }
 
@@ -233,6 +234,11 @@ function App() {
       columnsRef.current = columnsRef.current.filter(
         (c) => c.y - Math.min(64, c.length) * spacing < canvas.height + 120
       );
+
+      // Reset global state at the end of the frame to avoid carry-over.
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
 
       animationRef.current = requestAnimationFrame(draw);
     };
