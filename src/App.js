@@ -38,7 +38,8 @@ function App() {
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
         speed: (0.85 + Math.random() * 1.4) * scale,
-        length: Math.min(64, Math.floor(14 + Math.random() * 42)),
+        // Enforce drop length between 24 and 64 glyphs (trail + head) per requirements.
+        length: Math.min(64, Math.floor(24 + Math.random() * 41)),
         headPos: Math.random() * 8,
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
@@ -144,7 +145,8 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    const colors = ['#00f6ff', '#ff00ff', '#00ff9d', '#7c6bff'];
+    // Green → cyan palette only (no magenta/other hues) for tails/head shading.
+    const colors = ['#00f6ff', '#00ffb3', '#00d6ff', '#00ff7a'];
     const overlayAlpha = 0.12;
 
     const nextGlyph = () => chars[Math.floor(Math.random() * chars.length)];
@@ -203,8 +205,9 @@ function App() {
 
           const isHead = distanceFromHead === 0;
           if (isHead) {
-            ctx.fillStyle = 'rgba(0, 230, 255, 0.95)';
-            ctx.shadowColor = 'rgba(0, 230, 255, 0.55)';
+            // Slightly brighter cyan/green head with subtle glow (no pure white).
+            ctx.fillStyle = 'rgba(0, 235, 210, 0.95)';
+            ctx.shadowColor = 'rgba(0, 235, 210, 0.5)';
             ctx.shadowBlur = headGlow;
           } else {
             ctx.fillStyle = colors[col.hue];
