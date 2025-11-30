@@ -332,12 +332,13 @@ function App() {
         ctx.shadowColor = 'transparent';
       });
 
-      // Remove drops soon after the head leaves the viewport to avoid keeping invisible
-      // columns alive (previously we waited for the entire tail to clear, which kept
-      // them in memory long after they faded). This aggressively frees resources while
-      // still letting tails finish a brief exit.
-      const offscreenMargin = 200 * getScale();
-      columnsRef.current = columnsRef.current.filter((c) => c.y < canvas.height + offscreenMargin);
+      // Remove drops after their heads leave the viewport, but allow enough buffer for the
+      // longer tails to finish fading so they are not culled too early.
+      const offscreenMarginBase = 420 * getScale();
+      columnsRef.current = columnsRef.current.filter((c) => {
+        const tailAllowance = Math.max(offscreenMarginBase, c.length * charSpacing * 0.65);
+        return c.y < canvas.height + tailAllowance;
+      });
 
       // Reset global state at the end of the frame to avoid carry-over.
       ctx.globalAlpha = 1;
