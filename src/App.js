@@ -146,19 +146,21 @@ function App() {
 
     const colors = ['#00f6ff', '#ff00ff', '#00ff9d', '#7c6bff'];
 
-    // Matrix-style rain render loop with translucent overlay for smooth trails.
+    // Matrix-style rain render loop with composite fade for smooth trails.
     const draw = () => {
       const scale = getScale();
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
-      const headGlow = 14 * scale;
+      const headGlow = 8 * scale;
 
-      // Reset state and lay down a faint black veil to fade previous frame.
+      // Fade previous frame using destination-out to avoid tint buildup.
       ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
-      ctx.shadowColor = 'transparent';
+      ctx.globalCompositeOperation = 'destination-out';
       ctx.fillStyle = overlayColor();
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
       ctx.textAlign = 'center';
@@ -180,17 +182,18 @@ function App() {
 
           if (opacity <= 0.04) continue;
 
+          // Reset per-glyph shadow to avoid glow carryover.
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
 
           const isHead = Math.abs(distanceFromHead) < 0.35;
           if (isHead) {
-            ctx.fillStyle = '#b8fff1';
-            ctx.shadowColor = '#5ef8ff';
+            ctx.fillStyle = 'rgba(0, 230, 255, 1)';
+            ctx.shadowColor = 'rgba(0, 230, 255, 0.6)';
             ctx.shadowBlur = headGlow;
           } else {
             ctx.fillStyle = colors[col.hue];
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
           }
 
           ctx.fillText(char, col.x, col.y - i * charSpacing);
