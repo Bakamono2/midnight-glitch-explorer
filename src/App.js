@@ -1,6 +1,6 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/App.js b/src/App.js
-index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d9788bbf2d4 100644
+index ad74a2b181041119b4a5330c0a754e429537cfcb..185c531de6d2c21219f3a0392c41d50161bdefe4 100644
 --- a/src/App.js
 +++ b/src/App.js
 @@ -1,117 +1,142 @@
@@ -147,7 +147,7 @@ index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d97
        ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
        ctx.textAlign = 'center';
        ctx.textBaseline = 'middle';
-@@ -128,76 +153,90 @@ function App() {
+@@ -128,76 +153,101 @@ function App() {
            ctx.globalAlpha = brightness;
  
            if (brightness > 0.9) {
@@ -188,7 +188,19 @@ index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d97
      <>
        <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
  
-       <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
+-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }} />
++      <canvas
++        ref={canvasRef}
++        style={{
++          position: 'fixed',
++          top: 0,
++          left: 0,
++          width: '100%',
++          height: '100%',
++          zIndex: 1,
++          pointerEvents: 'none'
++        }}
++      />
  
 -      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh', padding: '4vh 5vw' }}>
 +      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 5vw' }}>
@@ -251,7 +263,7 @@ index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d97
        }}>
          <button
            onClick={() => setIsTimelineOpen(p => !p)}
-@@ -206,46 +245,45 @@ function App() {
+@@ -206,46 +256,45 @@ function App() {
              height: '100%',
              background: 'rgba(0, 255, 255, 0.38)',
              border: 'none',
