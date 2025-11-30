@@ -218,48 +218,47 @@ footer {
 @keyframes flicker { 0%,100% { opacity:1; } 50% { opacity:0.92; } }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
 
-/* Modernized glitch treatment for headings */
-@keyframes glitch-skew {
-  /* Add gentle stretch/scale to the base skew to create a dramatic flicker burst */
-  0%, 32%, 64%, 100% { transform: skew(0deg) scaleX(1); }
-  8% { transform: skew(6deg) scaleX(1.12); }
-  16% { transform: skew(-5deg) scaleX(0.94); }
-  48% { transform: skew(4deg) scaleX(1.08); }
-  80% { transform: skew(-6deg) scaleX(0.9); }
+/* Fresh glitch treatment: chromatic slices with scan-line flicker */
+@keyframes glitch-warp {
+  0%, 100% { transform: translate3d(0, 0, 0) skew(0deg); }
+  12% { transform: translate3d(-3px, 1px, 0) skew(-2deg) scaleX(1.06); }
+  26% { transform: translate3d(2px, -1px, 0) skew(3deg) scaleX(0.96); }
+  48% { transform: translate3d(-1px, 0, 0) skew(-3deg) scaleX(1.04); }
+  72% { transform: translate3d(3px, -2px, 0) skew(2deg) scaleX(0.94); }
 }
 
-@keyframes glitch-clip-a {
-  0% { clip-path: inset(4% 0 45% 0); }
-  20% { clip-path: inset(32% 0 8% 0); }
-  40% { clip-path: inset(12% 0 52% 0); }
-  60% { clip-path: inset(38% 0 6% 0); }
-  80% { clip-path: inset(6% 0 36% 0); }
-  100% { clip-path: inset(0 0 60% 0); }
+@keyframes glitch-slice-a {
+  0% { clip-path: inset(8% 0 52% 0); transform: translate3d(-2px, -1px, 0); }
+  20% { clip-path: inset(30% 0 18% 0); transform: translate3d(-4px, 1px, 0); }
+  40% { clip-path: inset(14% 0 40% 0); transform: translate3d(3px, -2px, 0); }
+  60% { clip-path: inset(50% 0 6% 0); transform: translate3d(-2px, 2px, 0); }
+  80% { clip-path: inset(24% 0 22% 0); transform: translate3d(2px, -2px, 0); }
+  100% { clip-path: inset(12% 0 38% 0); transform: translate3d(0, 0, 0); }
 }
 
-@keyframes glitch-clip-b {
-  0% { clip-path: inset(55% 0 6% 0); }
-  20% { clip-path: inset(18% 0 30% 0); }
-  40% { clip-path: inset(62% 0 2% 0); }
-  60% { clip-path: inset(26% 0 26% 0); }
-  80% { clip-path: inset(70% 0 0 0); }
-  100% { clip-path: inset(44% 0 8% 0); }
+@keyframes glitch-slice-b {
+  0% { clip-path: inset(54% 0 10% 0); transform: translate3d(2px, 1px, 0); }
+  20% { clip-path: inset(10% 0 48% 0); transform: translate3d(4px, -1px, 0); }
+  40% { clip-path: inset(62% 0 6% 0); transform: translate3d(-3px, 2px, 0); }
+  60% { clip-path: inset(22% 0 24% 0); transform: translate3d(3px, -2px, 0); }
+  80% { clip-path: inset(70% 0 0 0); transform: translate3d(-2px, -1px, 0); }
+  100% { clip-path: inset(38% 0 16% 0); transform: translate3d(0, 0, 0); }
 }
 
-@keyframes glitch-fade-shift {
-  /* Stretch pseudo slices during the burst for a modern, louder flicker */
-  0%, 100% { opacity: 0.8; transform: translate(0, 0) scaleX(1); }
-  25% { opacity: 0.35; transform: translate(-2px, 1px) scaleX(1.14); }
-  50% { opacity: 0.6; transform: translate(3px, -2px) scaleX(1.12); }
-  75% { opacity: 0.4; transform: translate(-1px, -1px) scaleX(0.92); }
+@keyframes glitch-flicker {
+  0%, 100% { opacity: 0.82; }
+  25% { opacity: 0.36; }
+  50% { opacity: 0.62; }
+  75% { opacity: 0.44; }
 }
 
 .glitch {
   position: relative;
   display: inline-block;
-  color: #9ffaff;
+  color: #c8f7ff;
   letter-spacing: 0.08em;
-  text-shadow: 0 0 18px rgba(0, 255, 255, 0.55);
+  text-shadow: 0 0 14px rgba(0, 255, 255, 0.42), 0 0 28px rgba(0, 255, 255, 0.22);
+  filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.35));
 }
 
 .glitch::before,
@@ -272,21 +271,21 @@ footer {
   opacity: 0;
 }
 
-/* Only animate when the glitch-active class is present so bursts can be timed */
+/* Only animate during scheduled bursts */
 .glitch.glitch-active {
-  animation: glitch-skew 0.85s steps(2, end) 1;
+  animation: glitch-warp 0.9s steps(2, end) 1;
 }
 
 .glitch.glitch-active::before {
-  color: #72f8c9;
-  text-shadow: -2px 0 12px rgba(0, 255, 170, 0.55);
+  color: #92ffd6;
+  text-shadow: -3px 0 14px rgba(0, 255, 180, 0.7);
   opacity: 1;
-  animation: glitch-clip-a 0.7s steps(2, end) 1, glitch-fade-shift 0.78s linear 1;
+  animation: glitch-slice-a 0.9s steps(2, end) 1, glitch-flicker 0.9s linear 1;
 }
 
 .glitch.glitch-active::after {
-  color: #4ce3ff;
-  text-shadow: 2px 0 12px rgba(0, 200, 255, 0.55);
+  color: #55e7ff;
+  text-shadow: 3px 0 16px rgba(0, 205, 255, 0.75);
   opacity: 1;
-  animation: glitch-clip-b 0.7s steps(2, end) 1, glitch-fade-shift 0.72s linear 1;
+  animation: glitch-slice-b 0.9s steps(2, end) 1, glitch-flicker 0.9s linear 1;
 }
