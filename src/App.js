@@ -42,7 +42,10 @@ function App() {
         headPos: Math.random() * 8,
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
-        trailJitter: Math.random() * 0.4
+        trailJitter: Math.random() * 0.4,
+        // trail state used only for rendering (spawn logic untouched)
+        glyphs: [],
+        distanceSinceChar: 0
       });
     }
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
@@ -134,9 +137,6 @@ function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    const overlayColor = () =>
-      overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.015)' : 'rgba(0, 0, 0, 0.05)';
-
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -145,18 +145,21 @@ function App() {
     window.addEventListener('resize', resize);
 
     const colors = ['#00f6ff', '#ff00ff', '#00ff9d', '#7c6bff'];
+    const overlayAlpha = 0.12;
+
+    const nextGlyph = () => chars[Math.floor(Math.random() * chars.length)];
 
     // Matrix-style rain render loop with composite fade for smooth trails.
     const draw = () => {
       const scale = getScale();
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
-      const headGlow = 8 * scale;
+      const headGlow = 5 * scale;
 
-      // Fade previous frame using destination-out to avoid tint buildup.
+      // Fade previous frame using destination-out so trails gently decay without tint buildup.
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = overlayColor();
+      ctx.fillStyle = overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.02)' : `rgba(0, 0, 0, ${overlayAlpha})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
       ctx.shadowBlur = 0;
@@ -166,37 +169,54 @@ function App() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      columnsRef.current.forEach(col => {
+      columnsRef.current.forEach((col) => {
         col.y += col.speed;
         col.headPos += 0.35 + col.trailJitter * 0.25;
+        col.distanceSinceChar += col.speed;
 
-        const columnLength = Math.min(64, col.length);
-        const headIndex = col.headPos;
+        // Record characters at roughly fixed spacing so tails are stable and readable.
+        while (col.distanceSinceChar >= charSpacing) {
+          col.glyphs.unshift(nextGlyph());
+          col.glyphs = col.glyphs.slice(0, col.length);
+          col.distanceSinceChar -= charSpacing;
+        }
 
-        for (let i = 0; i <= columnLength; i++) {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          const distanceFromHead = i - headIndex;
-          const depthFade = 1 - (i / columnLength) * 0.9;
-          const trailFade = Math.max(0, 1 - distanceFromHead * col.fadeRate);
-          const opacity = Math.max(0, Math.min(depthFade * trailFade, 1));
+        if (!col.glyphs.length) {
+          col.glyphs.unshift(nextGlyph());
+        }
+
+        const columnLength = Math.min(col.length, col.glyphs.length || col.length);
+
+        for (let i = 0; i < columnLength; i++) {
+          const glyph = col.glyphs[i] || nextGlyph();
+          const distanceFromHead = i;
+          const trailAlpha = Math.max(0, 1 - (distanceFromHead / columnLength) * 0.95);
+          const depthFade = Math.max(0, 1 - distanceFromHead * col.fadeRate);
+          const opacity = Math.max(0, Math.min(trailAlpha * depthFade, 1));
 
           if (opacity <= 0.04) continue;
 
-          // Reset per-glyph shadow to avoid glow carryover.
+          // Reset per-glyph shadow to avoid glow carryover on tails.
           ctx.shadowBlur = 0;
           ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
 
-          const isHead = Math.abs(distanceFromHead) < 0.35;
+          const isHead = distanceFromHead === 0;
           if (isHead) {
-            ctx.fillStyle = 'rgba(0, 230, 255, 1)';
-            ctx.shadowColor = 'rgba(0, 230, 255, 0.6)';
+            ctx.fillStyle = 'rgba(0, 230, 255, 0.95)';
+            ctx.shadowColor = 'rgba(0, 230, 255, 0.55)';
             ctx.shadowBlur = headGlow;
           } else {
             ctx.fillStyle = colors[col.hue];
           }
 
-          ctx.fillText(char, col.x, col.y - i * charSpacing);
+          ctx.fillText(glyph, col.x, col.y - i * charSpacing);
+
+          // Immediately clear shadow so it does not leak into the next glyph.
+          if (isHead) {
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+          }
         }
 
         // Reset per-column state to avoid shadow/alpha carry-over between columns.
@@ -205,9 +225,11 @@ function App() {
         ctx.shadowColor = 'transparent';
       });
 
-      // Remove drops that have fully exited the viewport to prevent buildup.
+      // Remove drops that have fully exited the viewport or fully faded to keep performance steady.
       const spacing = 26 * getScale();
-      columnsRef.current = columnsRef.current.filter(c => c.y - Math.min(64, c.length) * spacing < canvas.height + 120);
+      columnsRef.current = columnsRef.current.filter(
+        (c) => c.y - Math.min(64, c.length) * spacing < canvas.height + 120
+      );
 
       animationRef.current = requestAnimationFrame(draw);
     };
