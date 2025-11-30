@@ -14,11 +14,13 @@ function App() {
   const [epochBlocks, setEpochBlocks] = useState(null);
   const [epochTxCount, setEpochTxCount] = useState(null);
   const [epochNumber, setEpochNumber] = useState(null);
+  const [isTestRainActive, setIsTestRainActive] = useState(false);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
   const epochEndRef = useRef(null);
   const animationRef = useRef(null);
+  const testSpawnRef = useRef(null);
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
@@ -132,6 +134,28 @@ function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, [latest]);
+
+  // Optional debug toggle: continuously spawn drops without hitting the API to stress test rendering.
+  useEffect(() => {
+    if (isTestRainActive) {
+      if (testSpawnRef.current) clearInterval(testSpawnRef.current);
+      testSpawnRef.current = setInterval(() => {
+        // Spawn a small burst frequently to simulate sustained load.
+        const burstSize = 4 + Math.floor(Math.random() * 4);
+        spawnOneColumnPerTx(burstSize);
+      }, 350);
+    } else if (testSpawnRef.current) {
+      clearInterval(testSpawnRef.current);
+      testSpawnRef.current = null;
+    }
+
+    return () => {
+      if (testSpawnRef.current) {
+        clearInterval(testSpawnRef.current);
+        testSpawnRef.current = null;
+      }
+    };
+  }, [isTestRainActive]);
 
   const averageTxPerBlock = useMemo(() => {
     if (!recentBlocks.length) return null;
@@ -310,6 +334,28 @@ function App() {
           <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
           <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
+        </div>
+
+        <div style={{ width: 'min(720px, 92vw)', display: 'flex', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setIsTestRainActive((prev) => !prev)}
+            style={{
+              padding: '0.85rem 1.4rem',
+              background: isTestRainActive ? 'rgba(0,255,180,0.18)' : 'rgba(0,255,255,0.12)',
+              color: '#0ff',
+              border: '1px solid rgba(0,255,255,0.45)',
+              borderRadius: '12px',
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              boxShadow: '0 0 18px rgba(0,255,255,0.35)',
+              fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
+              transition: 'background 0.25s ease, transform 0.2s ease',
+              transform: isTestRainActive ? 'translateY(-1px)' : 'translateY(0)'
+            }}
+          >
+            {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
+          </button>
         </div>
 
         <div style={{ width: 'min(720px, 92vw)', padding: '1.15rem 1.25rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 30px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', fontSize: 'clamp(0.8rem, 1.6vw, 1.05rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
