@@ -53,6 +53,8 @@ function App() {
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
         trailJitter: Math.random() * 0.4,
+        // Random highlight flag (visual-only) to let some heads pop with a white glow.
+        highlighted: Math.random() < 0.14,
         // trail state used only for rendering (spawn logic untouched)
         glyphs: [],
         distanceSinceChar: 0
@@ -236,10 +238,16 @@ function App() {
 
           const isHead = distanceFromHead === 0;
           if (isHead) {
-            // Slightly brighter cyan/green head with subtle glow (no pure white).
-            ctx.fillStyle = 'rgba(0, 225, 210, 0.85)';
-            ctx.shadowColor = 'rgba(0, 225, 210, 0.4)';
-            ctx.shadowBlur = headGlow;
+            // Head glyph: cyan/green by default, occasional white highlight with stronger glow.
+            if (col.highlighted) {
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+              ctx.shadowColor = 'rgba(200, 255, 255, 0.8)';
+              ctx.shadowBlur = headGlow * 1.4;
+            } else {
+              ctx.fillStyle = 'rgba(0, 225, 210, 0.85)';
+              ctx.shadowColor = 'rgba(0, 225, 210, 0.4)';
+              ctx.shadowBlur = headGlow;
+            }
           } else {
             // Tail glyphs: green→cyan hue with fading opacity, no glow.
             ctx.fillStyle = colors[col.hue];
