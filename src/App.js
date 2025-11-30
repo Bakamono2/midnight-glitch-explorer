@@ -240,9 +240,10 @@ function App() {
           if (isHead) {
             // Head glyph: cyan/green by default, occasional white highlight with stronger glow.
             if (col.highlighted) {
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-              ctx.shadowColor = 'rgba(200, 255, 255, 0.8)';
-              ctx.shadowBlur = headGlow * 1.4;
+              // Brighter highlight head: pure white fill with a stronger, cool glow.
+              ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+              ctx.shadowColor = 'rgba(215, 255, 255, 0.95)';
+              ctx.shadowBlur = headGlow * 2.2;
             } else {
               ctx.fillStyle = 'rgba(0, 225, 210, 0.85)';
               ctx.shadowColor = 'rgba(0, 225, 210, 0.4)';
