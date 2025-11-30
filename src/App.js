@@ -1,6 +1,5 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/App.js b/src/App.js
-index ad74a2b181041119b4a5330c0a754e429537cfcb..382aed628f4064cddc6198b56442917012b5dce2 100644
+index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d9788bbf2d4 100644
 --- a/src/App.js
 +++ b/src/App.js
 @@ -1,117 +1,142 @@
@@ -251,6 +250,50 @@ index ad74a2b181041119b4a5330c0a754e429537cfcb..382aed628f4064cddc6198b564429170
        }}>
          <button
            onClick={() => setIsTimelineOpen(p => !p)}
+@@ -206,46 +245,45 @@ function App() {
+             height: '100%',
+             background: 'rgba(0, 255, 255, 0.38)',
+             border: 'none',
+             borderRight: '2px solid #0ff',
+             borderRadius: '16px 0 0 16px',
+             color: '#0ff',
+             cursor: 'pointer',
+             boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
+             transition: 'all 0.3s ease',
+             display: 'flex',
+             alignItems: 'center',
+             justifyContent: 'center',
+             outline: 'none'
+           }}
+         >
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+             {isTimelineOpen ? (
+               <path d="M15 18l-6-6 6-6" />
+             ) : (
+               <path d="M9 18l6-6-6-6" />
+             )}
+           </svg>
+         </button>
  
-EOF
-)
+         <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+-          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
+           {recentBlocks.slice(0, 10).map((b, i) => (
+             <div key={b.hash} style={{
+               padding: '0.9rem 0',
+               borderBottom: i < 9 ? '1px dashed rgba(0,255,255,0.2)' : 'none',
+               color: i === 0 ? '#0f0' : '#0ff',
+               display: 'flex',
+               justifyContent: 'space-between',
+               fontSize: '1.05rem'
+             }}>
+               <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
+               <span>{b.tx_count || 0} tx</span>
+             </div>
+           ))}
+         </div>
+       </div>
+     </>
+   );
+ }
+ 
+ export default App;
