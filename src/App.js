@@ -21,6 +21,10 @@ function App() {
   const epochEndRef = useRef(null);
   const animationRef = useRef(null);
   const testSpawnRef = useRef(null);
+  const perfRef = useRef({
+    lastFrameTime: performance.now(),
+    frameDeltas: []
+  });
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
@@ -71,7 +75,12 @@ function App() {
         distanceSinceChar: 0
       });
     }
-    columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
+    // Keep a generous cap based on viewport scale so spawning remains one-per-tx but
+    // older columns are culled before they overwhelm the renderer on small screens.
+    const baseCap = 900 * scale;
+    if (columnsRef.current.length > baseCap) {
+      columnsRef.current = columnsRef.current.slice(-Math.floor(baseCap));
+    }
   };
 
   useEffect(() => {
@@ -180,7 +189,11 @@ function App() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+
+    // Prefer GPU compositing for the canvas layer when available; fallback to normal 2D.
+    canvas.style.transform = 'translateZ(0)';
+    const ctx =
+      canvas.getContext('2d', { desynchronized: true }) || canvas.getContext('2d');
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -197,10 +210,29 @@ function App() {
 
     // Matrix-style rain render loop with composite fade for smooth trails.
     const draw = () => {
+      // Track frame timing to dynamically clamp the number of active columns when
+      // the render thread slows down, reducing sluggishness without changing how
+      // transactions spawn columns.
+      const now = performance.now();
+      const delta = now - perfRef.current.lastFrameTime;
+      perfRef.current.lastFrameTime = now;
+      perfRef.current.frameDeltas.push(delta);
+      if (perfRef.current.frameDeltas.length > 60) perfRef.current.frameDeltas.shift();
+      const avgDelta =
+        perfRef.current.frameDeltas.reduce((sum, d) => sum + d, 0) /
+        perfRef.current.frameDeltas.length;
+      const fps = avgDelta ? 1000 / avgDelta : 60;
+
       const scale = getScale();
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
       const headGlow = 3 * scale;
+
+      // Adaptive cap: if FPS drops, trim the oldest columns to keep the renderer responsive.
+      const maxColumns = Math.max(280, Math.floor((fps < 40 ? 520 : 760) * scale));
+      if (columnsRef.current.length > maxColumns) {
+        columnsRef.current = columnsRef.current.slice(-maxColumns);
+      }
 
       // Fade previous frame using destination-out so trails gently decay without tint buildup.
       ctx.globalAlpha = 1;
