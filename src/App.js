@@ -332,11 +332,12 @@ function App() {
         ctx.shadowColor = 'transparent';
       });
 
-      // Remove drops that have fully exited the viewport or fully faded to keep performance steady.
-      const spacing = 26 * getScale();
-      columnsRef.current = columnsRef.current.filter(
-        (c) => c.y - Math.min(64, c.length) * spacing < canvas.height + 120
-      );
+      // Remove drops soon after the head leaves the viewport to avoid keeping invisible
+      // columns alive (previously we waited for the entire tail to clear, which kept
+      // them in memory long after they faded). This aggressively frees resources while
+      // still letting tails finish a brief exit.
+      const offscreenMargin = 200 * getScale();
+      columnsRef.current = columnsRef.current.filter((c) => c.y < canvas.height + offscreenMargin);
 
       // Reset global state at the end of the frame to avoid carry-over.
       ctx.globalAlpha = 1;
