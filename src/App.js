@@ -1,3 +1,4 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/src/App.js b/src/App.js
 index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d9788bbf2d4 100644
 --- a/src/App.js
@@ -297,3 +298,6 @@ index ad74a2b181041119b4a5330c0a754e429537cfcb..b76af72e569af9133b06b6049a280d97
  }
  
  export default App;
+ 
+EOF
+)
