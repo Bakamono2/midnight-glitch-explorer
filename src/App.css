@@ -220,11 +220,12 @@ footer {
 
 /* Modernized glitch treatment for headings */
 @keyframes glitch-skew {
-  0%, 32%, 64%, 100% { transform: skew(0deg); }
-  8% { transform: skew(6deg); }
-  16% { transform: skew(-5deg); }
-  48% { transform: skew(4deg); }
-  80% { transform: skew(-6deg); }
+  /* Add gentle stretch/scale to the base skew to create a dramatic flicker burst */
+  0%, 32%, 64%, 100% { transform: skew(0deg) scaleX(1); }
+  8% { transform: skew(6deg) scaleX(1.12); }
+  16% { transform: skew(-5deg) scaleX(0.94); }
+  48% { transform: skew(4deg) scaleX(1.08); }
+  80% { transform: skew(-6deg) scaleX(0.9); }
 }
 
 @keyframes glitch-clip-a {
@@ -246,10 +247,11 @@ footer {
 }
 
 @keyframes glitch-fade-shift {
-  0%, 100% { opacity: 0.8; transform: translate(0, 0); }
-  25% { opacity: 0.35; transform: translate(-2px, 1px); }
-  50% { opacity: 0.6; transform: translate(3px, -2px); }
-  75% { opacity: 0.4; transform: translate(-1px, -1px); }
+  /* Stretch pseudo slices during the burst for a modern, louder flicker */
+  0%, 100% { opacity: 0.8; transform: translate(0, 0) scaleX(1); }
+  25% { opacity: 0.35; transform: translate(-2px, 1px) scaleX(1.14); }
+  50% { opacity: 0.6; transform: translate(3px, -2px) scaleX(1.12); }
+  75% { opacity: 0.4; transform: translate(-1px, -1px) scaleX(0.92); }
 }
 
 .glitch {
