@@ -404,7 +404,13 @@ function App() {
         </div>
 
         <div style={{ width: 'min(720px, 92vw)', padding: '2.4rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          <h2 className="glitch" style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}>LATEST BLOCK</h2>
+          <h2
+            className="glitch"
+            data-text="LATEST BLOCK"
+            style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}
+          >
+            LATEST BLOCK
+          </h2>
           <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
           <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
@@ -459,7 +465,7 @@ function App() {
         </div>
 
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(0.95rem, 2vw, 1.3rem)' }}>
-          <span className="glitch">shhh...</span> nothing ever happened
+          <span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened
         </footer>
       </div>
 
