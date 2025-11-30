@@ -227,12 +227,19 @@ function App() {
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
       const headGlow = 3 * scale;
+      const shouldRotate = fps > 32;
 
       // Adaptive cap: if FPS drops, trim the oldest columns to keep the renderer responsive.
-      const maxColumns = Math.max(280, Math.floor((fps < 40 ? 520 : 760) * scale));
+      const degradedMax = fps < 35 ? 420 : fps < 45 ? 580 : 760;
+      const stressFactor = isTestRainActive ? 0.72 : 1;
+      const maxColumns = Math.max(220, Math.floor(degradedMax * scale * stressFactor));
       if (columnsRef.current.length > maxColumns) {
         columnsRef.current = columnsRef.current.slice(-maxColumns);
       }
+
+      // When under heavy load, draw fewer tail glyphs per column instead of skipping frames.
+      // This keeps the animation smooth for stress tests while preserving spawn counts.
+      const densityFactor = fps < 30 ? 0.4 : fps < 42 ? 0.6 : 1;
 
       // Fade previous frame using destination-out so trails gently decay without tint buildup.
       ctx.globalAlpha = 1;
@@ -266,7 +273,9 @@ function App() {
         const columnLength = Math.min(col.length, col.glyphs.length || col.length);
         const headSpan = Math.max(1, col.headHighlightCount || 1);
 
-        for (let i = 0; i < columnLength; i++) {
+        const effectiveLength = Math.max(headSpan, Math.ceil(columnLength * densityFactor));
+
+        for (let i = 0; i < effectiveLength; i++) {
           const glyph = col.glyphs[i] || nextGlyph();
           const distanceFromHead = i;
           const trailAlpha = Math.max(0, 1 - distanceFromHead / columnLength);
@@ -282,7 +291,7 @@ function App() {
 
           ctx.save();
           ctx.translate(col.x, col.y - i * charSpacing);
-          ctx.rotate(col.rotation);
+          if (shouldRotate) ctx.rotate(col.rotation);
           ctx.shadowBlur = 0;
           ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
@@ -332,7 +341,7 @@ function App() {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', resize);
     };
-  }, [overlayMode]);
+  }, [overlayMode, isTestRainActive]);
 
   useEffect(() => {
     const toggleOverlay = (e) => {
