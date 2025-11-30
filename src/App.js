@@ -15,7 +15,7 @@ function App() {
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
 
-  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789';
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -31,8 +31,8 @@ function App() {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
-        speed: (0.7 + Math.random() * 1.1) * scale,
-        length: Math.floor(20 + Math.random() * 35),
+        speed: (0.85 + Math.random() * 1) * scale,
+        length: Math.min(64, Math.floor(18 + Math.random() * 34)),
         headPos: Math.random() * 8,
         hue: i % 3
       });
@@ -128,14 +128,14 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    const colors = ['#00ff99', '#00ffcc', '#00ffff'];
+    const colors = ['#00ff66', '#00e65c', '#00cc52'];
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const scale = getScale();
-      const baseFontSize = 28 * scale;
-      const charSpacing = 35 * scale;
-      const glowSize = 120 * scale;
+      const baseFontSize = 24 * scale;
+      const charSpacing = 28 * scale;
+      const glowSize = 90 * scale;
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
       ctx.textAlign = 'center';
@@ -145,10 +145,16 @@ function App() {
         col.y += col.speed;
         col.headPos += 0.3;
 
-        for (let i = 0; i <= col.length; i++) {
+        const columnLength = Math.min(64, col.length);
+
+        for (let i = 0; i <= columnLength; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
           const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1 ? 1.0 : distance < 3 ? 0.8 : Math.max(0.08, 1 - i / col.length);
+          const brightness = distance < 1
+            ? 1.0
+            : distance < 3
+              ? 0.82
+              : Math.max(0.06, 1 - i / columnLength);
 
           ctx.globalAlpha = brightness;
 
