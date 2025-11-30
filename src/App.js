@@ -21,6 +21,7 @@ function App() {
   const animationRef = useRef(null);
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
+  const [overlayMode, setOverlayMode] = useState('dark');
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -133,6 +134,9 @@ function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
+    const overlayColor = () =>
+      overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.015)' : 'rgba(0, 0, 0, 0.05)';
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -149,8 +153,10 @@ function App() {
       const headGlow = 90 * scale;
       const trailGlow = 26 * scale;
 
-      ctx.fillStyle = 'rgba(0, 5, 15, 0.08)';
       ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = overlayColor();
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
@@ -184,6 +190,10 @@ function App() {
 
           ctx.fillText(char, col.x, col.y - i * charSpacing);
         }
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
       });
 
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
@@ -195,6 +205,17 @@ function App() {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener('resize', resize);
     };
+  }, [overlayMode]);
+
+  useEffect(() => {
+    const toggleOverlay = (e) => {
+      if (e.key.toLowerCase() === 'o') {
+        setOverlayMode((mode) => (mode === 'dark' ? 'transparent' : 'dark'));
+      }
+    };
+
+    window.addEventListener('keydown', toggleOverlay);
+    return () => window.removeEventListener('keydown', toggleOverlay);
   }, []);
 
   const blockSizeKb = useMemo(() => (latest?.size ? (latest.size / 1024).toFixed(1) : null), [latest]);
@@ -223,7 +244,8 @@ function App() {
           width: '100%',
           height: '100%',
           zIndex: 1,
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          backgroundColor: 'transparent'
         }}
       />
 
