@@ -11,9 +11,13 @@ function App() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const [txRate, setTxRate] = useState(null);
   const [timeSinceBlock, setTimeSinceBlock] = useState(null);
+  const [epochBlocks, setEpochBlocks] = useState(null);
+  const [epochTxCount, setEpochTxCount] = useState(null);
+  const [epochNumber, setEpochNumber] = useState(null);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
+  const epochEndRef = useRef(null);
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789';
 
@@ -77,18 +81,21 @@ function App() {
   }, [latest]);
 
   useEffect(() => {
-    let epochEnd = null;
     const fetchEpoch = async () => {
       try {
         const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY } });
         const e = await r.json();
-        epochEnd = e.end_time * 1000;
+        epochEndRef.current = e.end_time * 1000;
+        setEpochBlocks(e.block_count ?? e.blocks ?? null);
+        setEpochTxCount(e.tx_count ?? e.transactions_count ?? null);
+        setEpochNumber(e.epoch ?? null);
       } catch {}
     };
     fetchEpoch();
+    const refreshEpoch = setInterval(fetchEpoch, 60000);
     const timer = setInterval(() => {
-      if (!epochEnd) return;
-      const diff = epochEnd - Date.now();
+      if (!epochEndRef.current) return;
+      const diff = epochEndRef.current - Date.now();
       if (diff <= 0) return setTimeLeft('EPOCH ENDED');
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
@@ -96,7 +103,10 @@ function App() {
       const s = Math.floor((diff % 60000) / 1000);
       setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearInterval(refreshEpoch);
+    };
   }, []);
 
   useEffect(() => {
@@ -185,11 +195,13 @@ function App() {
 
   const stats = [
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
-    { label: 'Total Blocks', value: latest?.height || '-' },
+    { label: 'Blocks This Epoch', value: epochBlocks ?? '-' },
     { label: 'Epoch Ends In', value: timeLeft },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
     { label: 'Block Size', value: blockSizeKb ? `${blockSizeKb} KB` : '-' },
-    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' }
+    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' },
+    { label: 'Epoch Tx Count', value: epochTxCount ?? '-' },
+    { label: 'Epoch', value: epochNumber ?? '-' }
   ];
 
   return (
