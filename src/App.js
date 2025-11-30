@@ -18,8 +18,9 @@ function App() {
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
   const epochEndRef = useRef(null);
+  const animationRef = useRef(null);
 
-  const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789';
+  const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -35,10 +36,12 @@ function App() {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
-        speed: (0.85 + Math.random() * 1) * scale,
-        length: Math.min(64, Math.floor(18 + Math.random() * 34)),
+        speed: (0.85 + Math.random() * 1.4) * scale,
+        length: Math.min(64, Math.floor(14 + Math.random() * 42)),
         headPos: Math.random() * 8,
-        hue: i % 3
+        hue: i % 4,
+        fadeRate: 0.045 + Math.random() * 0.05,
+        trailJitter: Math.random() * 0.4
       });
     }
     columnsRef.current = columnsRef.current.slice(-Math.floor(1200 * scale));
@@ -125,7 +128,6 @@ function App() {
     return (total / slice.length).toFixed(1);
   }, [recentBlocks]);
 
-  // YOUR ORIGINAL, WORKING DIGITAL RAIN — 100% UNCHANGED FROM WHEN IT WORKED
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -138,14 +140,18 @@ function App() {
     resize();
     window.addEventListener('resize', resize);
 
-    const colors = ['#00ff66', '#00e65c', '#00cc52'];
+    const colors = ['#00f6ff', '#ff00ff', '#00ff9d', '#7c6bff'];
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const scale = getScale();
       const baseFontSize = 24 * scale;
-      const charSpacing = 28 * scale;
-      const glowSize = 90 * scale;
+      const charSpacing = 26 * scale;
+      const headGlow = 90 * scale;
+      const trailGlow = 26 * scale;
+
+      ctx.fillStyle = 'rgba(0, 5, 15, 0.08)';
+      ctx.globalAlpha = 1;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
       ctx.textAlign = 'center';
@@ -153,42 +159,42 @@ function App() {
 
       columnsRef.current.forEach(col => {
         col.y += col.speed;
-        col.headPos += 0.3;
+        col.headPos += 0.35 + col.trailJitter * 0.25;
 
         const columnLength = Math.min(64, col.length);
 
         for (let i = 0; i <= columnLength; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const distance = Math.abs(i - col.headPos);
-          const brightness = distance < 1
-            ? 1.0
-            : distance < 3
-              ? 0.82
-              : Math.max(0.06, 1 - i / columnLength);
+          const distanceFromHead = i - col.headPos;
+          const depthFade = 1 - (i / columnLength) * 0.8;
+          const trailFade = Math.max(0, 1 - (distanceFromHead * col.fadeRate));
+          const brightness = Math.max(0.06, Math.min(depthFade * trailFade, 1));
 
           ctx.globalAlpha = brightness;
 
           if (brightness > 0.9) {
-            ctx.fillStyle = 'white';
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = glowSize;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.fillStyle = '#e0fff8';
+            ctx.shadowColor = '#a6fff5';
+            ctx.shadowBlur = headGlow;
           } else {
             ctx.fillStyle = colors[col.hue];
             ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = 22 * scale;
-            ctx.fillText(char, col.x, col.y - i * charSpacing);
+            ctx.shadowBlur = trailGlow;
           }
+
+          ctx.fillText(char, col.x, col.y - i * charSpacing);
         }
       });
 
       columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
-      requestAnimationFrame(draw);
+      animationRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
-    return () => window.removeEventListener('resize', resize);
+    animationRef.current = requestAnimationFrame(draw);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
   const blockSizeKb = useMemo(() => (latest?.size ? (latest.size / 1024).toFixed(1) : null), [latest]);
