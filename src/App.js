@@ -16,6 +16,7 @@ function App() {
   const [epochNumber, setEpochNumber] = useState(null);
   const [isTestRainActive, setIsTestRainActive] = useState(false);
   const [activeDropCount, setActiveDropCount] = useState(0);
+  const [isGlitchActive, setIsGlitchActive] = useState(false);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -89,6 +90,26 @@ function App() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Trigger a short glitch burst on a random cadence between 5–15 seconds
+  useEffect(() => {
+    const randomDelay = () => 5000 + Math.random() * 10000;
+    let activeTimer = null;
+    let scheduleTimer = null;
+
+    const triggerGlitch = () => {
+      setIsGlitchActive(true);
+      activeTimer = setTimeout(() => setIsGlitchActive(false), 950);
+      scheduleTimer = setTimeout(triggerGlitch, randomDelay());
+    };
+
+    scheduleTimer = setTimeout(triggerGlitch, randomDelay());
+
+    return () => {
+      if (activeTimer) clearTimeout(activeTimer);
+      if (scheduleTimer) clearTimeout(scheduleTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -405,7 +426,7 @@ function App() {
 
         <div style={{ width: 'min(720px, 92vw)', padding: '2.4rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           <h2
-            className="glitch"
+            className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`}
             data-text="LATEST BLOCK"
             style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}
           >
@@ -465,7 +486,7 @@ function App() {
         </div>
 
         <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(0.95rem, 2vw, 1.3rem)' }}>
-          <span className="glitch" data-text="shhh...">shhh...</span> nothing ever happened
+          <span className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`} data-text="shhh...">shhh...</span> nothing ever happened
         </footer>
       </div>
 

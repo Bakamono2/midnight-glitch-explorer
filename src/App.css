@@ -257,8 +257,7 @@ footer {
   display: inline-block;
   color: #9ffaff;
   letter-spacing: 0.08em;
-  text-shadow: 0 0 22px rgba(0, 255, 255, 0.55);
-  animation: glitch-skew 2.6s infinite steps(2, end);
+  text-shadow: 0 0 18px rgba(0, 255, 255, 0.55);
 }
 
 .glitch::before,
@@ -268,16 +267,24 @@ footer {
   inset: 0;
   mix-blend-mode: screen;
   pointer-events: none;
+  opacity: 0;
 }
 
-.glitch::before {
+/* Only animate when the glitch-active class is present so bursts can be timed */
+.glitch.glitch-active {
+  animation: glitch-skew 0.85s steps(2, end) 1;
+}
+
+.glitch.glitch-active::before {
   color: #72f8c9;
   text-shadow: -2px 0 12px rgba(0, 255, 170, 0.55);
-  animation: glitch-clip-a 1.9s infinite steps(2, end), glitch-fade-shift 1.7s infinite linear alternate-reverse;
+  opacity: 1;
+  animation: glitch-clip-a 0.7s steps(2, end) 1, glitch-fade-shift 0.78s linear 1;
 }
 
-.glitch::after {
+.glitch.glitch-active::after {
   color: #4ce3ff;
   text-shadow: 2px 0 12px rgba(0, 200, 255, 0.55);
-  animation: glitch-clip-b 1.6s infinite steps(2, end), glitch-fade-shift 1.4s infinite linear alternate;
+  opacity: 1;
+  animation: glitch-clip-b 0.7s steps(2, end) 1, glitch-fade-shift 0.72s linear 1;
 }
