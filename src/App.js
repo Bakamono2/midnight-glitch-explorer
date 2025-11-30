@@ -33,13 +33,20 @@ function App() {
     const scale = getScale();
     const safeMargin = 160 * scale;
 
+    // Bias drop lengths toward the upper range so most streams feel longer while
+    // still respecting the 24–64 character constraint.
+    const randomLength = () => {
+      const skewed = Math.pow(Math.random(), 0.45); // favor higher values
+      return Math.max(24, Math.min(64, Math.round(24 + skewed * (64 - 24))));
+    };
+
     for (let i = 0; i < txCount; i++) {
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
         speed: (0.85 + Math.random() * 1.4) * scale,
-        // Enforce drop length between 24 and 64 glyphs (trail + head) per requirements.
-        length: Math.min(64, Math.floor(24 + Math.random() * 41)),
+        // Enforce drop length between 24 and 64 glyphs (trail + head) with a skew toward longer trails.
+        length: randomLength(),
         headPos: Math.random() * 8,
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
@@ -147,7 +154,7 @@ function App() {
 
     // Green → cyan palette only (no magenta/other hues) for tails/head shading.
     const colors = ['#00f6ff', '#00ffb3', '#00d6ff', '#00ff7a'];
-    const overlayAlpha = 0.12;
+    const overlayAlpha = 0.18;
 
     const nextGlyph = () => chars[Math.floor(Math.random() * chars.length)];
 
@@ -156,12 +163,12 @@ function App() {
       const scale = getScale();
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
-      const headGlow = 5 * scale;
+      const headGlow = 3 * scale;
 
       // Fade previous frame using destination-out so trails gently decay without tint buildup.
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.06)' : `rgba(0, 0, 0, ${overlayAlpha})`;
+      ctx.fillStyle = overlayMode === 'transparent' ? 'rgba(0, 0, 0, 0.08)' : `rgba(0, 0, 0, ${overlayAlpha})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
       ctx.shadowBlur = 0;
@@ -206,8 +213,8 @@ function App() {
           const isHead = distanceFromHead === 0;
           if (isHead) {
             // Slightly brighter cyan/green head with subtle glow (no pure white).
-            ctx.fillStyle = 'rgba(0, 235, 210, 0.9)';
-            ctx.shadowColor = 'rgba(0, 235, 210, 0.45)';
+            ctx.fillStyle = 'rgba(0, 225, 210, 0.85)';
+            ctx.shadowColor = 'rgba(0, 225, 210, 0.4)';
             ctx.shadowBlur = headGlow;
           } else {
             // Tail glyphs: green→cyan hue with fading opacity, no glow.
