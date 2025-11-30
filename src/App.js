@@ -38,11 +38,20 @@ function App() {
     // Bias drop lengths toward the upper range so most streams feel longer while
     // still respecting the 24–64 character constraint.
     const randomLength = () => {
-      const skewed = Math.pow(Math.random(), 0.45); // favor higher values
-      return Math.max(24, Math.min(64, Math.round(24 + skewed * (64 - 24))));
+      // Favor longer trails while keeping the 24–64 bounds and occasionally push nearer to max.
+      const skewed = Math.pow(Math.random(), 0.3); // stronger bias toward higher values
+      let length = 24 + skewed * (64 - 24);
+      if (Math.random() < 0.35) {
+        length = 56 + Math.random() * 8; // bump a subset of drops closer to the max length
+      }
+      return Math.max(24, Math.min(64, Math.round(length)));
     };
 
     for (let i = 0; i < txCount; i++) {
+      const highlighted = Math.random() < 0.32;
+      const headHighlightCount = highlighted ? 1 + Math.floor(Math.random() * 3) : 1;
+      const rotation = (0.04 + Math.random() * 0.08) * (Math.random() < 0.5 ? -1 : 1);
+
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
@@ -54,7 +63,9 @@ function App() {
         fadeRate: 0.045 + Math.random() * 0.05,
         trailJitter: Math.random() * 0.4,
         // Random highlight flag (visual-only) to let some heads pop with a white glow.
-        highlighted: Math.random() < 0.14,
+        highlighted,
+        headHighlightCount,
+        rotation,
         // trail state used only for rendering (spawn logic untouched)
         glyphs: [],
         distanceSinceChar: 0
@@ -221,6 +232,7 @@ function App() {
         }
 
         const columnLength = Math.min(col.length, col.glyphs.length || col.length);
+        const headSpan = Math.max(1, col.headHighlightCount || 1);
 
         for (let i = 0; i < columnLength; i++) {
           const glyph = col.glyphs[i] || nextGlyph();
@@ -231,36 +243,36 @@ function App() {
 
           if (opacity <= 0.05) continue;
 
-          // Reset per-glyph shadow/blur so tails stay sharp with no glow bleed.
+          const isHeadSegment = distanceFromHead < headSpan;
+          const headIntensity = isHeadSegment
+            ? Math.max(0.55, 1 - (distanceFromHead / headSpan) * 0.45)
+            : 0;
+
+          ctx.save();
+          ctx.translate(col.x, col.y - i * charSpacing);
+          ctx.rotate(col.rotation);
           ctx.shadowBlur = 0;
           ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
 
-          const isHead = distanceFromHead === 0;
-          if (isHead) {
-            // Head glyph: cyan/green by default, occasional white highlight with stronger glow.
+          if (isHeadSegment) {
+            // Head glyphs (1–3 for highlighted drops): brighter tip-only glow in cyan/white.
             if (col.highlighted) {
-              // Brighter highlight head: pure white fill with a stronger, cool glow.
-              ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-              ctx.shadowColor = 'rgba(215, 255, 255, 0.95)';
-              ctx.shadowBlur = headGlow * 2.2;
+              ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * headIntensity})`;
+              ctx.shadowColor = `rgba(215, 255, 255, ${0.85 * headIntensity})`;
+              ctx.shadowBlur = headGlow * 2.6 * headIntensity;
             } else {
-              ctx.fillStyle = 'rgba(0, 225, 210, 0.85)';
-              ctx.shadowColor = 'rgba(0, 225, 210, 0.4)';
-              ctx.shadowBlur = headGlow;
+              ctx.fillStyle = `rgba(0, 225, 210, ${0.85 * headIntensity})`;
+              ctx.shadowColor = `rgba(0, 225, 210, ${0.42 * headIntensity})`;
+              ctx.shadowBlur = headGlow * headIntensity;
             }
           } else {
             // Tail glyphs: green→cyan hue with fading opacity, no glow.
             ctx.fillStyle = colors[col.hue];
           }
 
-          ctx.fillText(glyph, col.x, col.y - i * charSpacing);
-
-          // Immediately clear shadow so it does not leak into the next glyph.
-          if (isHead) {
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = 'transparent';
-          }
+          ctx.fillText(glyph, 0, 0);
+          ctx.restore();
         }
 
         // Reset per-column state to avoid shadow/alpha carry-over between columns.
