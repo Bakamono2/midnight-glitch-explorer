@@ -15,6 +15,7 @@ function App() {
   const [epochTxCount, setEpochTxCount] = useState(null);
   const [epochNumber, setEpochNumber] = useState(null);
   const [isTestRainActive, setIsTestRainActive] = useState(false);
+  const [activeDropCount, setActiveDropCount] = useState(0);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -162,10 +163,10 @@ function App() {
     if (isTestRainActive) {
       if (testSpawnRef.current) clearInterval(testSpawnRef.current);
       testSpawnRef.current = setInterval(() => {
-        // Spawn a small burst frequently to simulate sustained load.
-        const burstSize = 4 + Math.floor(Math.random() * 4);
+        // Spawn a smaller burst for stress testing to curb performance impact.
+        const burstSize = 2 + Math.floor(Math.random() * 2);
         spawnOneColumnPerTx(burstSize);
-      }, 350);
+      }, 420);
     } else if (testSpawnRef.current) {
       clearInterval(testSpawnRef.current);
       testSpawnRef.current = null;
@@ -178,6 +179,15 @@ function App() {
       }
     };
   }, [isTestRainActive]);
+
+  // Poll the number of active rain columns so we can surface a live counter in the UI
+  // without tying setState to every animation frame.
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveDropCount(columnsRef.current.length);
+    }, 400);
+    return () => clearInterval(id);
+  }, []);
 
   const averageTxPerBlock = useMemo(() => {
     if (!recentBlocks.length) return null;
@@ -418,6 +428,23 @@ function App() {
           >
             {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
           </button>
+          <div
+            style={{
+              marginLeft: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: 'rgba(0, 255, 255, 0.08)',
+              border: '1px solid rgba(0,255,255,0.2)',
+              borderRadius: '10px',
+              padding: '0.5rem 0.9rem',
+              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
+              color: '#0ff'
+            }}
+          >
+            <span style={{ opacity: 0.7 }}>Active Drops:</span>
+            <strong style={{ color: '#0f0' }}>{activeDropCount}</strong>
+          </div>
         </div>
 
         <div style={{ width: 'min(720px, 92vw)', padding: '1.15rem 1.25rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 30px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', fontSize: 'clamp(0.8rem, 1.6vw, 1.05rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
