@@ -146,13 +146,14 @@ function App() {
 
     const colors = ['#00f6ff', '#ff00ff', '#00ff9d', '#7c6bff'];
 
+    // Matrix-style rain render loop with translucent overlay for smooth trails.
     const draw = () => {
       const scale = getScale();
       const baseFontSize = 24 * scale;
       const charSpacing = 26 * scale;
-      const headGlow = 90 * scale;
-      const trailGlow = 26 * scale;
+      const headGlow = 14 * scale;
 
+      // Reset state and lay down a faint black veil to fade previous frame.
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
@@ -168,35 +169,43 @@ function App() {
         col.headPos += 0.35 + col.trailJitter * 0.25;
 
         const columnLength = Math.min(64, col.length);
+        const headIndex = col.headPos;
 
         for (let i = 0; i <= columnLength; i++) {
           const char = chars[Math.floor(Math.random() * chars.length)];
-          const distanceFromHead = i - col.headPos;
-          const depthFade = 1 - (i / columnLength) * 0.8;
-          const trailFade = Math.max(0, 1 - (distanceFromHead * col.fadeRate));
-          const brightness = Math.max(0.06, Math.min(depthFade * trailFade, 1));
+          const distanceFromHead = i - headIndex;
+          const depthFade = 1 - (i / columnLength) * 0.9;
+          const trailFade = Math.max(0, 1 - distanceFromHead * col.fadeRate);
+          const opacity = Math.max(0, Math.min(depthFade * trailFade, 1));
 
-          ctx.globalAlpha = brightness;
+          if (opacity <= 0.04) continue;
 
-          if (brightness > 0.9) {
-            ctx.fillStyle = '#e0fff8';
-            ctx.shadowColor = '#a6fff5';
+          ctx.globalAlpha = opacity;
+
+          const isHead = Math.abs(distanceFromHead) < 0.35;
+          if (isHead) {
+            ctx.fillStyle = '#b8fff1';
+            ctx.shadowColor = '#5ef8ff';
             ctx.shadowBlur = headGlow;
           } else {
             ctx.fillStyle = colors[col.hue];
-            ctx.shadowColor = colors[col.hue];
-            ctx.shadowBlur = trailGlow;
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
           }
 
           ctx.fillText(char, col.x, col.y - i * charSpacing);
         }
 
+        // Reset per-column state to avoid shadow/alpha carry-over between columns.
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
         ctx.shadowColor = 'transparent';
       });
 
-      columnsRef.current = columnsRef.current.filter(c => c.y < canvas.height + 4000 * scale);
+      // Remove drops that have fully exited the viewport to prevent buildup.
+      const spacing = 26 * getScale();
+      columnsRef.current = columnsRef.current.filter(c => c.y - Math.min(64, c.length) * spacing < canvas.height + 120);
+
       animationRef.current = requestAnimationFrame(draw);
     };
 
