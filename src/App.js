@@ -478,9 +478,9 @@ function App() {
 
         <div style={{ width: 'min(720px, 92vw)', padding: '1.15rem 1.25rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 30px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', fontSize: 'clamp(0.8rem, 1.6vw, 1.05rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           {stats.map(stat => (
-            <div key={stat.label} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.6rem', background: 'rgba(0,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(0,255,255,0.2)' }}>
-              <span style={{ opacity: 0.85, fontSize: 'clamp(0.72em, 2vw, 0.95em)', letterSpacing: '0.04em' }}>{stat.label}</span>
-              <span style={{ color: '#0f0', fontWeight: 'bold', fontSize: 'clamp(0.95em, 2.4vw, 1.25em)' }}>{stat.value}</span>
+            <div key={stat.label} className="stat-card">
+              <span className="stat-label">{stat.label}</span>
+              <span className="stat-value">{stat.value}</span>
             </div>
           ))}
         </div>
@@ -539,16 +539,9 @@ function App() {
 
         <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
           {recentBlocks.slice(0, 10).map((b, i) => (
-            <div key={b.hash} style={{
-              padding: '0.9rem 0',
-              borderBottom: i < 9 ? '1px dashed rgba(0,255,255,0.2)' : 'none',
-              color: i === 0 ? '#0f0' : '#0ff',
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '1.05rem'
-            }}>
-              <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>#{b.height}</span>
-              <span>{b.tx_count || 0} tx</span>
+            <div key={b.hash} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
+              <span className="timeline-height">#{b.height}</span>
+              <span className="timeline-tx">{b.tx_count || 0} tx</span>
             </div>
           ))}
         </div>

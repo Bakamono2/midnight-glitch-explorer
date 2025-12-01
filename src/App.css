@@ -201,17 +201,96 @@
   text-align: center; 
 }
 
-footer { 
-  margin-top: 10rem; 
-  opacity: 0.75; 
-  font-size: clamp(1.1rem,3vw,1.4rem); 
+footer {
+  margin-top: 10rem;
+  opacity: 0.75;
+  font-size: clamp(1.1rem,3vw,1.4rem);
 }
 
-.loading { 
-  font-size: clamp(2.5rem,9vw,4rem); 
-  margin-top: 40vh; 
-  color: #00ffff; 
-  text-align: center; 
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem;
+  background: radial-gradient(circle at 20% 20%, rgba(0, 255, 255, 0.08), rgba(0, 40, 60, 0.6));
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  box-shadow: 0 0 0 rgba(0, 255, 255, 0.25);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  background: radial-gradient(circle at 30% 25%, rgba(0, 255, 255, 0.16), rgba(0, 45, 70, 0.85));
+  border-color: rgba(0, 255, 255, 0.45);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.35);
+}
+
+.stat-label {
+  opacity: 0.85;
+  font-size: clamp(0.72em, 2vw, 0.95em);
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  color: #0f0;
+  font-weight: bold;
+  font-size: clamp(0.95em, 2.4vw, 1.25em);
+}
+
+.loading {
+  font-size: clamp(2.5rem,9vw,4rem);
+  margin-top: 40vh;
+  color: #00ffff;
+  text-align: center;
+}
+
+.timeline-row {
+  padding: 0.9rem 0;
+  border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
+  color: #0ff;
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.05rem;
+  border-radius: 10px;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+  position: relative;
+}
+
+.timeline-row:last-child {
+  border-bottom: none;
+}
+
+.timeline-row::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(0, 255, 255, 0.04), rgba(0, 128, 255, 0.07));
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  z-index: 0;
+}
+
+.timeline-row:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.28);
+}
+
+.timeline-row:hover::before {
+  opacity: 1;
+}
+
+.timeline-row-latest {
+  color: #0f0;
+  font-weight: 700;
+  border-bottom-color: rgba(0, 255, 140, 0.35);
+}
+
+.timeline-height,
+.timeline-tx {
+  position: relative;
+  z-index: 1;
 }
 
 /* ANIMATIONS */
