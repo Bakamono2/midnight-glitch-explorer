@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
 
-const API_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
-const BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
+const INDEXER_BASE_URL = process.env.REACT_APP_MIDNIGHT_INDEXER_URL || '';
+const INDEXER_KEY = process.env.REACT_APP_MIDNIGHT_INDEXER_KEY || '';
+const INDEXER_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_INDEXER_AUTH_HEADER || 'x-api-key';
+
+const BLOCKFROST_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
+const BLOCKFROST_BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
 function App() {
   const [latest, setLatest] = useState(null);
@@ -30,6 +34,64 @@ function App() {
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
+
+  const hasIndexer = Boolean(INDEXER_BASE_URL);
+
+  const fetchJSON = async (path, provider = 'indexer') => {
+    const base = provider === 'indexer' ? INDEXER_BASE_URL : BLOCKFROST_BASE_URL;
+    const headers = { 'content-type': 'application/json' };
+
+    if (provider === 'indexer' && INDEXER_KEY) {
+      headers[INDEXER_AUTH_HEADER] = INDEXER_KEY;
+    }
+
+    if (provider === 'blockfrost' && BLOCKFROST_KEY) {
+      headers.project_id = BLOCKFROST_KEY;
+    }
+
+    const res = await fetch(`${base}${path}`, { headers });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Failed ${provider} request ${path}: ${res.status} ${body}`);
+    }
+    return res.json();
+  };
+
+  const normalizeBlock = (b) => ({
+    hash: b?.hash || b?.block_hash || b?.id || b?.blockHash,
+    height: b?.height ?? b?.block_height ?? b?.blockHeight ?? null,
+    time: b?.time ?? b?.timestamp ?? (b?.slot_time ? Math.floor(b.slot_time) : null),
+    tx_count:
+      b?.tx_count ??
+      b?.txCount ??
+      b?.transactions_count ??
+      b?.transaction_count ??
+      (Array.isArray(b?.transactions) ? b.transactions.length : null),
+    size: b?.size ?? b?.block_size ?? b?.blockSize ?? null
+  });
+
+  const normalizeEpoch = (e) => ({
+    epoch: e?.epoch ?? e?.number ?? null,
+    end_time:
+      e?.end_time ??
+      e?.endTime ??
+      (e?.endTimeMs ? Math.floor(e.endTimeMs / 1000) : null) ??
+      null,
+    block_count: e?.block_count ?? e?.blocks ?? e?.blockCount ?? null,
+    tx_count: e?.tx_count ?? e?.transactions_count ?? e?.transactionCount ?? null
+  });
+
+  const fetchFromProvider = async (provider) => {
+    const block = normalizeBlock(await fetchJSON('/blocks/latest', provider));
+    if (!block.hash) throw new Error('Missing block hash from provider');
+    const txs = await fetchJSON(`/blocks/${block.hash}/txs`, provider);
+    return { block, txs };
+  };
+
+  const fetchEpochFromProvider = async (provider) => {
+    const epoch = normalizeEpoch(await fetchJSON('/epochs/latest', provider));
+    return epoch;
+  };
 
   const getScale = () => {
     const area = window.innerWidth * window.innerHeight;
@@ -114,26 +176,31 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/blocks/latest`, { headers: { project_id: API_KEY } });
-        const block = await res.json();
-        const txRes = await fetch(`${BASE_URL}/blocks/${block.hash}/txs`, { headers: { project_id: API_KEY } });
-        const txs = await txRes.json();
+      const providers = hasIndexer ? ['indexer', 'blockfrost'] : ['blockfrost'];
+      for (const provider of providers) {
+        try {
+          const { block, txs } = await fetchFromProvider(provider);
+          const txCount = block.tx_count ?? (Array.isArray(txs) ? txs.length : Number(txs?.count ?? txs?.total ?? 0));
 
-        if (!latest || latest.hash !== block.hash) {
-          if (latest?.time && block.time) {
-            const seconds = Math.max(1, block.time - latest.time);
-            const txCount = block.tx_count ?? txs.length;
-            setTxRate(txCount / seconds);
-          } else {
-            setTxRate(block.tx_count ?? txs.length ?? null);
+          if (!latest || latest.hash !== block.hash) {
+            if (latest?.time && block.time) {
+              const seconds = Math.max(1, block.time - latest.time);
+              setTxRate(txCount / seconds);
+            } else {
+              setTxRate(txCount ?? null);
+            }
+            setLatest(block);
+            setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
+            spawnOneColumnPerTx(txCount || 0);
           }
-          setLatest(block);
-          setRecentBlocks(prev => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txs.length);
+          return; // fetched successfully; stop trying providers
+        } catch (err) {
+          if (provider === providers[providers.length - 1]) {
+            console.error('All providers failed', err);
+          } else {
+            console.warn(`Provider ${provider} failed, trying next`, err);
+          }
         }
-      } catch (e) {
-        console.error(e);
       }
     };
     fetchData();
@@ -143,14 +210,21 @@ function App() {
 
   useEffect(() => {
     const fetchEpoch = async () => {
-      try {
-        const r = await fetch(`${BASE_URL}/epochs/latest`, { headers: { project_id: API_KEY } });
-        const e = await r.json();
-        epochEndRef.current = e.end_time * 1000;
-        setEpochBlocks(e.block_count ?? e.blocks ?? null);
-        setEpochTxCount(e.tx_count ?? e.transactions_count ?? null);
-        setEpochNumber(e.epoch ?? null);
-      } catch {}
+      const providers = hasIndexer ? ['indexer', 'blockfrost'] : ['blockfrost'];
+      for (const provider of providers) {
+        try {
+          const e = await fetchEpochFromProvider(provider);
+          if (e?.end_time) epochEndRef.current = e.end_time * 1000;
+          setEpochBlocks(e?.block_count ?? null);
+          setEpochTxCount(e?.tx_count ?? null);
+          setEpochNumber(e?.epoch ?? null);
+          return;
+        } catch (err) {
+          if (provider === providers[providers.length - 1]) {
+            console.error('Failed to fetch epoch data', err);
+          }
+        }
+      }
     };
     fetchEpoch();
     const refreshEpoch = setInterval(fetchEpoch, 60000);
