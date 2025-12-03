@@ -17,3 +17,12 @@ A fun, cyberpunk-themed viewer for Midnight testnet transactions.
 - Live block fetches
 - Glitch effects & confetti
 - Easy switch to mainnet
+
+## Debugging which provider is active
+
+The home screen surfaces the active data sources while you build or debug:
+
+- **Block/Tx Provider** shows which backend served the latest block/transaction fetch (Midnight Indexer, Midnight testnet-02, or Blockfrost).
+- **Epoch Provider** shows which backend served the latest epoch metadata fetch.
+
+The app also logs provider selections to the browser console (e.g., `[provider] block+tx source => indexer`).

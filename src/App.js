@@ -27,6 +27,8 @@ function App() {
   const [isTestRainActive, setIsTestRainActive] = useState(false);
   const [activeDropCount, setActiveDropCount] = useState(0);
   const [isGlitchActive, setIsGlitchActive] = useState(false);
+  const [activeProvider, setActiveProvider] = useState(null);
+  const [activeEpochProvider, setActiveEpochProvider] = useState(null);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -212,6 +214,8 @@ function App() {
             setLatest(block);
             setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
             spawnOneColumnPerTx(txCount || 0);
+            setActiveProvider(provider);
+            console.info(`[provider] block+tx source => ${provider}`);
           }
           return; // fetched successfully; stop trying providers
         } catch (err) {
@@ -242,6 +246,8 @@ function App() {
           setEpochBlocks(e?.block_count ?? null);
           setEpochTxCount(e?.tx_count ?? null);
           setEpochNumber(e?.epoch ?? null);
+          setActiveEpochProvider(provider);
+          console.info(`[provider] epoch source => ${provider}`);
           return;
         } catch (err) {
           if (provider === providers[providers.length - 1]) {
@@ -498,6 +504,13 @@ function App() {
     { label: 'Epoch', value: epochNumber ?? '-' }
   ];
 
+  const providerLabel = (provider) => {
+    if (provider === 'indexer') return 'Midnight Indexer';
+    if (provider === 'testnet') return 'Midnight testnet-02';
+    if (provider === 'blockfrost') return 'Blockfrost (preprod)';
+    return 'Unknown';
+  };
+
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
@@ -571,6 +584,49 @@ function App() {
           >
             <span style={{ opacity: 0.7 }}>Active Drops:</span>
             <strong style={{ color: '#0f0' }}>{activeDropCount}</strong>
+          </div>
+        </div>
+
+        <div
+          style={{
+            width: 'min(720px, 92vw)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '0.6rem',
+            marginTop: '0.5rem'
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(120deg, rgba(0, 255, 180, 0.12), rgba(0, 180, 255, 0.18))',
+              border: '1px solid rgba(0,255,255,0.25)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+              color: '#bdf',
+              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
+              boxShadow: '0 0 16px rgba(0,255,255,0.25)'
+            }}
+          >
+            <div style={{ opacity: 0.65, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Block/Tx Provider</div>
+            <div style={{ color: '#0ff', fontWeight: 700 }}>
+              {activeProvider ? providerLabel(activeProvider) : 'Resolving...'}
+            </div>
+          </div>
+          <div
+            style={{
+              background: 'linear-gradient(120deg, rgba(0, 255, 140, 0.12), rgba(0, 160, 255, 0.15))',
+              border: '1px solid rgba(0,255,255,0.22)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+              color: '#bdf',
+              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
+              boxShadow: '0 0 16px rgba(0,255,255,0.2)'
+            }}
+          >
+            <div style={{ opacity: 0.65, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Epoch Provider</div>
+            <div style={{ color: '#0ff', fontWeight: 700 }}>
+              {activeEpochProvider ? providerLabel(activeEpochProvider) : 'Resolving...'}
+            </div>
           </div>
         </div>
 
