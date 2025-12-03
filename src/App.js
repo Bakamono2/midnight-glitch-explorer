@@ -5,6 +5,12 @@ const INDEXER_BASE_URL = process.env.REACT_APP_MIDNIGHT_INDEXER_URL || '';
 const INDEXER_KEY = process.env.REACT_APP_MIDNIGHT_INDEXER_KEY || '';
 const INDEXER_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_INDEXER_AUTH_HEADER || 'x-api-key';
 
+// Prefer the Midnight testnet-02 indexer as the primary fallback before Blockfrost.
+const TESTNET_BASE_URL =
+  process.env.REACT_APP_MIDNIGHT_TESTNET_URL || 'https://testnet-02.midnight.network/api/v1';
+const TESTNET_KEY = process.env.REACT_APP_MIDNIGHT_TESTNET_KEY || '';
+const TESTNET_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_TESTNET_AUTH_HEADER || INDEXER_AUTH_HEADER;
+
 const BLOCKFROST_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BLOCKFROST_BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
 
@@ -36,13 +42,23 @@ function App() {
   const [overlayMode, setOverlayMode] = useState('dark');
 
   const hasIndexer = Boolean(INDEXER_BASE_URL);
+  const hasTestnet = Boolean(TESTNET_BASE_URL);
 
   const fetchJSON = async (path, provider = 'indexer') => {
-    const base = provider === 'indexer' ? INDEXER_BASE_URL : BLOCKFROST_BASE_URL;
+    const base =
+      provider === 'indexer'
+        ? INDEXER_BASE_URL
+        : provider === 'testnet'
+        ? TESTNET_BASE_URL
+        : BLOCKFROST_BASE_URL;
     const headers = { 'content-type': 'application/json' };
 
     if (provider === 'indexer' && INDEXER_KEY) {
       headers[INDEXER_AUTH_HEADER] = INDEXER_KEY;
+    }
+
+    if (provider === 'testnet' && TESTNET_KEY) {
+      headers[TESTNET_AUTH_HEADER] = TESTNET_KEY;
     }
 
     if (provider === 'blockfrost' && BLOCKFROST_KEY) {
@@ -176,7 +192,11 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const providers = hasIndexer ? ['indexer', 'blockfrost'] : ['blockfrost'];
+      const providers = hasIndexer
+        ? ['indexer', 'testnet', 'blockfrost']
+        : hasTestnet
+        ? ['testnet', 'blockfrost']
+        : ['blockfrost'];
       for (const provider of providers) {
         try {
           const { block, txs } = await fetchFromProvider(provider);
@@ -210,7 +230,11 @@ function App() {
 
   useEffect(() => {
     const fetchEpoch = async () => {
-      const providers = hasIndexer ? ['indexer', 'blockfrost'] : ['blockfrost'];
+      const providers = hasIndexer
+        ? ['indexer', 'testnet', 'blockfrost']
+        : hasTestnet
+        ? ['testnet', 'blockfrost']
+        : ['blockfrost'];
       for (const provider of providers) {
         try {
           const e = await fetchEpochFromProvider(provider);
