@@ -203,8 +203,15 @@ export async function fetchLatestEpoch(): Promise<{
   txCount: number;
   epochEndTime?: string | null;
 }> {
-  const providers = buildProviderOrder();
+  // Epoch polling is disabled for Midnight providers; only non-Midnight sources like Blockfrost
+  // should be queried when explicitly enabled.
+  const providers = buildProviderOrder().filter((p) => p.kind === 'blockfrost');
   const failures: string[] = [];
+
+  if (!providers.length) {
+    console.warn('[providers] no eligible providers configured for epoch fetch');
+    failures.push('no eligible providers configured for epoch fetch');
+  }
 
   for (const provider of providers) {
     try {
