@@ -8,11 +8,12 @@ export default async function handler(req, res) {
 
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
+  // Shape matches provider expectations: epochNumber, blockCount, txCount, epochEndTime
   const epoch = {
-    epoch: 0,
+    epochNumber: 0,
     blockCount: 0,
     txCount: 0,
-    endTime: new Date(now + oneHour).toISOString(),
+    epochEndTime: new Date(now + oneHour).toISOString(),
   };
 
   res.status(200).json(epoch);
