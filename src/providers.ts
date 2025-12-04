@@ -19,6 +19,7 @@ export interface NormalizedBlock {
 export interface NormalizedTx {
   hash: string;
   size?: number | null;
+  sizeBytes?: number | null;
 }
 
 export interface LatestBlockAndTxs {
@@ -97,13 +98,14 @@ const normalizeBlock = (provider: ProviderConfig, raw: any): NormalizedBlock => 
 
 const normalizeTxs = (provider: ProviderConfig, raw: any): NormalizedTx[] => {
   if (provider.kind === 'blockfrost') {
-    return (raw as string[]).map((hash) => ({ hash, size: null }));
+    return (raw as string[]).map((hash) => ({ hash, size: null, sizeBytes: null }));
   }
 
   if (Array.isArray(raw)) {
     return raw.map((tx) => ({
       hash: tx?.hash ?? tx?.id,
-      size: tx?.size ?? null
+      size: tx?.sizeBytes ?? tx?.size ?? null,
+      sizeBytes: tx?.sizeBytes ?? tx?.size ?? null
     }));
   }
 

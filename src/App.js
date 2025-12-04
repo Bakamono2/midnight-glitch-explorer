@@ -181,6 +181,19 @@ function App() {
         const prevTime = parseSeconds(latest?.timestamp);
 
         if (!latest || latest.hash !== block.hash) {
+          const txMeta = Array.isArray(txs)
+            ? txs.map((tx, idx) => {
+                const hash = typeof tx?.hash === 'string' ? tx.hash : `tx-${block?.hash || 'unknown'}-${idx}`;
+                const sizeBytes =
+                  typeof tx?.sizeBytes === 'number'
+                    ? tx.sizeBytes
+                    : typeof tx?.size === 'number'
+                    ? tx.size
+                    : null;
+                return { ...tx, hash, sizeBytes };
+              })
+            : null;
+
           if (prevTime != null && currentTime != null) {
             const seconds = Math.max(1, currentTime - prevTime);
             setTxRate(txCount / seconds);
@@ -189,7 +202,11 @@ function App() {
           }
           setLatest(block);
           setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txs || txCount || 0);
+          if (txMeta && txMeta.length) {
+            spawnOneColumnPerTx(txMeta);
+          } else {
+            spawnOneColumnPerTx(txCount || 0);
+          }
           setActiveProvider(provider);
           setProviderErrors((prev) => ({ ...prev, block: null }));
         }
