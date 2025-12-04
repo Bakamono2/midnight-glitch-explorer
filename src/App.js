@@ -108,6 +108,24 @@ function App() {
       const importanceBoost = imp * 0.9;
       const speed = (baseSpeed + importanceBoost) * scale;
 
+      let importanceBand;
+      if (imp < 0.33) {
+        importanceBand = 0;
+      } else if (imp < 0.66) {
+        importanceBand = 1;
+      } else {
+        importanceBand = 2;
+      }
+
+      let hueIndex = 0;
+      if (importanceBand === 0) {
+        hueIndex = 0; // calmer teal for low-importance txs
+      } else if (importanceBand === 1) {
+        hueIndex = 2; // mid-bright cyan for medium importance
+      } else {
+        hueIndex = 1; // punchier green/cyan for high importance
+      }
+
       const baseHighlightChance = 0.18;
       const extraHighlightChance = imp * 0.42;
       const highlightChance = Math.max(0, Math.min(1, baseHighlightChance + extraHighlightChance));
@@ -123,7 +141,7 @@ function App() {
         // now lightly influenced by tx size when available.
         length: computeTailLength(meta.sizeBytes),
         headPos: Math.random() * 8,
-        hue: i % 4,
+        hue: hueIndex,
         fadeRate: 0.045 + Math.random() * 0.05,
         trailJitter: Math.random() * 0.4,
         // Random highlight flag (visual-only) to let some heads pop with a white glow.
