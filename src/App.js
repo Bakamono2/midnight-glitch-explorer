@@ -1,25 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
-
-const normalizeBase = (url = '') => url.trim().replace(/\/+$/, '');
-
-const INDEXER_BASE_URL = normalizeBase(process.env.REACT_APP_MIDNIGHT_INDEXER_URL) || '';
-const INDEXER_KEY = process.env.REACT_APP_MIDNIGHT_INDEXER_KEY || '';
-const INDEXER_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_INDEXER_AUTH_HEADER || 'x-api-key';
-
-// Prefer the Midnight testnet-02 indexer as the primary fallback before Blockfrost.
-const TESTNET_BASE_URL =
-  normalizeBase(process.env.REACT_APP_MIDNIGHT_TESTNET_URL) ||
-  'https://testnet-02.midnight.network/api/v1';
-const TESTNET_KEY = process.env.REACT_APP_MIDNIGHT_TESTNET_KEY || '';
-const TESTNET_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_TESTNET_AUTH_HEADER || INDEXER_AUTH_HEADER;
-
-const ALLOW_BLOCKFROST_FALLBACK =
-  process.env.REACT_APP_ALLOW_BLOCKFROST_FALLBACK === undefined ||
-  process.env.REACT_APP_ALLOW_BLOCKFROST_FALLBACK === 'true';
-
-const BLOCKFROST_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
-const BLOCKFROST_BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
+import { fetchLatestBlockAndTxs, fetchLatestEpoch, isBlockfrostAllowed } from './providers';
 
 function App() {
   const [latest, setLatest] = useState(null);
@@ -51,72 +32,12 @@ function App() {
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
 
-  const hasIndexer = Boolean(INDEXER_BASE_URL);
-  const hasTestnet = Boolean(TESTNET_BASE_URL);
+  const ALLOW_BLOCKFROST_FALLBACK = isBlockfrostAllowed();
 
-  const fetchJSON = async (path, provider = 'indexer') => {
-    const base =
-      provider === 'indexer'
-        ? INDEXER_BASE_URL
-        : provider === 'testnet'
-        ? TESTNET_BASE_URL
-        : BLOCKFROST_BASE_URL;
-    const headers = { 'content-type': 'application/json' };
-
-    if (provider === 'indexer' && INDEXER_KEY) {
-      headers[INDEXER_AUTH_HEADER] = INDEXER_KEY;
-    }
-
-    if (provider === 'testnet' && TESTNET_KEY) {
-      headers[TESTNET_AUTH_HEADER] = TESTNET_KEY;
-    }
-
-    if (provider === 'blockfrost' && BLOCKFROST_KEY) {
-      headers.project_id = BLOCKFROST_KEY;
-    }
-
-    const res = await fetch(`${base}${path}`, { headers });
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Failed ${provider} request ${path}: ${res.status} ${body}`);
-    }
-    return res.json();
-  };
-
-  const normalizeBlock = (b) => ({
-    hash: b?.hash || b?.block_hash || b?.id || b?.blockHash,
-    height: b?.height ?? b?.block_height ?? b?.blockHeight ?? null,
-    time: b?.time ?? b?.timestamp ?? (b?.slot_time ? Math.floor(b.slot_time) : null),
-    tx_count:
-      b?.tx_count ??
-      b?.txCount ??
-      b?.transactions_count ??
-      b?.transaction_count ??
-      (Array.isArray(b?.transactions) ? b.transactions.length : null),
-    size: b?.size ?? b?.block_size ?? b?.blockSize ?? null
-  });
-
-  const normalizeEpoch = (e) => ({
-    epoch: e?.epoch ?? e?.number ?? null,
-    end_time:
-      e?.end_time ??
-      e?.endTime ??
-      (e?.endTimeMs ? Math.floor(e.endTimeMs / 1000) : null) ??
-      null,
-    block_count: e?.block_count ?? e?.blocks ?? e?.blockCount ?? null,
-    tx_count: e?.tx_count ?? e?.transactions_count ?? e?.transactionCount ?? null
-  });
-
-  const fetchFromProvider = async (provider) => {
-    const block = normalizeBlock(await fetchJSON('/blocks/latest', provider));
-    if (!block.hash) throw new Error('Missing block hash from provider');
-    const txs = await fetchJSON(`/blocks/${block.hash}/txs`, provider);
-    return { block, txs };
-  };
-
-  const fetchEpochFromProvider = async (provider) => {
-    const epoch = normalizeEpoch(await fetchJSON('/epochs/latest', provider));
-    return epoch;
+  const parseSeconds = (timestamp) => {
+    if (!timestamp) return null;
+    const value = Date.parse(timestamp);
+    return Number.isNaN(value) ? null : Math.floor(value / 1000);
   };
 
   const getScale = () => {
@@ -202,46 +123,27 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const providers = hasIndexer
-        ? ['indexer', 'testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
-        : hasTestnet
-        ? ['testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
-        : ['blockfrost'];
+      try {
+        const { provider, block, txs } = await fetchLatestBlockAndTxs();
+        const txCount = block.txCount ?? (Array.isArray(txs) ? txs.length : 0);
+        const currentTime = parseSeconds(block.timestamp);
+        const prevTime = parseSeconds(latest?.timestamp);
 
-      const failures = [];
-
-      for (const provider of providers) {
-        try {
-          const { block, txs } = await fetchFromProvider(provider);
-          const txCount = block.tx_count ?? (Array.isArray(txs) ? txs.length : Number(txs?.count ?? txs?.total ?? 0));
-
-          if (!latest || latest.hash !== block.hash) {
-            if (latest?.time && block.time) {
-              const seconds = Math.max(1, block.time - latest.time);
-              setTxRate(txCount / seconds);
-            } else {
-              setTxRate(txCount ?? null);
-            }
-            setLatest(block);
-            setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
-            spawnOneColumnPerTx(txCount || 0);
-            setActiveProvider(provider);
-            setProviderErrors((prev) => ({ ...prev, block: null }));
-            console.info(`[provider] block+tx source => ${provider}`);
-          }
-          return; // fetched successfully; stop trying providers
-        } catch (err) {
-          failures.push(`${provider}: ${err.message}`);
-          if (provider === providers[providers.length - 1]) {
-            console.error('All providers failed', err);
+        if (!latest || latest.hash !== block.hash) {
+          if (prevTime != null && currentTime != null) {
+            const seconds = Math.max(1, currentTime - prevTime);
+            setTxRate(txCount / seconds);
           } else {
-            console.warn(`Provider ${provider} failed, trying next`, err);
+            setTxRate(txCount ?? null);
           }
+          setLatest(block);
+          setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
+          spawnOneColumnPerTx(txCount || 0);
+          setActiveProvider(provider);
+          setProviderErrors((prev) => ({ ...prev, block: null }));
         }
-      }
-
-      if (failures.length) {
-        setProviderErrors((prev) => ({ ...prev, block: failures.join(' | ') }));
+      } catch (err) {
+        setProviderErrors((prev) => ({ ...prev, block: err.message || 'Failed to fetch block data' }));
       }
     };
     fetchData();
@@ -251,35 +153,16 @@ function App() {
 
   useEffect(() => {
     const fetchEpoch = async () => {
-      const providers = hasIndexer
-        ? ['indexer', 'testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
-        : hasTestnet
-        ? ['testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
-        : ['blockfrost'];
-
-      const failures = [];
-
-      for (const provider of providers) {
-        try {
-          const e = await fetchEpochFromProvider(provider);
-          if (e?.end_time) epochEndRef.current = e.end_time * 1000;
-          setEpochBlocks(e?.block_count ?? null);
-          setEpochTxCount(e?.tx_count ?? null);
-          setEpochNumber(e?.epoch ?? null);
-          setActiveEpochProvider(provider);
-          setProviderErrors((prev) => ({ ...prev, epoch: null }));
-          console.info(`[provider] epoch source => ${provider}`);
-          return;
-        } catch (err) {
-          failures.push(`${provider}: ${err.message}`);
-          if (provider === providers[providers.length - 1]) {
-            console.error('Failed to fetch epoch data', err);
-          }
-        }
-      }
-
-      if (failures.length) {
-        setProviderErrors((prev) => ({ ...prev, epoch: failures.join(' | ') }));
+      try {
+        const epoch = await fetchLatestEpoch();
+        if (epoch?.epochEndTime) epochEndRef.current = Date.parse(epoch.epochEndTime);
+        setEpochBlocks(epoch?.blockCount ?? null);
+        setEpochTxCount(epoch?.txCount ?? null);
+        setEpochNumber(epoch?.epochNumber ?? null);
+        setActiveEpochProvider(epoch?.provider ?? null);
+        setProviderErrors((prev) => ({ ...prev, epoch: null }));
+      } catch (err) {
+        setProviderErrors((prev) => ({ ...prev, epoch: err.message || 'Failed to fetch epoch data' }));
       }
     };
     fetchEpoch();
@@ -302,8 +185,13 @@ function App() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      if (latest?.time) {
-        setTimeSinceBlock(Math.max(0, Math.floor(Date.now() / 1000 - latest.time)));
+      if (latest?.timestamp) {
+        const last = parseSeconds(latest.timestamp);
+        if (last != null) {
+          setTimeSinceBlock(Math.max(0, Math.floor(Date.now() / 1000 - last)));
+        }
+      } else {
+        setTimeSinceBlock(null);
       }
     }, 1000);
     return () => clearInterval(timer);
@@ -343,7 +231,7 @@ function App() {
   const averageTxPerBlock = useMemo(() => {
     if (!recentBlocks.length) return null;
     const slice = recentBlocks.slice(0, 10);
-    const total = slice.reduce((sum, b) => sum + (b.tx_count || 0), 0);
+    const total = slice.reduce((sum, b) => sum + (b.txCount || 0), 0);
     return (total / slice.length).toFixed(1);
   }, [recentBlocks]);
 
@@ -531,9 +419,10 @@ function App() {
   ];
 
   const providerLabel = (provider) => {
-    if (provider === 'indexer') return 'Midnight Indexer';
-    if (provider === 'testnet') return 'Midnight testnet-02';
-    if (provider === 'blockfrost') return 'Blockfrost (preprod)';
+    const id = provider?.id || provider;
+    if (id === 'midnight-indexer') return 'Midnight Indexer';
+    if (id === 'midnight-testnet') return 'Midnight testnet-02';
+    if (id === 'blockfrost') return 'Blockfrost (preprod)';
     return 'Unknown';
   };
 
@@ -571,7 +460,7 @@ function App() {
           </h2>
           <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
           <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
-          <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.tx_count || 0} transactions</p>
+          <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.txCount || 0} transactions</p>
         </div>
 
         <div style={{ width: 'min(720px, 92vw)', display: 'flex', justifyContent: 'center' }}>
@@ -683,8 +572,8 @@ function App() {
             )}
             <div style={{ marginTop: '0.2rem', opacity: 0.8 }}>
               {ALLOW_BLOCKFROST_FALLBACK
-                ? 'Falling back to Blockfrost when indexer/testnet fail. Set REACT_APP_ALLOW_BLOCKFROST_FALLBACK=false to force Midnight Indexer-only behavior.'
-                : 'Blockfrost fallback disabled; ensure Midnight Indexer or testnet-02 URL/key are configured so data can load.'}
+                ? 'Blockfrost fallback enabled when both Midnight providers fail.'
+                : 'Blockfrost fallback disabled; ensure Midnight Indexer or testnet-02 URL/key are configured so data can load or enable REACT_APP_ALLOW_BLOCKFROST_FALLBACK.'}
             </div>
           </div>
         )}
@@ -754,7 +643,7 @@ function App() {
           {recentBlocks.slice(0, 10).map((b, i) => (
             <div key={b.hash} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
               <span className="timeline-height">#{b.height}</span>
-              <span className="timeline-tx">{b.tx_count || 0} tx</span>
+              <span className="timeline-tx">{b.txCount || 0} tx</span>
             </div>
           ))}
         </div>
