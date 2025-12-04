@@ -22,6 +22,7 @@ function App() {
     lastFrameTime: performance.now(),
     frameDeltas: []
   });
+  const lastSeenHeightRef = useRef(null);
   const bigBlockStatsRef = useRef({
     initialized: false,
     avgScore: 0,
@@ -241,42 +242,117 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
+      const sanitizeTxMeta = (txs, blockHash) => {
+        if (!Array.isArray(txs)) return null;
+        return txs.map((tx, idx) => {
+          const hash = typeof tx?.hash === 'string' ? tx.hash : `tx-${blockHash || 'unknown'}-${idx}`;
+          const sizeBytes =
+            typeof tx?.sizeBytes === 'number'
+              ? tx.sizeBytes
+              : typeof tx?.size === 'number'
+              ? tx.size
+              : null;
+          return { ...tx, hash, sizeBytes };
+        });
+      };
+
+      const buildHeaders = (provider) => {
+        const headers = { 'Content-Type': 'application/json' };
+        if (provider?.authHeaderName && provider?.authHeaderValue) {
+          headers[provider.authHeaderName] = provider.authHeaderValue;
+        }
+        return headers;
+      };
+
+      const fetchProviderJson = async (provider, path) => {
+        const resp = await fetch(`${provider.baseUrl}${path}`, { headers: buildHeaders(provider) });
+        if (!resp.ok) throw new Error(`status ${resp.status}`);
+        return resp.json();
+      };
+
+      const processBlock = async (blockData, txList, prevBlockForRate, provider) => {
+        const txCount = blockData.txCount ?? (Array.isArray(txList) ? txList.length : 0);
+        const currentTime = parseSeconds(blockData.timestamp);
+        const prevTime = parseSeconds(prevBlockForRate?.timestamp);
+
+        if (prevTime != null && currentTime != null) {
+          const seconds = Math.max(1, currentTime - prevTime);
+          setTxRate(txCount / seconds);
+        } else {
+          setTxRate(txCount ?? null);
+        }
+
+        setLatest(blockData);
+        setRecentBlocks((prev) => {
+          const filtered = prev.filter((b) => b.hash !== blockData.hash);
+          return [blockData, ...filtered].slice(0, 50);
+        });
+
+        const txMeta = sanitizeTxMeta(txList, blockData.hash);
+        if (txMeta && txMeta.length) {
+          spawnOneColumnPerTx(txMeta);
+        } else {
+          spawnOneColumnPerTx(txCount || 0);
+        }
+
+        setActiveProvider(provider);
+        setProviderErrors((prev) => ({ ...prev, block: null }));
+      };
+
       try {
         const { provider, block, txs } = await fetchLatestBlockAndTxs();
-        const txCount = block.txCount ?? (Array.isArray(txs) ? txs.length : 0);
-        const currentTime = parseSeconds(block.timestamp);
-        const prevTime = parseSeconds(latest?.timestamp);
+        const latestHeight = block?.height;
+        const prevHeight = lastSeenHeightRef.current;
 
-        if (!latest || latest.hash !== block.hash) {
-          const txMeta = Array.isArray(txs)
-            ? txs.map((tx, idx) => {
-                const hash = typeof tx?.hash === 'string' ? tx.hash : `tx-${block?.hash || 'unknown'}-${idx}`;
-                const sizeBytes =
-                  typeof tx?.sizeBytes === 'number'
-                    ? tx.sizeBytes
-                    : typeof tx?.size === 'number'
-                    ? tx.size
-                    : null;
-                return { ...tx, hash, sizeBytes };
-              })
-            : null;
-
-          if (prevTime != null && currentTime != null) {
-            const seconds = Math.max(1, currentTime - prevTime);
-            setTxRate(txCount / seconds);
-          } else {
-            setTxRate(txCount ?? null);
-          }
-          setLatest(block);
-          setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
-          if (txMeta && txMeta.length) {
-            spawnOneColumnPerTx(txMeta);
-          } else {
-            spawnOneColumnPerTx(txCount || 0);
-          }
-          setActiveProvider(provider);
-          setProviderErrors((prev) => ({ ...prev, block: null }));
+        if (!Number.isFinite(latestHeight)) {
+          await processBlock(block, txs, latest, provider);
+          lastSeenHeightRef.current = latestHeight ?? null;
+          return;
         }
+
+        if (prevHeight == null) {
+          await processBlock(block, txs, latest, provider);
+          lastSeenHeightRef.current = latestHeight;
+          return;
+        }
+
+        if (latestHeight <= prevHeight) {
+          setActiveProvider(provider);
+          return;
+        }
+
+        if (latestHeight === prevHeight + 1) {
+          await processBlock(block, txs, latest, provider);
+          lastSeenHeightRef.current = latestHeight;
+          return;
+        }
+
+        const fromHeight = prevHeight + 1;
+        try {
+          const missingBlocks = await fetchProviderJson(provider, `/blocks/latest?fromHeight=${fromHeight}`);
+          if (Array.isArray(missingBlocks) && missingBlocks.length) {
+            let prevBlock = latest;
+            for (const missing of missingBlocks) {
+              let blockTxs = null;
+              try {
+                if (missing?.hash) {
+                  blockTxs = await fetchProviderJson(provider, `/blocks/${missing.hash}/txs`);
+                }
+              } catch (txErr) {
+                console.error('[midnight] tx fetch failed during catch-up', txErr);
+              }
+              await processBlock(missing, blockTxs, prevBlock, provider);
+              prevBlock = missing;
+            }
+            lastSeenHeightRef.current = missingBlocks[missingBlocks.length - 1].height;
+            return;
+          }
+        } catch (rangeErr) {
+          console.error('[midnight] failed to fetch missing blocks range', rangeErr);
+        }
+
+        await processBlock(block, txs, latest, provider);
+        lastSeenHeightRef.current = latestHeight;
       } catch (err) {
         setProviderErrors((prev) => ({ ...prev, block: err.message || 'Failed to fetch block data' }));
       }
