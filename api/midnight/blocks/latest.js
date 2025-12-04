@@ -45,6 +45,16 @@ export default async function handler(req, res) {
 
     const extrinsics = block?.extrinsics;
     const txCount = Array.isArray(extrinsics) ? extrinsics.length : 0;
+    let sizeBytes = 0;
+
+    if (Array.isArray(extrinsics)) {
+      for (const ext of extrinsics) {
+        if (typeof ext === 'string') {
+          const hex = ext.startsWith('0x') ? ext.slice(2) : ext;
+          sizeBytes += Math.floor(hex.length / 2);
+        }
+      }
+    }
 
     let hash = null;
     try {
@@ -76,7 +86,7 @@ export default async function handler(req, res) {
       height,
       timestamp: new Date().toISOString(),
       txCount,
-      size: null,
+      size: sizeBytes,
     };
 
     res.status(200).json(normalized);
