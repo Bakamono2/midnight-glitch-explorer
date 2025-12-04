@@ -40,23 +40,54 @@ function App() {
     return Math.sqrt(area / referenceArea);
   };
 
-  const spawnOneColumnPerTx = (txCount) => {
+  const spawnOneColumnPerTx = (txSource) => {
     const scale = getScale();
     const safeMargin = 160 * scale;
 
+    // Normalize the input so we can handle a simple count (existing behavior) or
+    // a list of transaction metadata to drive semantic styling in future phases.
+    const txs = Array.isArray(txSource)
+      ? txSource
+      : Array.from({ length: txSource || 0 }, () => null);
+
+    const deriveMeta = (tx, index) => {
+      const hash = tx && typeof tx.hash === 'string' ? tx.hash : null;
+      const sizeBytes = Number.isFinite(tx?.size) ? tx.size : 0;
+      const type = tx && typeof tx.type === 'string' ? tx.type : 'transfer';
+
+      // Simple importance heuristic: scale by size (log), keep within [0, 1].
+      const importanceBase = sizeBytes ? Math.log10(sizeBytes + 10) / 4 : 0.18;
+      const importance = Math.max(0, Math.min(1, importanceBase + (hash ? 0.05 : 0) + (index % 7 === 0 ? 0.04 : 0)));
+
+      return {
+        hash,
+        sizeBytes,
+        type,
+        importance
+      };
+    };
+
     // Bias drop lengths toward the upper range so most streams feel longer while
     // still respecting the 24–64 character constraint.
-    const randomLength = () => {
+    const randomLength = (sizeBytes) => {
       // Favor longer trails while keeping the 24–64 bounds and occasionally push nearer to max.
       const skewed = Math.pow(Math.random(), 0.3); // stronger bias toward higher values
       let length = 24 + skewed * (64 - 24);
+
+      // Use approximate size to influence trail length slightly while keeping visuals familiar.
+      if (sizeBytes && Number.isFinite(sizeBytes)) {
+        const sizeBoost = Math.min(1, Math.log10(sizeBytes + 10) / 3);
+        length += sizeBoost * 8; // modest bump for larger tx
+      }
+
       if (Math.random() < 0.35) {
-        length = 56 + Math.random() * 8; // bump a subset of drops closer to the max length
+        length = Math.max(length, 56 + Math.random() * 8); // bump a subset of drops closer to the max length
       }
       return Math.max(24, Math.min(64, Math.round(length)));
     };
 
-    for (let i = 0; i < txCount; i++) {
+    txs.forEach((tx, i) => {
+      const meta = deriveMeta(tx, i);
       const highlighted = Math.random() < 0.32;
       const headHighlightCount = highlighted ? 1 + Math.floor(Math.random() * 3) : 1;
       const rotation = (0.04 + Math.random() * 0.08) * (Math.random() < 0.5 ? -1 : 1);
@@ -65,8 +96,9 @@ function App() {
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
         speed: (0.85 + Math.random() * 1.4) * scale,
-        // Enforce drop length between 24 and 64 glyphs (trail + head) with a skew toward longer trails.
-        length: randomLength(),
+        // Enforce drop length between 24 and 64 glyphs (trail + head) with a skew toward longer trails,
+        // lightly influenced by tx size when available.
+        length: randomLength(meta.sizeBytes),
         headPos: Math.random() * 8,
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
@@ -75,11 +107,13 @@ function App() {
         highlighted,
         headHighlightCount,
         rotation,
+        // Attach semantic metadata for future styling/interaction without changing spawn logic.
+        meta,
         // trail state used only for rendering (spawn logic untouched)
         glyphs: [],
         distanceSinceChar: 0
       });
-    }
+    });
     // Keep a generous cap based on viewport scale so spawning remains one-per-tx but
     // older columns are culled before they overwhelm the renderer on small screens.
     const baseCap = 900 * scale;
@@ -132,7 +166,7 @@ function App() {
           }
           setLatest(block);
           setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
-          spawnOneColumnPerTx(txCount || 0);
+          spawnOneColumnPerTx(txs || txCount || 0);
           setActiveProvider(provider);
           setProviderErrors((prev) => ({ ...prev, block: null }));
         }
