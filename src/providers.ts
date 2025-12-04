@@ -125,7 +125,8 @@ const normalizeEpoch = (provider: ProviderConfig, raw: any) => {
 export function buildProviderOrder(): ProviderConfig[] {
   const providers: ProviderConfig[] = [];
 
-  const indexerUrl = normalizeBase(process.env.REACT_APP_MIDNIGHT_INDEXER_URL ?? '');
+  const rawIndexerUrl = process.env.REACT_APP_MIDNIGHT_INDEXER_URL;
+  const indexerUrl = rawIndexerUrl ? normalizeBase(rawIndexerUrl) : '';
   const indexerAuthHeader = process.env.REACT_APP_MIDNIGHT_INDEXER_AUTH_HEADER;
   const indexerKey = process.env.REACT_APP_MIDNIGHT_INDEXER_KEY;
 
@@ -142,7 +143,8 @@ export function buildProviderOrder(): ProviderConfig[] {
   // NOTE: REACT_APP_MIDNIGHT_TESTNET_URL should point to a custom REST gateway
   // that implements /blocks/latest, /blocks/:hash/txs, and /epochs/latest.
   // It is NOT an official Midnight host; if unset we skip this provider entirely.
-  const testnetUrl = normalizeBase(process.env.REACT_APP_MIDNIGHT_TESTNET_URL ?? '');
+  const rawTestnetUrl = process.env.REACT_APP_MIDNIGHT_TESTNET_URL;
+  const testnetUrl = rawTestnetUrl ? normalizeBase(rawTestnetUrl) : '';
   const testnetAuthHeader = process.env.REACT_APP_MIDNIGHT_TESTNET_AUTH_HEADER;
   const testnetKey = process.env.REACT_APP_MIDNIGHT_TESTNET_KEY;
 
