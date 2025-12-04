@@ -1,27 +1,21 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
-import { fetchLatestBlockAndTxs, fetchLatestEpoch, isBlockfrostAllowed } from './providers';
+import { fetchLatestBlockAndTxs, isBlockfrostAllowed } from './providers';
 
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [timeLeft, setTimeLeft] = useState('Loading...');
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const [txRate, setTxRate] = useState(null);
   const [timeSinceBlock, setTimeSinceBlock] = useState(null);
-  const [epochBlocks, setEpochBlocks] = useState(null);
-  const [epochTxCount, setEpochTxCount] = useState(null);
-  const [epochNumber, setEpochNumber] = useState(null);
   const [isTestRainActive, setIsTestRainActive] = useState(false);
   const [activeDropCount, setActiveDropCount] = useState(0);
   const [isGlitchActive, setIsGlitchActive] = useState(false);
   const [activeProvider, setActiveProvider] = useState(null);
-  const [activeEpochProvider, setActiveEpochProvider] = useState(null);
-  const [providerErrors, setProviderErrors] = useState({ block: null, epoch: null });
+  const [providerErrors, setProviderErrors] = useState({ block: null });
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
-  const epochEndRef = useRef(null);
   const animationRef = useRef(null);
   const testSpawnRef = useRef(null);
   const perfRef = useRef({
@@ -150,38 +144,6 @@ function App() {
     const id = setInterval(fetchData, 8000);
     return () => clearInterval(id);
   }, [latest]);
-
-  useEffect(() => {
-    const fetchEpoch = async () => {
-      try {
-        const epoch = await fetchLatestEpoch();
-        if (epoch?.epochEndTime) epochEndRef.current = Date.parse(epoch.epochEndTime);
-        setEpochBlocks(epoch?.blockCount ?? null);
-        setEpochTxCount(epoch?.txCount ?? null);
-        setEpochNumber(epoch?.epochNumber ?? null);
-        setActiveEpochProvider(epoch?.provider ?? null);
-        setProviderErrors((prev) => ({ ...prev, epoch: null }));
-      } catch (err) {
-        setProviderErrors((prev) => ({ ...prev, epoch: err.message || 'Failed to fetch epoch data' }));
-      }
-    };
-    fetchEpoch();
-    const refreshEpoch = setInterval(fetchEpoch, 60000);
-    const timer = setInterval(() => {
-      if (!epochEndRef.current) return;
-      const diff = epochEndRef.current - Date.now();
-      if (diff <= 0) return setTimeLeft('EPOCH ENDED');
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
-    }, 1000);
-    return () => {
-      clearInterval(timer);
-      clearInterval(refreshEpoch);
-    };
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -409,13 +371,9 @@ function App() {
 
   const stats = [
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
-    { label: 'Blocks This Epoch', value: epochBlocks ?? '-' },
-    { label: 'Epoch Ends In', value: timeLeft },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
     { label: 'Block Size', value: blockSizeKb ? `${blockSizeKb} KB` : '-' },
-    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' },
-    { label: 'Epoch Tx Count', value: epochTxCount ?? '-' },
-    { label: 'Epoch', value: epochNumber ?? '-' }
+    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' }
   ];
 
   const providerLabel = (provider) => {
@@ -527,25 +485,9 @@ function App() {
               {activeProvider ? providerLabel(activeProvider) : 'Resolving...'}
             </div>
           </div>
-          <div
-            style={{
-              background: 'linear-gradient(120deg, rgba(0, 255, 140, 0.12), rgba(0, 160, 255, 0.15))',
-              border: '1px solid rgba(0,255,255,0.22)',
-              borderRadius: '12px',
-              padding: '0.75rem 1rem',
-              color: '#bdf',
-              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-              boxShadow: '0 0 16px rgba(0,255,255,0.2)'
-            }}
-          >
-            <div style={{ opacity: 0.65, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Epoch Provider</div>
-            <div style={{ color: '#0ff', fontWeight: 700 }}>
-              {activeEpochProvider ? providerLabel(activeEpochProvider) : 'Resolving...'}
-            </div>
-          </div>
         </div>
 
-        {(providerErrors.block || providerErrors.epoch || !ALLOW_BLOCKFROST_FALLBACK) && (
+        {(providerErrors.block || !ALLOW_BLOCKFROST_FALLBACK) && (
           <div
             style={{
               width: 'min(720px, 92vw)',
@@ -563,11 +505,6 @@ function App() {
             {providerErrors.block && (
               <div style={{ marginTop: '0.2rem' }}>
                 <span style={{ opacity: 0.7 }}>Block/Tx errors:</span> {providerErrors.block}
-              </div>
-            )}
-            {providerErrors.epoch && (
-              <div style={{ marginTop: '0.1rem' }}>
-                <span style={{ opacity: 0.7 }}>Epoch errors:</span> {providerErrors.epoch}
               </div>
             )}
             <div style={{ marginTop: '0.2rem', opacity: 0.8 }}>
