@@ -13,6 +13,7 @@ function App() {
   const [isGlitchActive, setIsGlitchActive] = useState(false);
   const [activeProvider, setActiveProvider] = useState(null);
   const [providerErrors, setProviderErrors] = useState({ block: null });
+  const [focusMode, setFocusMode] = useState(false);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -661,24 +662,48 @@ function App() {
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: '#0ff', fontFamily: '"Courier New", monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3vh', padding: '3vh 5vw' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1 className="glitch-title" style={{ margin: '0 0 0.5vh', fontSize: 'clamp(2.8rem, 7vw, 6.5rem)' }}>MIDNIGHT</h1>
-          <p style={{ margin: 0, fontSize: 'clamp(1.2rem, 3.5vw, 2.4rem)', opacity: 0.9, letterSpacing: '0.25em' }}>EXPLORER</p>
-        </div>
+      <button
+        type="button"
+        className="focus-toggle"
+        onClick={() => setFocusMode((prev) => !prev)}
+      >
+        {focusMode ? 'Exit Focus' : 'Focus'}
+      </button>
 
-        <div style={{ width: 'min(720px, 92vw)', padding: '2.4rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          <h2
-            className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`}
-            data-text="LATEST BLOCK"
-            style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}
+      {!focusMode && (
+        <>
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 10,
+              minHeight: '100vh',
+              color: '#0ff',
+              fontFamily: '"Courier New", monospace',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3vh',
+              padding: '3vh 5vw'
+            }}
           >
-            LATEST BLOCK
-          </h2>
-          <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-          <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
-          <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.txCount || 0} transactions</p>
-        </div>
+            <div style={{ textAlign: 'center' }}>
+              <h1 className="glitch-title" style={{ margin: '0 0 0.5vh', fontSize: 'clamp(2.8rem, 7vw, 6.5rem)' }}>MIDNIGHT</h1>
+              <p style={{ margin: 0, fontSize: 'clamp(1.2rem, 3.5vw, 2.4rem)', opacity: 0.9, letterSpacing: '0.25em' }}>EXPLORER</p>
+            </div>
+
+            <div style={{ width: 'min(720px, 92vw)', padding: '2.4rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
+              <h2
+                className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`}
+                data-text="LATEST BLOCK"
+                style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}
+              >
+                LATEST BLOCK
+              </h2>
+              <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
+              <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
+              <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.txCount || 0} transactions</p>
+            </div>
 
         <div style={{ width: 'min(720px, 92vw)', display: 'flex', justifyContent: 'center' }}>
           <button
@@ -789,61 +814,65 @@ function App() {
       </div>
 
       {/* TIMELINE */}
-      <div style={{
-        position: 'fixed',
-        top: '50%',
-        right: isTimelineOpen ? '2vw' : '-288px',
-        transform: 'translateY(-50%)',
-        width: '320px',
-        height: '76vh',
-        maxHeight: '76vh',
-        background: 'rgba(0,10,30,0.96)',
-        borderRadius: '16px',
-        border: '2px solid #0ff',
-        boxShadow: '0 0 40px rgba(0,255,255,0.5)',
-        transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-        zIndex: 100,
-        backdropFilter: 'blur(8px)',
-        overflow: 'hidden',
-        display: 'flex'
-      }}>
-        <button
-          onClick={() => setIsTimelineOpen(p => !p)}
-          style={{
-            width: '32px',
-            height: '100%',
-            background: 'rgba(0, 255, 255, 0.38)',
-            border: 'none',
-            borderRight: '2px solid #0ff',
-            borderRadius: '16px 0 0 16px',
-            color: '#0ff',
-            cursor: 'pointer',
-            boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            outline: 'none'
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-            {isTimelineOpen ? (
-              <path d="M15 18l-6-6 6-6" />
-            ) : (
-              <path d="M9 18l6-6-6-6" />
-            )}
-          </svg>
-        </button>
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              right: isTimelineOpen ? '2vw' : '-288px',
+              transform: 'translateY(-50%)',
+              width: '320px',
+              height: '76vh',
+              maxHeight: '76vh',
+              background: 'rgba(0,10,30,0.96)',
+              borderRadius: '16px',
+              border: '2px solid #0ff',
+              boxShadow: '0 0 40px rgba(0,255,255,0.5)',
+              transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+              zIndex: 100,
+              backdropFilter: 'blur(8px)',
+              overflow: 'hidden',
+              display: 'flex'
+            }}
+          >
+            <button
+              onClick={() => setIsTimelineOpen((p) => !p)}
+              style={{
+                width: '32px',
+                height: '100%',
+                background: 'rgba(0, 255, 255, 0.38)',
+                border: 'none',
+                borderRight: '2px solid #0ff',
+                borderRadius: '16px 0 0 16px',
+                color: '#0ff',
+                cursor: 'pointer',
+                boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                outline: 'none'
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                {isTimelineOpen ? (
+                  <path d="M15 18l-6-6 6-6" />
+                ) : (
+                  <path d="M9 18l6-6-6-6" />
+                )}
+              </svg>
+            </button>
 
-        <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
-          {recentBlocks.slice(0, 10).map((b, i) => (
-            <div key={b.hash} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
-              <span className="timeline-height">#{b.height}</span>
-              <span className="timeline-tx">{b.txCount || 0} tx</span>
+            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
+              {recentBlocks.slice(0, 10).map((b, i) => (
+                <div key={b.hash} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
+                  <span className="timeline-height">#{b.height}</span>
+                  <span className="timeline-tx">{b.txCount || 0} tx</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

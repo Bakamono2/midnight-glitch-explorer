@@ -358,3 +358,26 @@ footer {
   opacity: 1;
   animation: glitch-slice-soft 0.8s steps(2, end) reverse 1, glitch-fade-scan 0.8s linear 1;
 }
+
+.focus-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 30;
+  padding: 0.65rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 255, 0.35);
+  background: linear-gradient(135deg, rgba(0, 255, 190, 0.2), rgba(0, 200, 255, 0.24));
+  color: #0ff;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.25s ease;
+}
+
+.focus-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 26px rgba(0, 255, 255, 0.5);
+  background: linear-gradient(135deg, rgba(0, 255, 220, 0.28), rgba(0, 210, 255, 0.32));
+}
