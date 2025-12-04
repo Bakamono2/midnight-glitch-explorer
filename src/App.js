@@ -22,6 +22,16 @@ function App() {
     lastFrameTime: performance.now(),
     frameDeltas: []
   });
+  const bigBlockStatsRef = useRef({
+    initialized: false,
+    avgScore: 0,
+    lastPulseAt: 0,
+    pulse: {
+      active: false,
+      startedAt: 0,
+      durationMs: 1600
+    }
+  });
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
@@ -49,6 +59,40 @@ function App() {
     const txs = Array.isArray(txSource)
       ? txSource
       : Array.from({ length: txSource || 0 }, () => null);
+
+    // Track block-level heft for a subtle scanline pulse when an unusually large block lands.
+    const stats = bigBlockStatsRef.current;
+    let blockScore = 0;
+    if (Array.isArray(txs) && txs.length > 0) {
+      for (const tx of txs) {
+        if (tx && typeof tx.sizeBytes === 'number' && isFinite(tx.sizeBytes)) {
+          blockScore += Math.max(0, tx.sizeBytes);
+        }
+      }
+    }
+
+    if (blockScore > 0) {
+      const now = Date.now();
+      const alpha = 0.12;
+
+      if (!stats.initialized) {
+        stats.initialized = true;
+        stats.avgScore = blockScore;
+      } else {
+        stats.avgScore = (1 - alpha) * stats.avgScore + alpha * blockScore;
+      }
+
+      const isBigBlock = stats.initialized && blockScore > stats.avgScore * 1.8 && txs.length >= 5;
+      const minPulseGapMs = 30000;
+      const canPulse = now - stats.lastPulseAt > minPulseGapMs;
+
+      if (isBigBlock && canPulse) {
+        stats.lastPulseAt = now;
+        stats.pulse.active = true;
+        stats.pulse.startedAt = now;
+        stats.pulse.durationMs = 1600;
+      }
+    }
 
     const deriveMeta = (tx) => {
       const hash = tx && typeof tx.hash === 'string' ? tx.hash : undefined;
@@ -131,6 +175,10 @@ function App() {
       const highlightChance = Math.max(0, Math.min(1, baseHighlightChance + extraHighlightChance));
       const highlighted = Math.random() < highlightChance;
       const headHighlightCount = highlighted ? 1 + Math.floor(Math.random() * 3) : 1;
+      const baseGlitchChance = 0.004;
+      const extraGlitchChance = imp * 0.006;
+      const glitchChance = Math.max(0, Math.min(1, baseGlitchChance + extraGlitchChance));
+      const glitchHead = Math.random() < glitchChance;
       const rotation = (0.04 + Math.random() * 0.08) * (Math.random() < 0.5 ? -1 : 1);
 
       columnsRef.current.push({
@@ -146,6 +194,7 @@ function App() {
         trailJitter: Math.random() * 0.4,
         // Random highlight flag (visual-only) to let some heads pop with a white glow.
         highlighted,
+        glitchHead,
         headHighlightCount,
         rotation,
         // Attach semantic metadata for future styling/interaction without changing spawn logic.
@@ -325,6 +374,7 @@ function App() {
         perfRef.current.frameDeltas.reduce((sum, d) => sum + d, 0) /
         perfRef.current.frameDeltas.length;
       const fps = avgDelta ? 1000 / avgDelta : 60;
+      const nowMs = Date.now();
 
       const scale = getScale();
       const baseFontSize = 24 * scale;
@@ -352,6 +402,41 @@ function App() {
       ctx.globalCompositeOperation = 'source-over';
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
+
+      const pulse = bigBlockStatsRef.current.pulse;
+      let pulseLineY = null;
+      let pulseAlpha = 0;
+
+      if (pulse.active) {
+        const elapsed = nowMs - pulse.startedAt;
+        if (elapsed >= pulse.durationMs) {
+          pulse.active = false;
+        } else {
+          const progress = elapsed / pulse.durationMs;
+          pulseLineY = canvas.height * progress;
+          const centerDist = Math.abs(progress - 0.5) / 0.5;
+          const intensity = Math.max(0, 1 - centerDist);
+          pulseAlpha = 0.16 * intensity;
+        }
+      }
+
+      if (pulseLineY !== null && pulseAlpha > 0) {
+        ctx.save();
+        const bandHeight = 80 * getScale();
+        const y0 = pulseLineY - bandHeight / 2;
+        const y1 = pulseLineY + bandHeight / 2;
+
+        const grad = ctx.createLinearGradient(0, y0, 0, y1);
+        grad.addColorStop(0, 'rgba(0, 255, 210, 0)');
+        grad.addColorStop(0.5, `rgba(0, 255, 210, ${pulseAlpha})`);
+        grad.addColorStop(1, 'rgba(0, 255, 210, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillRect(0, y0, canvas.width, bandHeight);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.restore();
+      }
 
       ctx.font = `${baseFontSize}px "Matrix Code NFI", monospace`;
       ctx.textAlign = 'center';
@@ -398,6 +483,12 @@ function App() {
           ctx.shadowBlur = 0;
           ctx.shadowColor = 'transparent';
           ctx.globalAlpha = opacity;
+
+          if (isHeadSegment && col.glitchHead) {
+            const jitter = 2 * scale;
+            const offsetX = (Math.random() - 0.5) * jitter;
+            ctx.translate(offsetX, 0);
+          }
 
           if (isHeadSegment) {
             // Head glyphs (1–3 for highlighted drops): brighter tip-only glow in cyan/white.
