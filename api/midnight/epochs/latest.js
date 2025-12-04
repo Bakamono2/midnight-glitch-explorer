@@ -8,11 +8,23 @@ export default async function handler(req, res) {
 
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
-  // Shape matches provider expectations: epochNumber, blockCount, txCount, epochEndTime
+  const epochNumber = 1; // non-zero to satisfy UI expectations
+
+  // Provide both legacy and current field names so the frontend normalizers can
+  // pick up epoch data regardless of mapping.
   const epoch = {
-    epochNumber: 0,
+    // Primary epoch identifiers
+    epoch: epochNumber,
+    epochNumber,
+
+    // Counts (duplicated to support different normalizers)
     blockCount: 0,
     txCount: 0,
+    block_count: 0,
+    tx_count: 0,
+
+    // End times (duplicated field names)
+    endTime: new Date(now + oneHour).toISOString(),
     epochEndTime: new Date(now + oneHour).toISOString(),
   };
 
