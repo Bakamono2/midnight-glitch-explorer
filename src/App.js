@@ -50,14 +50,33 @@ function App() {
       ? txSource
       : Array.from({ length: txSource || 0 }, () => null);
 
-    const deriveMeta = (tx, index) => {
-      const hash = tx && typeof tx.hash === 'string' ? tx.hash : null;
-      const sizeBytes = Number.isFinite(tx?.size) ? tx.size : 0;
-      const type = tx && typeof tx.type === 'string' ? tx.type : 'transfer';
+    const deriveMeta = (tx) => {
+      const hash = tx && typeof tx.hash === 'string' ? tx.hash : undefined;
 
-      // Simple importance heuristic: scale by size (log), keep within [0, 1].
-      const importanceBase = sizeBytes ? Math.log10(sizeBytes + 10) / 4 : 0.18;
-      const importance = Math.max(0, Math.min(1, importanceBase + (hash ? 0.05 : 0) + (index % 7 === 0 ? 0.04 : 0)));
+      let sizeBytes = 0;
+      if (tx && typeof tx.sizeBytes === 'number') {
+        sizeBytes = tx.sizeBytes;
+      } else if (tx && typeof tx.size === 'number') {
+        sizeBytes = tx.size;
+      } else if (tx && typeof tx.raw === 'string') {
+        const hex = tx.raw.startsWith('0x') ? tx.raw.slice(2) : tx.raw;
+        sizeBytes = Math.floor(hex.length / 2);
+      } else {
+        // Fallback: bounded random size so visuals stay varied when metadata is missing.
+        sizeBytes = 200 + Math.random() * 4000;
+      }
+
+      let type = 'unknown';
+      if (tx && typeof tx.type === 'string') {
+        type = tx.type;
+      } else if (tx && typeof tx.kind === 'string') {
+        type = tx.kind;
+      } else if (tx && typeof tx.module === 'string') {
+        type = tx.module.toLowerCase().includes('contract') ? 'contract' : 'transfer';
+      }
+
+      // Importance scaled on a log curve so large txs have more influence without dominating.
+      const importance = Math.min(1, Math.log10(1 + sizeBytes) / 4);
 
       return {
         hash,
@@ -67,27 +86,22 @@ function App() {
       };
     };
 
-    // Bias drop lengths toward the upper range so most streams feel longer while
-    // still respecting the 24–64 character constraint.
-    const randomLength = (sizeBytes) => {
-      // Favor longer trails while keeping the 24–64 bounds and occasionally push nearer to max.
-      const skewed = Math.pow(Math.random(), 0.3); // stronger bias toward higher values
-      let length = 24 + skewed * (64 - 24);
-
-      // Use approximate size to influence trail length slightly while keeping visuals familiar.
-      if (sizeBytes && Number.isFinite(sizeBytes)) {
-        const sizeBoost = Math.min(1, Math.log10(sizeBytes + 10) / 3);
-        length += sizeBoost * 8; // modest bump for larger tx
-      }
+    const computeTailLength = (sizeBytes) => {
+      const minLen = 24;
+      const maxLen = 64;
+      const norm = Math.min(1, Math.log10(1 + sizeBytes) / 4);
+      const skewed = Math.pow(norm, 0.5);
+      let length = minLen + skewed * (maxLen - minLen);
 
       if (Math.random() < 0.35) {
-        length = Math.max(length, 56 + Math.random() * 8); // bump a subset of drops closer to the max length
+        length = 56 + Math.random() * 8;
       }
-      return Math.max(24, Math.min(64, Math.round(length)));
+
+      return Math.round(Math.max(minLen, Math.min(maxLen, length)));
     };
 
     txs.forEach((tx, i) => {
-      const meta = deriveMeta(tx, i);
+      const meta = deriveMeta(tx);
       const highlighted = Math.random() < 0.32;
       const headHighlightCount = highlighted ? 1 + Math.floor(Math.random() * 3) : 1;
       const rotation = (0.04 + Math.random() * 0.08) * (Math.random() < 0.5 ? -1 : 1);
@@ -97,8 +111,8 @@ function App() {
         y: -200 - Math.random() * 600,
         speed: (0.85 + Math.random() * 1.4) * scale,
         // Enforce drop length between 24 and 64 glyphs (trail + head) with a skew toward longer trails,
-        // lightly influenced by tx size when available.
-        length: randomLength(meta.sizeBytes),
+        // now lightly influenced by tx size when available.
+        length: computeTailLength(meta.sizeBytes),
         headPos: Math.random() * 8,
         hue: i % 4,
         fadeRate: 0.045 + Math.random() * 0.05,
