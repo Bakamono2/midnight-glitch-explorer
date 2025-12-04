@@ -139,17 +139,22 @@ export function buildProviderOrder(): ProviderConfig[] {
     });
   }
 
-  const testnetUrl = normalizeBase(process.env.REACT_APP_MIDNIGHT_TESTNET_URL ?? 'https://testnet-02.midnight.network/api/v1');
+  // NOTE: REACT_APP_MIDNIGHT_TESTNET_URL should point to a custom REST gateway
+  // that implements /blocks/latest, /blocks/:hash/txs, and /epochs/latest.
+  // It is NOT an official Midnight host; if unset we skip this provider entirely.
+  const testnetUrl = normalizeBase(process.env.REACT_APP_MIDNIGHT_TESTNET_URL ?? '');
   const testnetAuthHeader = process.env.REACT_APP_MIDNIGHT_TESTNET_AUTH_HEADER;
   const testnetKey = process.env.REACT_APP_MIDNIGHT_TESTNET_KEY;
 
-  providers.push({
-    id: 'midnight-testnet',
-    kind: 'midnight-testnet',
-    baseUrl: testnetUrl,
-    authHeaderName: testnetAuthHeader,
-    authHeaderValue: testnetKey
-  });
+  if (testnetUrl) {
+    providers.push({
+      id: 'midnight-testnet',
+      kind: 'midnight-testnet',
+      baseUrl: testnetUrl,
+      authHeaderName: testnetAuthHeader,
+      authHeaderValue: testnetKey
+    });
+  }
 
   if (isBlockfrostAllowed()) {
     providers.push({

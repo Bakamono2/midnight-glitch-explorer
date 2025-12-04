@@ -421,7 +421,7 @@ function App() {
   const providerLabel = (provider) => {
     const id = provider?.id || provider;
     if (id === 'midnight-indexer') return 'Midnight Indexer';
-    if (id === 'midnight-testnet') return 'Midnight testnet-02';
+    if (id === 'midnight-testnet') return 'Midnight testnet gateway';
     if (id === 'blockfrost') return 'Blockfrost (preprod)';
     return 'Unknown';
   };
@@ -573,7 +573,7 @@ function App() {
             <div style={{ marginTop: '0.2rem', opacity: 0.8 }}>
               {ALLOW_BLOCKFROST_FALLBACK
                 ? 'Blockfrost fallback enabled when both Midnight providers fail.'
-                : 'Blockfrost fallback disabled; ensure Midnight Indexer or testnet-02 URL/key are configured so data can load or enable REACT_APP_ALLOW_BLOCKFROST_FALLBACK.'}
+                : 'Blockfrost fallback disabled; ensure Midnight Indexer or a custom testnet gateway URL/key are configured so data can load or enable REACT_APP_ALLOW_BLOCKFROST_FALLBACK.'}
             </div>
           </div>
         )}
