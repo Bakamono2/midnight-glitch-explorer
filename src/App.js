@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
 
-const INDEXER_BASE_URL = process.env.REACT_APP_MIDNIGHT_INDEXER_URL || '';
+const normalizeBase = (url = '') => url.trim().replace(/\/+$/, '');
+
+const INDEXER_BASE_URL = normalizeBase(process.env.REACT_APP_MIDNIGHT_INDEXER_URL) || '';
 const INDEXER_KEY = process.env.REACT_APP_MIDNIGHT_INDEXER_KEY || '';
 const INDEXER_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_INDEXER_AUTH_HEADER || 'x-api-key';
 
 // Prefer the Midnight testnet-02 indexer as the primary fallback before Blockfrost.
 const TESTNET_BASE_URL =
-  process.env.REACT_APP_MIDNIGHT_TESTNET_URL || 'https://testnet-02.midnight.network/api/v1';
+  normalizeBase(process.env.REACT_APP_MIDNIGHT_TESTNET_URL) ||
+  'https://testnet-02.midnight.network/api/v1';
 const TESTNET_KEY = process.env.REACT_APP_MIDNIGHT_TESTNET_KEY || '';
 const TESTNET_AUTH_HEADER = process.env.REACT_APP_MIDNIGHT_TESTNET_AUTH_HEADER || INDEXER_AUTH_HEADER;
+
+const ALLOW_BLOCKFROST_FALLBACK =
+  process.env.REACT_APP_ALLOW_BLOCKFROST_FALLBACK === undefined ||
+  process.env.REACT_APP_ALLOW_BLOCKFROST_FALLBACK === 'true';
 
 const BLOCKFROST_KEY = process.env.REACT_APP_BLOCKFROST_KEY;
 const BLOCKFROST_BASE_URL = 'https://cardano-preprod.blockfrost.io/api/v0';
@@ -29,6 +36,7 @@ function App() {
   const [isGlitchActive, setIsGlitchActive] = useState(false);
   const [activeProvider, setActiveProvider] = useState(null);
   const [activeEpochProvider, setActiveEpochProvider] = useState(null);
+  const [providerErrors, setProviderErrors] = useState({ block: null, epoch: null });
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -195,10 +203,13 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       const providers = hasIndexer
-        ? ['indexer', 'testnet', 'blockfrost']
+        ? ['indexer', 'testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
         : hasTestnet
-        ? ['testnet', 'blockfrost']
+        ? ['testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
         : ['blockfrost'];
+
+      const failures = [];
+
       for (const provider of providers) {
         try {
           const { block, txs } = await fetchFromProvider(provider);
@@ -215,16 +226,22 @@ function App() {
             setRecentBlocks((prev) => [block, ...prev].slice(0, 50));
             spawnOneColumnPerTx(txCount || 0);
             setActiveProvider(provider);
+            setProviderErrors((prev) => ({ ...prev, block: null }));
             console.info(`[provider] block+tx source => ${provider}`);
           }
           return; // fetched successfully; stop trying providers
         } catch (err) {
+          failures.push(`${provider}: ${err.message}`);
           if (provider === providers[providers.length - 1]) {
             console.error('All providers failed', err);
           } else {
             console.warn(`Provider ${provider} failed, trying next`, err);
           }
         }
+      }
+
+      if (failures.length) {
+        setProviderErrors((prev) => ({ ...prev, block: failures.join(' | ') }));
       }
     };
     fetchData();
@@ -235,10 +252,13 @@ function App() {
   useEffect(() => {
     const fetchEpoch = async () => {
       const providers = hasIndexer
-        ? ['indexer', 'testnet', 'blockfrost']
+        ? ['indexer', 'testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
         : hasTestnet
-        ? ['testnet', 'blockfrost']
+        ? ['testnet', ...(ALLOW_BLOCKFROST_FALLBACK ? ['blockfrost'] : [])]
         : ['blockfrost'];
+
+      const failures = [];
+
       for (const provider of providers) {
         try {
           const e = await fetchEpochFromProvider(provider);
@@ -247,13 +267,19 @@ function App() {
           setEpochTxCount(e?.tx_count ?? null);
           setEpochNumber(e?.epoch ?? null);
           setActiveEpochProvider(provider);
+          setProviderErrors((prev) => ({ ...prev, epoch: null }));
           console.info(`[provider] epoch source => ${provider}`);
           return;
         } catch (err) {
+          failures.push(`${provider}: ${err.message}`);
           if (provider === providers[providers.length - 1]) {
             console.error('Failed to fetch epoch data', err);
           }
         }
+      }
+
+      if (failures.length) {
+        setProviderErrors((prev) => ({ ...prev, epoch: failures.join(' | ') }));
       }
     };
     fetchEpoch();
@@ -629,6 +655,39 @@ function App() {
             </div>
           </div>
         </div>
+
+        {(providerErrors.block || providerErrors.epoch || !ALLOW_BLOCKFROST_FALLBACK) && (
+          <div
+            style={{
+              width: 'min(720px, 92vw)',
+              marginTop: '0.4rem',
+              padding: '0.8rem 1rem',
+              borderRadius: '12px',
+              border: '1px solid rgba(0,255,255,0.22)',
+              background: 'rgba(0, 30, 50, 0.72)',
+              color: '#bff',
+              fontSize: 'clamp(0.78rem, 1.9vw, 0.95rem)',
+              lineHeight: 1.5
+            }}
+          >
+            <div style={{ fontWeight: 700, color: '#7fffd4' }}>Provider debug</div>
+            {providerErrors.block && (
+              <div style={{ marginTop: '0.2rem' }}>
+                <span style={{ opacity: 0.7 }}>Block/Tx errors:</span> {providerErrors.block}
+              </div>
+            )}
+            {providerErrors.epoch && (
+              <div style={{ marginTop: '0.1rem' }}>
+                <span style={{ opacity: 0.7 }}>Epoch errors:</span> {providerErrors.epoch}
+              </div>
+            )}
+            <div style={{ marginTop: '0.2rem', opacity: 0.8 }}>
+              {ALLOW_BLOCKFROST_FALLBACK
+                ? 'Falling back to Blockfrost when indexer/testnet fail. Set REACT_APP_ALLOW_BLOCKFROST_FALLBACK=false to force Midnight Indexer-only behavior.'
+                : 'Blockfrost fallback disabled; ensure Midnight Indexer or testnet-02 URL/key are configured so data can load.'}
+            </div>
+          </div>
+        )}
 
         <div style={{ width: 'min(720px, 92vw)', padding: '1.15rem 1.25rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 30px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', fontSize: 'clamp(0.8rem, 1.6vw, 1.05rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
           {stats.map(stat => (
