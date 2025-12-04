@@ -102,14 +102,23 @@ function App() {
 
     txs.forEach((tx, i) => {
       const meta = deriveMeta(tx);
-      const highlighted = Math.random() < 0.32;
+      const imp = typeof meta.importance === 'number' ? Math.max(0, Math.min(1, meta.importance)) : 0;
+      const metaWithImportance = { ...meta, importance: imp };
+      const baseSpeed = 0.9 + Math.random() * 0.9;
+      const importanceBoost = imp * 0.9;
+      const speed = (baseSpeed + importanceBoost) * scale;
+
+      const baseHighlightChance = 0.18;
+      const extraHighlightChance = imp * 0.42;
+      const highlightChance = Math.max(0, Math.min(1, baseHighlightChance + extraHighlightChance));
+      const highlighted = Math.random() < highlightChance;
       const headHighlightCount = highlighted ? 1 + Math.floor(Math.random() * 3) : 1;
       const rotation = (0.04 + Math.random() * 0.08) * (Math.random() < 0.5 ? -1 : 1);
 
       columnsRef.current.push({
         x: safeMargin + Math.random() * (window.innerWidth - 2 * safeMargin),
         y: -200 - Math.random() * 600,
-        speed: (0.85 + Math.random() * 1.4) * scale,
+        speed,
         // Enforce drop length between 24 and 64 glyphs (trail + head) with a skew toward longer trails,
         // now lightly influenced by tx size when available.
         length: computeTailLength(meta.sizeBytes),
@@ -122,7 +131,7 @@ function App() {
         headHighlightCount,
         rotation,
         // Attach semantic metadata for future styling/interaction without changing spawn logic.
-        meta,
+        meta: metaWithImportance,
         // trail state used only for rendering (spawn logic untouched)
         glyphs: [],
         distanceSinceChar: 0
