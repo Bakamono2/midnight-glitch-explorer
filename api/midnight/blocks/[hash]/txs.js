@@ -46,10 +46,15 @@ export default async function handler(req, res) {
     const transactions = Array.isArray(extrinsics)
       ? extrinsics.map((extrinsic, index) => {
           if (typeof extrinsic === 'string') {
-            const truncated = `${extrinsic.substring(0, 18)}…`;
-            return { hash: truncated, size: null };
+            const hex = extrinsic.startsWith('0x') ? extrinsic.slice(2) : extrinsic;
+            const sizeBytes = Math.floor(hex.length / 2);
+            const displayHash =
+              hex.length > 16
+                ? `0x${hex.slice(0, 10)}…${hex.slice(-6)}`
+                : `0x${hex}`;
+            return { hash: displayHash, sizeBytes, size: sizeBytes };
           }
-          return { hash: `extrinsic-${index}`, size: null };
+          return { hash: `extrinsic-${index}`, sizeBytes: 0, size: 0 };
         })
       : [];
 
