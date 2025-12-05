@@ -239,10 +239,10 @@ function App() {
     };
   }, []);
 
-  // Secret shortcut to toggle the midnight console visibility (Ctrl+Shift+M)
+  // Secret shortcut to toggle the midnight console visibility (Ctrl+Alt+M)
   useEffect(() => {
     const handler = (event) => {
-      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'm') {
+      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'm') {
         event.preventDefault();
         setConsoleVisible((visible) => {
           const nextVisible = !visible;
