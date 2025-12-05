@@ -7,7 +7,6 @@ function App() {
   const [recentBlocks, setRecentBlocks] = useState([]);
   const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const [txRate, setTxRate] = useState(null);
-  const [timeSinceBlock, setTimeSinceBlock] = useState(null);
   const [isTestRainActive, setIsTestRainActive] = useState(false);
   const [activeDropCount, setActiveDropCount] = useState(0);
   const [isGlitchActive, setIsGlitchActive] = useState(false);
@@ -363,20 +362,6 @@ function App() {
     return () => clearInterval(id);
   }, [latest]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (latest?.timestamp) {
-        const last = parseSeconds(latest.timestamp);
-        if (last != null) {
-          setTimeSinceBlock(Math.max(0, Math.floor(Date.now() / 1000 - last)));
-        }
-      } else {
-        setTimeSinceBlock(null);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [latest]);
-
   // Optional debug toggle: continuously spawn drops without hitting the API to stress test rendering.
   useEffect(() => {
     if (isTestRainActive) {
@@ -661,7 +646,6 @@ function App() {
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
     { label: 'Block Size', value: blockSizeKb ? `${blockSizeKb} KB` : '-' },
-    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' },
     {
       label: 'Blocks (10 min)',
       value: activityStats.blocks10m != null ? activityStats.blocks10m : '—'
