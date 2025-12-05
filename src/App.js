@@ -672,6 +672,11 @@ function App() {
     return 'Unknown';
   };
 
+  const latestHeight = latest?.height ?? null;
+  const latestHashDisplay = latest?.hash
+    ? `${latest.hash.slice(0, 28)}…${latest.hash.slice(-6)}`
+    : '—';
+
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
@@ -705,20 +710,24 @@ function App() {
 
             <main className="hud-main">
               <section className="glass-panel latest-block-panel">
-                <div className="panel-heading">
-                  <span className="eyebrow">Latest Block</span>
-                  <span className="eyebrow">Live</span>
+                <div className="latest-block-top">
+                  <div className="latest-block-header-row">
+                    <div className="latest-block-label">LATEST BLOCK</div>
+                    <div className="latest-block-live-badge">LIVE</div>
+                  </div>
+
+                  <div className="latest-block-number">#{latest?.height ?? '—'}</div>
+
+                  <div className="latest-block-meta">
+                    <span>{`${latest?.txCount ?? 0} tx`}</span>
+                    <span>{blockSizeKb ? `${blockSizeKb} kB` : '—'}</span>
+                    <span>{formatTimeAgo(latest?.timestamp)}</span>
+                  </div>
+
+                  <div className="latest-block-hash">Hash: {latestHashDisplay}</div>
                 </div>
-                <div className="block-number">#{latest?.height ?? '—'}</div>
-                <div className="block-summary">
-                  {`${latest?.txCount ?? 0} tx · ${blockSizeKb ? `${blockSizeKb} kB` : '—'} · ${formatTimeAgo(
-                    latest?.timestamp
-                  )}`}
-                </div>
-                <div className="block-hash">
-                  Hash: {latest?.hash ? `${latest.hash.slice(0, 28)}…${latest.hash.slice(-6)}` : '—'}
-                </div>
-                <div className="block-actions">
+
+                <div className="latest-block-footer debug-controls">
                   <button
                     type="button"
                     className="stress-button"
@@ -726,7 +735,7 @@ function App() {
                   >
                     {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
                   </button>
-                  <div className="pill">
+                  <div className="active-drops-pill">
                     <span>Active Drops:</span>
                     <strong>{activeDropCount}</strong>
                   </div>
@@ -739,14 +748,20 @@ function App() {
                   <span className="eyebrow">{recentBlocks.length ? `${recentBlocks.length} tracked` : '—'}</span>
                 </div>
                 <div className="timeline-list">
-                  {recentBlocks.slice(0, 10).map((b, i) => (
-                    <div key={b.hash || i} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
-                      <span className="timeline-height">#{b?.height ?? '—'}</span>
-                      <span className="timeline-tx">{b?.txCount ?? 0} tx</span>
-                      <span className="timeline-age">{formatTimeAgo(b?.timestamp)}</span>
-                    </div>
-                  ))}
-                  {!recentBlocks.length && <div className="timeline-age">Waiting for blocks…</div>}
+                  {recentBlocks.slice(0, 10).map((b, i) => {
+                    const isActive = latestHeight != null && b?.height === latestHeight;
+                    return (
+                      <div
+                        key={b.hash || i}
+                        className={`recent-block-row${isActive ? ' recent-block-row--active' : ''}`}
+                      >
+                        <span className="recent-block-height">#{b?.height ?? '—'}</span>
+                        <span className="recent-block-tx">{b?.txCount ?? 0} tx</span>
+                        <span className="recent-block-age">{formatTimeAgo(b?.timestamp)}</span>
+                      </div>
+                    );
+                  })}
+                  {!recentBlocks.length && <div className="recent-block-age">Waiting for blocks…</div>}
                 </div>
               </aside>
             </main>
@@ -760,10 +775,8 @@ function App() {
               ))}
             </section>
 
-            <section className="glass-panel provider-panel">
-              <div className="panel-heading">
-                <span className="eyebrow">Provider Status</span>
-              </div>
+            <section className="glass-panel provider-panel debug-panel">
+              <div className="provider-title">Provider Status</div>
               <div className="provider-line">
                 Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
               </div>
