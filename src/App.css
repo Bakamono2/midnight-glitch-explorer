@@ -162,9 +162,16 @@ body {
 .latest-block-panel {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: 1.25rem 1.6rem 0.9rem;
-  min-height: 180px;
+}
+
+.latest-block-panel--with-debug {
+  min-height: 190px;
+  justify-content: space-between;
+}
+
+.latest-block-panel--no-debug {
+  min-height: 0;
 }
 
 .latest-block-top {

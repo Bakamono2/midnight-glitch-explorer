@@ -864,7 +864,11 @@ function App() {
             </header>
 
             <main className="hud-main">
-              <section className="glass-panel latest-block-panel">
+              <section
+                className={`glass-panel latest-block-panel ${
+                  debugVisible ? 'latest-block-panel--with-debug' : 'latest-block-panel--no-debug'
+                }`}
+              >
                 <div className="latest-block-top">
                   <div className="latest-block-header-row">
                     <div className="latest-block-label">LATEST BLOCK</div>
