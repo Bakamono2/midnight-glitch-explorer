@@ -497,6 +497,122 @@ body {
   animation: glitch-slice-soft 0.8s steps(2, end) reverse 1, glitch-fade-scan 0.8s linear 1;
 }
 
+.midnight-console {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  pointer-events: auto;
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  color: #e7fdff;
+}
+
+.midnight-console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.9rem;
+  background: rgba(0, 6, 12, 0.96);
+  border-top: 1px solid rgba(0, 255, 210, 0.5);
+  box-shadow: 0 -6px 18px rgba(0, 255, 210, 0.28);
+  cursor: pointer;
+}
+
+.midnight-console-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(180, 245, 235, 0.9);
+}
+
+.midnight-console-toggle {
+  font-size: 0.8rem;
+  color: rgba(0, 255, 210, 0.8);
+}
+
+.midnight-console--collapsed .midnight-console-body {
+  display: none;
+}
+
+.midnight-console-body {
+  background: rgba(0, 4, 10, 0.96);
+  border-top: 1px solid rgba(0, 255, 210, 0.4);
+  padding: 0.45rem 0.9rem 0.55rem;
+}
+
+.midnight-console-log {
+  max-height: 8rem;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.midnight-console-log {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 210, 0.7) transparent;
+}
+
+.midnight-console-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.midnight-console-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.midnight-console-log::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 210, 0.3);
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(0, 255, 210, 0.6);
+}
+
+.midnight-console-log:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 210, 0.7);
+}
+
+.console-line {
+  line-height: 1.3;
+}
+
+.console-line--input {
+  color: #e7fdff;
+}
+
+.console-line--system {
+  color: rgba(170, 230, 225, 0.9);
+}
+
+.midnight-console-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.midnight-console-prompt {
+  font-size: 0.78rem;
+  color: rgba(0, 255, 210, 0.9);
+}
+
+.midnight-console-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.8rem;
+  color: #e7fdff;
+}
+
+.midnight-console-input::placeholder {
+  color: rgba(130, 190, 190, 0.7);
+}
+
+@media (max-width: 768px) {
+  .midnight-console-log {
+    max-height: 6rem;
+  }
+}
+
 @keyframes glitch-shift {
   0%, 100% { transform: translate3d(0, 0, 0); }
   22% { transform: translate3d(-1px, 0, 0); }

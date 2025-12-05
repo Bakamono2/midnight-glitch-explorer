@@ -12,6 +12,12 @@ function App() {
   const [activeProvider, setActiveProvider] = useState(null);
   const [providerErrors, setProviderErrors] = useState({ block: null });
   const [uiVisible, setUiVisible] = useState(true);
+  const [debugVisible, setDebugVisible] = useState(true);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [consoleInput, setConsoleInput] = useState('');
+  const [consoleLines, setConsoleLines] = useState([
+    { type: 'system', text: 'midnight:// type "help" for commands' }
+  ]);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -392,6 +398,58 @@ function App() {
     return (total / slice.length).toFixed(1);
   }, [recentBlocks]);
 
+  const handleConsoleSubmit = (event) => {
+    event.preventDefault();
+    const raw = consoleInput.trim();
+    if (!raw) return;
+
+    const lower = raw.toLowerCase();
+    const tokens = lower.split(/\s+/);
+
+    const pushLines = (newLines) => {
+      setConsoleLines((prev) => {
+        const merged = [...prev, ...newLines];
+        return merged.slice(-40);
+      });
+    };
+
+    const inputLine = { type: 'input', text: `> ${raw}` };
+
+    let response = null;
+    const cmd = tokens[0];
+    const arg = tokens[1];
+
+    if (cmd === 'help') {
+      response = 'commands: help, debug on/off, ui hide/show, stress on/off, clear';
+    } else if (cmd === 'clear') {
+      setConsoleLines([{ type: 'system', text: 'midnight:// console cleared' }]);
+      setConsoleInput('');
+      return;
+    } else if (cmd === 'debug' && (arg === 'on' || arg === 'off')) {
+      const next = arg === 'on';
+      setDebugVisible(next);
+      response = `debug ${arg} (debug panels ${next ? 'visible' : 'hidden'})`;
+    } else if (cmd === 'ui' && (arg === 'hide' || arg === 'show')) {
+      const next = arg === 'show';
+      setUiVisible(next);
+      response = `ui ${arg} (HUD ${next ? 'shown' : 'hidden'})`;
+    } else if (cmd === 'stress' && (arg === 'on' || arg === 'off')) {
+      if (typeof setIsTestRainActive === 'function') {
+        const next = arg === 'on';
+        setIsTestRainActive(next);
+        response = `stress ${arg} (rain stress test ${next ? 'enabled' : 'disabled'})`;
+      } else {
+        response = 'ERR: stress control not wired (setIsTestRainActive missing)';
+      }
+    } else {
+      response = `ERR: unknown command "${raw}" (type "help")`;
+    }
+
+    const respLine = { type: 'system', text: response };
+    pushLines([inputLine, respLine]);
+    setConsoleInput('');
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -694,6 +752,43 @@ function App() {
           </button>
         </div>
 
+        <div
+          className={`midnight-console${consoleOpen ? ' midnight-console--open' : ' midnight-console--collapsed'}`}
+        >
+          <div className="midnight-console-header" onClick={() => setConsoleOpen((open) => !open)}>
+            <span className="midnight-console-title">midnight://</span>
+            <span className="midnight-console-toggle">{consoleOpen ? '▾' : '▴'}</span>
+          </div>
+
+          {consoleOpen && (
+            <div className="midnight-console-body">
+              <div className="midnight-console-log">
+                {consoleLines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className={`console-line${line.type ? ` console-line--${line.type}` : ''}`}
+                  >
+                    {line.text}
+                  </div>
+                ))}
+              </div>
+
+              <form className="midnight-console-input-row" onSubmit={handleConsoleSubmit}>
+                <span className="midnight-console-prompt">midnight://</span>
+                <input
+                  type="text"
+                  value={consoleInput}
+                  onChange={(e) => setConsoleInput(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="midnight-console-input"
+                  placeholder="type a command, e.g. `help`"
+                />
+              </form>
+            </div>
+          )}
+        </div>
+
         {uiVisible ? (
           <div className="hud-shell">
             <header className="hud-header glass-edge">
@@ -727,19 +822,21 @@ function App() {
                   <div className="latest-block-hash">Hash: {latestHashDisplay}</div>
                 </div>
 
-                <div className="latest-block-footer debug-controls">
-                  <button
-                    type="button"
-                    className="stress-button"
-                    onClick={() => setIsTestRainActive((prev) => !prev)}
-                  >
-                    {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
-                  </button>
-                  <div className="active-drops-pill">
-                    <span>Active Drops:</span>
-                    <strong>{activeDropCount}</strong>
+                {debugVisible && (
+                  <div className="latest-block-footer debug-controls">
+                    <button
+                      type="button"
+                      className="stress-button"
+                      onClick={() => setIsTestRainActive((prev) => !prev)}
+                    >
+                      {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
+                    </button>
+                    <div className="active-drops-pill">
+                      <span>Active Drops:</span>
+                      <strong>{activeDropCount}</strong>
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
 
               <aside className="glass-panel timeline-panel">
@@ -777,20 +874,22 @@ function App() {
               ))}
             </section>
 
-            <section className="glass-panel provider-panel debug-panel">
-              <div className="provider-title">Provider Status</div>
-              <div className="provider-line">
-                Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
-              </div>
-              {providerErrors.block && (
-                <div className="provider-error">Block/Tx errors: {providerErrors.block}</div>
-              )}
-              <div className="provider-note">
-                {ALLOW_BLOCKFROST_FALLBACK
-                  ? 'Blockfrost fallback enabled when both Midnight providers fail.'
-                  : 'Blockfrost fallback disabled; configure Midnight Indexer or a custom testnet gateway so data can load.'}
-              </div>
-            </section>
+            {debugVisible && (
+              <section className="glass-panel provider-panel debug-panel">
+                <div className="provider-title">Provider Status</div>
+                <div className="provider-line">
+                  Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
+                </div>
+                {providerErrors.block && (
+                  <div className="provider-error">Block/Tx errors: {providerErrors.block}</div>
+                )}
+                <div className="provider-note">
+                  {ALLOW_BLOCKFROST_FALLBACK
+                    ? 'Blockfrost fallback enabled when both Midnight providers fail.'
+                    : 'Blockfrost fallback disabled; configure Midnight Indexer or a custom testnet gateway so data can load.'}
+                </div>
+              </section>
+            )}
           </div>
         ) : (
           <div className="hud-minimal-footer">MIDNIGHT TESTNET · live blocks</div>
