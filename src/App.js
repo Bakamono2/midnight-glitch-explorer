@@ -750,6 +750,16 @@ function App() {
     return { blocks10m, tx10m, avgBlockSizeKb };
   }, [recentBlocks]);
 
+  const getFlowLabel = (txCount) => {
+    if (!Number.isFinite(txCount) || txCount <= 0) return 'CALM';
+    if (txCount < 20) return 'HUM';
+    if (txCount < 80) return 'STREAM';
+    return 'STORM';
+  };
+
+  const flowLabel = getFlowLabel(activityStats.tx10m);
+  const txLast10Min = activityStats.tx10m;
+
   const stats = [
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
@@ -787,6 +797,8 @@ function App() {
     if (id === 'blockfrost') return 'Blockfrost (preprod)';
     return 'Unknown';
   };
+
+  const ambientHint = null;
 
   const latestHeight = latest?.height ?? null;
   const latestHashDisplay = latest?.hash
@@ -941,10 +953,17 @@ function App() {
             <section className="panel footer-panel glass-panel">
               <div className="footer-row footer-row-primary">
                 <div className="footer-brand">MIDNIGHT TESTNET-02 · LIVE</div>
-                <div className="footer-message">Listening for new blocks…</div>
-                <div className="footer-hints">
-                  <span className="footer-hint">[H] Hide UI</span>
-                  <span className="footer-hint">[`] Console</span>
+                <div className="footer-message">{ambientHint || 'Listening for new blocks…'}</div>
+                <div className="footer-flow">
+                  <span className="footer-label">FLOW</span>
+                  <span
+                    className={`footer-value footer-value--flow-${flowLabel.toLowerCase()}`}
+                  >
+                    {flowLabel}
+                  </span>
+                  {Number.isFinite(txLast10Min) && (
+                    <span className="footer-tx-window">· 10m: {txLast10Min} tx</span>
+                  )}
                 </div>
               </div>
 
