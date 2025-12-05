@@ -5,7 +5,6 @@ import { fetchLatestBlockAndTxs, isBlockfrostAllowed } from './providers';
 function App() {
   const [latest, setLatest] = useState(null);
   const [recentBlocks, setRecentBlocks] = useState([]);
-  const [isTimelineOpen, setIsTimelineOpen] = useState(true);
   const [txRate, setTxRate] = useState(null);
   const [isTestRainActive, setIsTestRainActive] = useState(false);
   const [activeDropCount, setActiveDropCount] = useState(0);
@@ -212,13 +211,6 @@ function App() {
       columnsRef.current = columnsRef.current.slice(-Math.floor(baseCap));
     }
   };
-
-  useEffect(() => {
-    const check = () => setIsTimelineOpen(window.innerWidth >= 1100);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   // Trigger a short glitch burst on a random cadence between 5–15 seconds
   useEffect(() => {
@@ -661,6 +653,17 @@ function App() {
     }
   ];
 
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return '—';
+    const value = typeof timestamp === 'number' ? timestamp * 1000 : Date.parse(timestamp);
+    if (!Number.isFinite(value)) return '—';
+    const diffSeconds = Math.max(0, Math.floor((Date.now() - value) / 1000));
+    if (diffSeconds < 60) return `${diffSeconds}s ago`;
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
+    const hours = Math.floor(diffSeconds / 3600);
+    return `${hours}h ago`;
+  };
+
   const providerLabel = (provider) => {
     const id = provider?.id || provider;
     if (id === 'midnight-indexer') return 'Midnight Indexer';
@@ -673,235 +676,114 @@ function App() {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Matrix+Code+NFI&display=swap" rel="stylesheet" />
 
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1,
-          pointerEvents: 'none',
-          backgroundColor: 'transparent'
-        }}
-      />
+      <div className="app-root">
+        <canvas ref={canvasRef} className="rain-canvas" />
 
-      <div className="ui-toggle-container">
-        <button
-          type="button"
-          className="ui-toggle-button"
-          onClick={() => setUiVisible((prev) => !prev)}
-        >
-          {uiVisible ? 'Hide UI' : 'Show UI'}
-        </button>
-      </div>
-
-      {uiVisible && (
-        <>
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 10,
-              minHeight: '100vh',
-              color: '#0ff',
-              fontFamily: '"Courier New", monospace',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3vh',
-              padding: '3vh 5vw'
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <h1 className="glitch-title" style={{ margin: '0 0 0.5vh', fontSize: 'clamp(2.8rem, 7vw, 6.5rem)' }}>MIDNIGHT</h1>
-              <p style={{ margin: 0, fontSize: 'clamp(1.2rem, 3.5vw, 2.4rem)', opacity: 0.9, letterSpacing: '0.25em' }}>EXPLORER</p>
-            </div>
-
-            <div style={{ width: 'min(720px, 92vw)', padding: '2.4rem', background: 'rgba(0,15,30,0.95)', border: '2px solid #0ff', borderRadius: '20px', boxShadow: '0 0 50px #0ff', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-              <h2
-                className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`}
-                data-text="LATEST BLOCK"
-                style={{ fontSize: 'clamp(1.5rem, 3.6vw, 2.4rem)', margin: '0 0 0.6rem' }}
-              >
-                LATEST BLOCK
-              </h2>
-              <p style={{ fontSize: 'clamp(2.1rem, 6vw, 4rem)', margin: '0.3rem 0', color: '#f0f' }}>#{latest?.height || '...'}</p>
-              <p style={{ margin: '0.8rem 0', fontSize: 'clamp(0.85rem, 2vw, 1.15rem)', wordBreak: 'break-all', opacity: 0.9 }}>Hash: {(latest?.hash || '').slice(0, 32)}...</p>
-              <p style={{ fontSize: 'clamp(1.2rem, 3.2vw, 2rem)', color: '#0f0', marginTop: '0.8rem' }}>{recentBlocks[0]?.txCount || 0} transactions</p>
-            </div>
-
-        <div style={{ width: 'min(720px, 92vw)', display: 'flex', justifyContent: 'center' }}>
+        <div className="ui-toggle-container">
           <button
             type="button"
-            onClick={() => setIsTestRainActive((prev) => !prev)}
-            style={{
-              padding: '0.85rem 1.4rem',
-              background: isTestRainActive ? 'rgba(0,255,180,0.18)' : 'rgba(0,255,255,0.12)',
-              color: '#0ff',
-              border: '1px solid rgba(0,255,255,0.45)',
-              borderRadius: '12px',
-              letterSpacing: '0.08em',
-              cursor: 'pointer',
-              boxShadow: '0 0 18px rgba(0,255,255,0.35)',
-              fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
-              transition: 'background 0.25s ease, transform 0.2s ease',
-              transform: isTestRainActive ? 'translateY(-1px)' : 'translateY(0)'
-            }}
+            className="ui-toggle-button"
+            onClick={() => setUiVisible((prev) => !prev)}
           >
-            {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
+            {uiVisible ? 'Hide UI' : 'Show UI'}
           </button>
-          <div
-            style={{
-              marginLeft: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              background: 'rgba(0, 255, 255, 0.08)',
-              border: '1px solid rgba(0,255,255,0.2)',
-              borderRadius: '10px',
-              padding: '0.5rem 0.9rem',
-              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-              color: '#0ff'
-            }}
-          >
-            <span style={{ opacity: 0.7 }}>Active Drops:</span>
-            <strong style={{ color: '#0f0' }}>{activeDropCount}</strong>
-          </div>
         </div>
 
-        <div
-          style={{
-            width: 'min(720px, 92vw)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '0.6rem',
-            marginTop: '0.5rem'
-          }}
-        >
-          <div
-            style={{
-              background: 'linear-gradient(120deg, rgba(0, 255, 180, 0.12), rgba(0, 180, 255, 0.18))',
-              border: '1px solid rgba(0,255,255,0.25)',
-              borderRadius: '12px',
-              padding: '0.75rem 1rem',
-              color: '#bdf',
-              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-              boxShadow: '0 0 16px rgba(0,255,255,0.25)'
-            }}
-          >
-            <div style={{ opacity: 0.65, letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Block/Tx Provider</div>
-            <div style={{ color: '#0ff', fontWeight: 700 }}>
-              {activeProvider ? providerLabel(activeProvider) : 'Resolving...'}
-            </div>
-          </div>
-        </div>
-
-        {(providerErrors.block || !ALLOW_BLOCKFROST_FALLBACK) && (
-          <div
-            style={{
-              width: 'min(720px, 92vw)',
-              marginTop: '0.4rem',
-              padding: '0.8rem 1rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(0,255,255,0.22)',
-              background: 'rgba(0, 30, 50, 0.72)',
-              color: '#bff',
-              fontSize: 'clamp(0.78rem, 1.9vw, 0.95rem)',
-              lineHeight: 1.5
-            }}
-          >
-            <div style={{ fontWeight: 700, color: '#7fffd4' }}>Provider debug</div>
-            {providerErrors.block && (
-              <div style={{ marginTop: '0.2rem' }}>
-                <span style={{ opacity: 0.7 }}>Block/Tx errors:</span> {providerErrors.block}
+        {uiVisible ? (
+          <div className="hud-shell">
+            <header className="hud-header glass-edge">
+              <div className="logo-lockup">
+                <div
+                  className={`logo-main glitch ${isGlitchActive ? 'glitch-active' : ''}`}
+                  data-text="MIDNIGHT"
+                >
+                  MIDNIGHT
+                </div>
+                <div className="logo-sub">EXPLORER</div>
               </div>
-            )}
-            <div style={{ marginTop: '0.2rem', opacity: 0.8 }}>
-              {ALLOW_BLOCKFROST_FALLBACK
-                ? 'Blockfrost fallback enabled when both Midnight providers fail.'
-                : 'Blockfrost fallback disabled; ensure Midnight Indexer or a custom testnet gateway URL/key are configured so data can load or enable REACT_APP_ALLOW_BLOCKFROST_FALLBACK.'}
-            </div>
-          </div>
-        )}
+            </header>
 
-        <div style={{ width: 'min(720px, 92vw)', padding: '1.15rem 1.25rem', background: 'rgba(0,20,40,0.95)', border: '2px solid #0ff', borderRadius: '16px', boxShadow: '0 0 30px #0ff', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.85rem', fontSize: 'clamp(0.8rem, 1.6vw, 1.05rem)', textAlign: 'center', backdropFilter: 'blur(6px)' }}>
-          {stats.map(stat => (
-            <div key={stat.label} className="stat-card">
-              <span className="stat-label">{stat.label}</span>
-              <span className="stat-value">{stat.value}</span>
-            </div>
-          ))}
-        </div>
+            <main className="hud-main">
+              <section className="glass-panel latest-block-panel">
+                <div className="panel-heading">
+                  <span className="eyebrow">Latest Block</span>
+                  <span className="eyebrow">Live</span>
+                </div>
+                <div className="block-number">#{latest?.height ?? '—'}</div>
+                <div className="block-summary">
+                  {`${latest?.txCount ?? 0} tx · ${blockSizeKb ? `${blockSizeKb} kB` : '—'} · ${formatTimeAgo(
+                    latest?.timestamp
+                  )}`}
+                </div>
+                <div className="block-hash">
+                  Hash: {latest?.hash ? `${latest.hash.slice(0, 28)}…${latest.hash.slice(-6)}` : '—'}
+                </div>
+                <div className="block-actions">
+                  <button
+                    type="button"
+                    className="stress-button"
+                    onClick={() => setIsTestRainActive((prev) => !prev)}
+                  >
+                    {isTestRainActive ? 'Stop Rain Stress Test' : 'Start Rain Stress Test'}
+                  </button>
+                  <div className="pill">
+                    <span>Active Drops:</span>
+                    <strong>{activeDropCount}</strong>
+                  </div>
+                </div>
+              </section>
 
-        <footer style={{ marginTop: 'auto', paddingBottom: '3vh', opacity: 0.7, fontSize: 'clamp(0.95rem, 2vw, 1.3rem)' }}>
-          <span className={`glitch ${isGlitchActive ? 'glitch-active' : ''}`} data-text="shhh...">shhh...</span> nothing ever happened
-        </footer>
-      </div>
+              <aside className="glass-panel timeline-panel">
+                <div className="panel-heading">
+                  <span className="eyebrow">Recent Blocks</span>
+                  <span className="eyebrow">{recentBlocks.length ? `${recentBlocks.length} tracked` : '—'}</span>
+                </div>
+                <div className="timeline-list">
+                  {recentBlocks.slice(0, 10).map((b, i) => (
+                    <div key={b.hash || i} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
+                      <span className="timeline-height">#{b?.height ?? '—'}</span>
+                      <span className="timeline-tx">{b?.txCount ?? 0} tx</span>
+                      <span className="timeline-age">{formatTimeAgo(b?.timestamp)}</span>
+                    </div>
+                  ))}
+                  {!recentBlocks.length && <div className="timeline-age">Waiting for blocks…</div>}
+                </div>
+              </aside>
+            </main>
 
-      {/* TIMELINE */}
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              right: isTimelineOpen ? '2vw' : '-288px',
-              transform: 'translateY(-50%)',
-              width: '320px',
-              height: '76vh',
-              maxHeight: '76vh',
-              background: 'rgba(0,10,30,0.96)',
-              borderRadius: '16px',
-              border: '2px solid #0ff',
-              boxShadow: '0 0 40px rgba(0,255,255,0.5)',
-              transition: 'right 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 100,
-              backdropFilter: 'blur(8px)',
-              overflow: 'hidden',
-              display: 'flex'
-            }}
-          >
-            <button
-              onClick={() => setIsTimelineOpen((p) => !p)}
-              style={{
-                width: '32px',
-                height: '100%',
-                background: 'rgba(0, 255, 255, 0.38)',
-                border: 'none',
-                borderRight: '2px solid #0ff',
-                borderRadius: '16px 0 0 16px',
-                color: '#0ff',
-                cursor: 'pointer',
-                boxShadow: '-10px 0 35px rgba(0,255,255,0.9)',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                outline: 'none'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                {isTimelineOpen ? (
-                  <path d="M15 18l-6-6 6-6" />
-                ) : (
-                  <path d="M9 18l6-6-6-6" />
-                )}
-              </svg>
-            </button>
-
-            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', scrollbarWidth: 'none' }}>
-              {recentBlocks.slice(0, 10).map((b, i) => (
-                <div key={b.hash} className={`timeline-row ${i === 0 ? 'timeline-row-latest' : ''}`}>
-                  <span className="timeline-height">#{b.height}</span>
-                  <span className="timeline-tx">{b.txCount || 0} tx</span>
+            <section className="stats-strip">
+              {stats.map((stat) => (
+                <div key={stat.label} className="stat-chip">
+                  <span className="stat-chip-label">{stat.label}</span>
+                  <span className="stat-chip-value">{stat.value}</span>
                 </div>
               ))}
-            </div>
+            </section>
+
+            <section className="glass-panel provider-panel">
+              <div className="panel-heading">
+                <span className="eyebrow">Provider Status</span>
+              </div>
+              <div className="provider-line">
+                Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
+              </div>
+              {providerErrors.block && (
+                <div className="provider-error">Block/Tx errors: {providerErrors.block}</div>
+              )}
+              <div className="provider-note">
+                {ALLOW_BLOCKFROST_FALLBACK
+                  ? 'Blockfrost fallback enabled when both Midnight providers fail.'
+                  : 'Blockfrost fallback disabled; configure Midnight Indexer or a custom testnet gateway so data can load.'}
+              </div>
+            </section>
           </div>
-        </>
-      )}
+        ) : (
+          <div className="hud-minimal-footer">MIDNIGHT TESTNET · live blocks</div>
+        )}
+      </div>
     </>
   );
+
 }
 
 export default App;
