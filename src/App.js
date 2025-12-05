@@ -747,21 +747,23 @@ function App() {
                   <span className="eyebrow">Recent Blocks</span>
                   <span className="eyebrow">{recentBlocks.length ? `${recentBlocks.length} tracked` : '—'}</span>
                 </div>
-                <div className="timeline-list">
-                  {recentBlocks.slice(0, 10).map((b, i) => {
-                    const isActive = latestHeight != null && b?.height === latestHeight;
-                    return (
-                      <div
-                        key={b.hash || i}
-                        className={`recent-block-row${isActive ? ' recent-block-row--active' : ''}`}
-                      >
-                        <span className="recent-block-height">#{b?.height ?? '—'}</span>
-                        <span className="recent-block-tx">{b?.txCount ?? 0} tx</span>
-                        <span className="recent-block-age">{formatTimeAgo(b?.timestamp)}</span>
-                      </div>
-                    );
-                  })}
-                  {!recentBlocks.length && <div className="recent-block-age">Waiting for blocks…</div>}
+                <div className="timeline-scroll">
+                  <div className="timeline-list">
+                    {recentBlocks.map((b, i) => {
+                      const isActive = latestHeight != null && b?.height === latestHeight;
+                      return (
+                        <div
+                          key={b.hash || i}
+                          className={`recent-block-row${isActive ? ' recent-block-row--active' : ''}`}
+                        >
+                          <span className="recent-block-height">#{b?.height ?? '—'}</span>
+                          <span className="recent-block-tx">{b?.txCount ?? 0} tx</span>
+                          <span className="recent-block-age">{formatTimeAgo(b?.timestamp)}</span>
+                        </div>
+                      );
+                    })}
+                    {!recentBlocks.length && <div className="recent-block-age">Waiting for blocks…</div>}
+                  </div>
                 </div>
               </aside>
             </main>
