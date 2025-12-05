@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import './App.css';
-import { fetchLatestBlockAndTxs, isBlockfrostAllowed } from './providers';
+import { fetchBlockTxsByHash, fetchLatestBlockAndTxs, isBlockfrostAllowed } from './providers';
 
 function App() {
   const [latest, setLatest] = useState(null);
@@ -19,6 +19,10 @@ function App() {
   const [consoleLines, setConsoleLines] = useState([
     { type: 'system', text: 'midnight:// type "help" for commands' }
   ]);
+  const [selectedBlock, setSelectedBlock] = useState(null);
+  const [selectedBlockTxs, setSelectedBlockTxs] = useState([]);
+  const [selectedBlockLoading, setSelectedBlockLoading] = useState(false);
+  const [selectedBlockError, setSelectedBlockError] = useState(null);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -50,6 +54,39 @@ function App() {
     if (!timestamp) return null;
     const value = Date.parse(timestamp);
     return Number.isNaN(value) ? null : Math.floor(value / 1000);
+  };
+
+  const providerLabel = (provider) => {
+    const id = provider?.id || provider;
+    if (id === 'midnight-indexer') return 'Midnight Indexer';
+    if (id === 'midnight-testnet') return 'Midnight testnet gateway';
+    if (id === 'blockfrost') return 'Blockfrost (preprod)';
+    return 'Unknown';
+  };
+
+  const formatBlockTimestamp = (ts) => {
+    if (!ts) return 'Unknown';
+    const date =
+      ts instanceof Date ? ts : new Date(typeof ts === 'number' ? ts : Date.parse(ts));
+    if (!Number.isFinite(date.getTime())) return 'Unknown';
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const sanitizeTxMeta = (txs, blockHash) => {
+    if (!Array.isArray(txs)) return null;
+    return txs.map((tx, idx) => {
+      const hash = typeof tx?.hash === 'string' ? tx.hash : `tx-${blockHash || 'unknown'}-${idx}`;
+      const sizeBytes =
+        typeof tx?.sizeBytes === 'number' ? tx.sizeBytes : typeof tx?.size === 'number' ? tx.size : null;
+      return { ...tx, hash, sizeBytes };
+    });
   };
 
   const getScale = () => {
@@ -297,20 +334,6 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const sanitizeTxMeta = (txs, blockHash) => {
-        if (!Array.isArray(txs)) return null;
-        return txs.map((tx, idx) => {
-          const hash = typeof tx?.hash === 'string' ? tx.hash : `tx-${blockHash || 'unknown'}-${idx}`;
-          const sizeBytes =
-            typeof tx?.sizeBytes === 'number'
-              ? tx.sizeBytes
-              : typeof tx?.size === 'number'
-              ? tx.size
-              : null;
-          return { ...tx, hash, sizeBytes };
-        });
-      };
-
       const buildHeaders = (provider) => {
         const headers = { 'Content-Type': 'application/json' };
         if (provider?.authHeaderName && provider?.authHeaderValue) {
@@ -326,6 +349,11 @@ function App() {
       };
 
       const processBlock = async (blockData, txList, prevBlockForRate, provider) => {
+        const blockWithProvider = {
+          ...blockData,
+          providerId: provider?.id ?? null,
+          providerName: providerLabel(provider)
+        };
         const txCount = blockData.txCount ?? (Array.isArray(txList) ? txList.length : 0);
         const currentTime = parseSeconds(blockData.timestamp);
         const prevTime = parseSeconds(prevBlockForRate?.timestamp);
@@ -337,13 +365,13 @@ function App() {
           setTxRate(txCount ?? null);
         }
 
-        setLatest(blockData);
+        setLatest(blockWithProvider);
         setRecentBlocks((prev) => {
-          const filtered = prev.filter((b) => b.hash !== blockData.hash);
-          return [blockData, ...filtered].slice(0, 50);
+          const filtered = prev.filter((b) => b.hash !== blockWithProvider.hash);
+          return [blockWithProvider, ...filtered].slice(0, 50);
         });
 
-        const txMeta = sanitizeTxMeta(txList, blockData.hash);
+        const txMeta = sanitizeTxMeta(txList, blockWithProvider.hash);
         if (txMeta && txMeta.length) {
           spawnOneColumnPerTx(txMeta);
         } else {
@@ -759,6 +787,26 @@ function App() {
   const flowLabel = getFlowLabel(activityStats.tx10m);
   const txLast10Min = activityStats.tx10m;
 
+  const openBlockDetails = async (block) => {
+    if (!block || !block.hash) return;
+
+    setSelectedBlock(block);
+    setSelectedBlockLoading(true);
+    setSelectedBlockError(null);
+    setSelectedBlockTxs([]);
+
+    try {
+      const txs = await fetchBlockTxsByHash(block.hash);
+      const normalized = sanitizeTxMeta(txs, block.hash);
+      setSelectedBlockTxs(Array.isArray(normalized) ? normalized : []);
+    } catch (err) {
+      console.error('[BlockDetails] failed to load txs', err);
+      setSelectedBlockError('Failed to load transactions for this block.');
+    } finally {
+      setSelectedBlockLoading(false);
+    }
+  };
+
   const stats = [
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
@@ -787,14 +835,6 @@ function App() {
     if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
     const hours = Math.floor(diffSeconds / 3600);
     return `${hours}h ago`;
-  };
-
-  const providerLabel = (provider) => {
-    const id = provider?.id || provider;
-    if (id === 'midnight-indexer') return 'Midnight Indexer';
-    if (id === 'midnight-testnet') return 'Midnight testnet gateway';
-    if (id === 'blockfrost') return 'Blockfrost (preprod)';
-    return 'Unknown';
   };
 
   const ambientHint = null;
@@ -880,22 +920,29 @@ function App() {
                 debugVisible ? 'latest-block-panel--with-debug' : 'latest-block-panel--no-debug'
               }`}
             >
-                <div className="latest-block-top">
-                  <div className="latest-block-header-row">
-                    <div className="latest-block-label">LATEST BLOCK</div>
-                    <div className="latest-block-live-badge">LIVE</div>
+                <button
+                  type="button"
+                  className="latest-block-clickable"
+                  onClick={() => latest && openBlockDetails(latest)}
+                  aria-label="Open latest block details"
+                >
+                  <div className="latest-block-top">
+                    <div className="latest-block-header-row">
+                      <div className="latest-block-label">LATEST BLOCK</div>
+                      <div className="latest-block-live-badge">LIVE</div>
+                    </div>
+
+                    <div className="latest-block-number">#{latest?.height ?? '—'}</div>
+
+                    <div className="latest-block-meta">
+                      <span>{`${latest?.txCount ?? 0} tx`}</span>
+                      <span>{blockSizeKb ? `${blockSizeKb} kB` : '—'}</span>
+                      <span>{formatTimeAgo(latest?.timestamp)}</span>
+                    </div>
+
+                    <div className="latest-block-hash">Hash: {latestHashDisplay}</div>
                   </div>
-
-                  <div className="latest-block-number">#{latest?.height ?? '—'}</div>
-
-                  <div className="latest-block-meta">
-                    <span>{`${latest?.txCount ?? 0} tx`}</span>
-                    <span>{blockSizeKb ? `${blockSizeKb} kB` : '—'}</span>
-                    <span>{formatTimeAgo(latest?.timestamp)}</span>
-                  </div>
-
-                  <div className="latest-block-hash">Hash: {latestHashDisplay}</div>
-                </div>
+                </button>
 
                 {debugVisible && (
                   <div className="latest-block-footer debug-controls">
@@ -927,6 +974,7 @@ function App() {
                         <div
                           key={b.hash || i}
                           className={`recent-block-row${isActive ? ' recent-block-row--active' : ''}`}
+                          onClick={() => openBlockDetails(b)}
                         >
                           <span className="recent-block-height">#{b?.height ?? '—'}</span>
                           <span className="recent-block-tx">{b?.txCount ?? 0} tx</span>
@@ -948,6 +996,78 @@ function App() {
                 </div>
               ))}
             </section>
+
+            {selectedBlock && (
+              <section className="panel block-details-panel glass-panel">
+                <div className="block-details-header">
+                  <div>
+                    <div className="block-details-label">BLOCK DETAILS</div>
+                    <div className="block-details-title">#{selectedBlock.height ?? '?'}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="block-details-close"
+                    onClick={() => {
+                      setSelectedBlock(null);
+                      setSelectedBlockTxs([]);
+                      setSelectedBlockError(null);
+                      setSelectedBlockLoading(false);
+                    }}
+                    aria-label="Close block details"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="block-details-meta">
+                  <div className="meta-row">
+                    <span className="meta-label">Hash</span>
+                    <span className="meta-value meta-value--hash">{selectedBlock.hash}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Time</span>
+                    <span className="meta-value">{formatBlockTimestamp(selectedBlock.timestamp)}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Size</span>
+                    <span className="meta-value">
+                      {selectedBlock.size != null ? `${selectedBlock.size} bytes` : '—'}
+                    </span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Tx</span>
+                    <span className="meta-value">{selectedBlock.txCount ?? selectedBlock.tx_count ?? '0'}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Provider</span>
+                    <span className="meta-value">{selectedBlock.providerName || providerLabel(selectedBlock.providerId)}</span>
+                  </div>
+                </div>
+
+                <div className="block-details-txs">
+                  <div className="block-details-txs-header">
+                    Transactions
+                    {selectedBlockLoading && <span className="block-details-txs-status">Loading…</span>}
+                    {selectedBlockError && (
+                      <span className="block-details-txs-status error">{selectedBlockError}</span>
+                    )}
+                  </div>
+
+                  <div className="block-details-txs-list">
+                    {!selectedBlockLoading && !selectedBlockError && selectedBlockTxs.length === 0 && (
+                      <div className="block-details-empty">No transactions found for this block.</div>
+                    )}
+
+                    {selectedBlockTxs.map((tx, idx) => (
+                      <div key={tx.hash ?? idx} className="block-details-tx-row">
+                        <span className="tx-index">#{idx + 1}</span>
+                        <span className="tx-hash">{tx.hash ?? '(unknown tx hash)'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
 
             <section className="panel footer-panel glass-panel">
               <div className="footer-row footer-row-primary">

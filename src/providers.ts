@@ -198,6 +198,29 @@ export async function fetchLatestBlockAndTxs(): Promise<LatestBlockAndTxs> {
   throw new Error(`All providers failed: ${failures.join(' | ')}`);
 }
 
+export async function fetchBlockTxsByHash(blockHash: string): Promise<NormalizedTx[]> {
+  if (!blockHash) {
+    throw new Error('Block hash is required');
+  }
+
+  const providers = buildProviderOrder();
+  const failures: string[] = [];
+
+  for (const provider of providers) {
+    try {
+      const txs = normalizeTxs(provider, await fetchJson<any>(`${provider.baseUrl}/blocks/${blockHash}/txs`, provider));
+      console.info(`[providers] using ${provider.id} for block txs ${blockHash}`);
+      return txs;
+    } catch (err: any) {
+      console.warn(`[providers] ${provider.id} block txs failed: ${err?.message ?? err}`);
+      failures.push(`${provider.id}: ${err?.message ?? err}`);
+    }
+  }
+
+  console.error('[providers] all providers failed for block txs', failures);
+  throw new Error(`All providers failed: ${failures.join(' | ')}`);
+}
+
 export async function fetchLatestEpoch(): Promise<{
   provider: ProviderConfig;
   epochNumber: number;
