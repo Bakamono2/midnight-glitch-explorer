@@ -12,7 +12,8 @@ function App() {
   const [activeProvider, setActiveProvider] = useState(null);
   const [providerErrors, setProviderErrors] = useState({ block: null });
   const [uiVisible, setUiVisible] = useState(true);
-  const [debugVisible, setDebugVisible] = useState(true);
+  const [debugVisible, setDebugVisible] = useState(false);
+  const [consoleVisible, setConsoleVisible] = useState(false);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleInput, setConsoleInput] = useState('');
   const [consoleLines, setConsoleLines] = useState([
@@ -236,6 +237,25 @@ function App() {
       if (activeTimer) clearTimeout(activeTimer);
       if (scheduleTimer) clearTimeout(scheduleTimer);
     };
+  }, []);
+
+  // Secret shortcut to toggle the midnight console visibility (Ctrl+Shift+M)
+  useEffect(() => {
+    const handler = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'm') {
+        event.preventDefault();
+        setConsoleVisible((visible) => {
+          const nextVisible = !visible;
+          if (nextVisible) {
+            setConsoleOpen(true);
+          }
+          return nextVisible;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   useEffect(() => {
@@ -752,42 +772,44 @@ function App() {
           </button>
         </div>
 
-        <div
-          className={`midnight-console${consoleOpen ? ' midnight-console--open' : ' midnight-console--collapsed'}`}
-        >
-          <div className="midnight-console-header" onClick={() => setConsoleOpen((open) => !open)}>
-            <span className="midnight-console-title">midnight://</span>
-            <span className="midnight-console-toggle">{consoleOpen ? '▾' : '▴'}</span>
-          </div>
-
-          {consoleOpen && (
-            <div className="midnight-console-body">
-              <div className="midnight-console-log">
-                {consoleLines.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className={`console-line${line.type ? ` console-line--${line.type}` : ''}`}
-                  >
-                    {line.text}
-                  </div>
-                ))}
-              </div>
-
-              <form className="midnight-console-input-row" onSubmit={handleConsoleSubmit}>
-                <span className="midnight-console-prompt">midnight://</span>
-                <input
-                  type="text"
-                  value={consoleInput}
-                  onChange={(e) => setConsoleInput(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="midnight-console-input"
-                  placeholder="type a command, e.g. `help`"
-                />
-              </form>
+        {consoleVisible && (
+          <div
+            className={`midnight-console${consoleOpen ? ' midnight-console--open' : ' midnight-console--collapsed'}`}
+          >
+            <div className="midnight-console-header" onClick={() => setConsoleOpen((open) => !open)}>
+              <span className="midnight-console-title">midnight://</span>
+              <span className="midnight-console-toggle">{consoleOpen ? '▾' : '▴'}</span>
             </div>
-          )}
-        </div>
+
+            {consoleOpen && (
+              <div className="midnight-console-body">
+                <div className="midnight-console-log">
+                  {consoleLines.map((line, idx) => (
+                    <div
+                      key={idx}
+                      className={`console-line${line.type ? ` console-line--${line.type}` : ''}`}
+                    >
+                      {line.text}
+                    </div>
+                  ))}
+                </div>
+
+                <form className="midnight-console-input-row" onSubmit={handleConsoleSubmit}>
+                  <span className="midnight-console-prompt">midnight://</span>
+                  <input
+                    type="text"
+                    value={consoleInput}
+                    onChange={(e) => setConsoleInput(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="midnight-console-input"
+                    placeholder="type a command, e.g. `help`"
+                  />
+                </form>
+              </div>
+            )}
+          </div>
+        )}
 
         {uiVisible ? (
           <div className="hud-shell">
