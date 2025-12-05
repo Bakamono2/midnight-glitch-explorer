@@ -13,7 +13,7 @@ function App() {
   const [isGlitchActive, setIsGlitchActive] = useState(false);
   const [activeProvider, setActiveProvider] = useState(null);
   const [providerErrors, setProviderErrors] = useState({ block: null });
-  const [focusMode, setFocusMode] = useState(false);
+  const [uiVisible, setUiVisible] = useState(true);
 
   const canvasRef = useRef(null);
   const columnsRef = useRef([]);
@@ -629,11 +629,52 @@ function App() {
 
   const blockSizeKb = useMemo(() => (latest?.size ? (latest.size / 1024).toFixed(1) : null), [latest]);
 
+  const activityStats = useMemo(() => {
+    if (!recentBlocks?.length) {
+      return { blocks10m: 0, tx10m: 0, avgBlockSizeKb: null };
+    }
+
+    const now = Date.now();
+    const tenMinutes = 10 * 60 * 1000;
+
+    const blocksLast10 = recentBlocks.filter((b) => {
+      if (!b?.timestamp) return false;
+      const t = typeof b.timestamp === 'number' ? b.timestamp : Date.parse(b.timestamp);
+      if (!Number.isFinite(t)) return false;
+      return now - t <= tenMinutes;
+    });
+
+    const blocks10m = blocksLast10.length;
+    const tx10m = blocksLast10.reduce((sum, b) => sum + (typeof b?.txCount === 'number' ? b.txCount : 0), 0);
+
+    const last50 = recentBlocks.slice(0, 50);
+    const sizes = last50
+      .map((b) => (typeof b?.size === 'number' ? b.size : null))
+      .filter((v) => v != null);
+
+    const avgBlockSizeKb = sizes.length ? sizes.reduce((sum, v) => sum + v, 0) / sizes.length / 1024 : null;
+
+    return { blocks10m, tx10m, avgBlockSizeKb };
+  }, [recentBlocks]);
+
   const stats = [
     { label: 'Tx/s', value: txRate != null ? txRate.toFixed(2) : '...' },
     { label: 'Avg Tx/Block (10)', value: averageTxPerBlock || '-' },
     { label: 'Block Size', value: blockSizeKb ? `${blockSizeKb} KB` : '-' },
-    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' }
+    { label: 'Since Last Block', value: timeSinceBlock != null ? `${timeSinceBlock}s` : '...' },
+    {
+      label: 'Blocks (10 min)',
+      value: activityStats.blocks10m != null ? activityStats.blocks10m : '—'
+    },
+    {
+      label: 'Tx (10 min)',
+      value: activityStats.tx10m != null ? activityStats.tx10m.toLocaleString() : '—'
+    },
+    {
+      label: 'Avg Block Size (50)',
+      value:
+        activityStats.avgBlockSizeKb != null ? `${activityStats.avgBlockSizeKb.toFixed(1)} kB` : '—'
+    }
   ];
 
   const providerLabel = (provider) => {
@@ -662,15 +703,17 @@ function App() {
         }}
       />
 
-      <button
-        type="button"
-        className="focus-toggle"
-        onClick={() => setFocusMode((prev) => !prev)}
-      >
-        {focusMode ? 'Exit Focus' : 'Focus'}
-      </button>
+      <div className="ui-toggle-container">
+        <button
+          type="button"
+          className="ui-toggle-button"
+          onClick={() => setUiVisible((prev) => !prev)}
+        >
+          {uiVisible ? 'Hide UI' : 'Show UI'}
+        </button>
+      </div>
 
-      {!focusMode && (
+      {uiVisible && (
         <>
           <div
             style={{
