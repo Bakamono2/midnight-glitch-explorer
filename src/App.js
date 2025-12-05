@@ -239,16 +239,43 @@ function App() {
     };
   }, []);
 
-  // Secret shortcut to toggle the midnight console visibility (Ctrl+Alt+M)
+  // Secret shortcuts to toggle the midnight console visibility (Ctrl+Alt+M primary, backtick fallback)
   useEffect(() => {
     const handler = (event) => {
-      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'm') {
+      const target = event.target;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.getAttribute('contenteditable') === 'true');
+
+      if (isInput) return;
+
+      const key = event.key;
+      const lowerKey = typeof key === 'string' ? key.toLowerCase() : key;
+      const code = event.code;
+
+      const isCtrlAltM = event.ctrlKey && event.altKey && (lowerKey === 'm' || code === 'KeyM');
+      const isBacktick = !event.ctrlKey && !event.altKey && !event.shiftKey && (key === '`' || code === 'Backquote');
+
+      if (isCtrlAltM || isBacktick) {
+        console.log('[midnight-console] hotkey detected:', {
+          key,
+          code,
+          ctrl: event.ctrlKey,
+          alt: event.altKey,
+          shift: event.shiftKey
+        });
+
         event.preventDefault();
+
         setConsoleVisible((visible) => {
           const nextVisible = !visible;
+
           if (nextVisible) {
             setConsoleOpen(true);
           }
+
           return nextVisible;
         });
       }
