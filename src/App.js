@@ -864,11 +864,11 @@ function App() {
             </header>
 
             <main className="hud-main">
-              <section
-                className={`glass-panel latest-block-panel ${
-                  debugVisible ? 'latest-block-panel--with-debug' : 'latest-block-panel--no-debug'
-                }`}
-              >
+            <section
+              className={`panel latest-block-panel glass-panel ${
+                debugVisible ? 'latest-block-panel--with-debug' : 'latest-block-panel--no-debug'
+              }`}
+            >
                 <div className="latest-block-top">
                   <div className="latest-block-header-row">
                     <div className="latest-block-label">LATEST BLOCK</div>
@@ -938,22 +938,33 @@ function App() {
               ))}
             </section>
 
-            {debugVisible && (
-              <section className="glass-panel provider-panel debug-panel">
-                <div className="provider-title">Provider Status</div>
-                <div className="provider-line">
-                  Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
+            <section className="panel footer-panel glass-panel">
+              <div className="footer-row footer-row-primary">
+                <div className="footer-brand">MIDNIGHT TESTNET-02 · LIVE</div>
+                <div className="footer-message">Listening for new blocks…</div>
+                <div className="footer-hints">
+                  <span className="footer-hint">[H] Hide UI</span>
+                  <span className="footer-hint">[`] Console</span>
                 </div>
-                {providerErrors.block && (
-                  <div className="provider-error">Block/Tx errors: {providerErrors.block}</div>
-                )}
-                <div className="provider-note">
-                  {ALLOW_BLOCKFROST_FALLBACK
-                    ? 'Blockfrost fallback enabled when both Midnight providers fail.'
-                    : 'Blockfrost fallback disabled; configure Midnight Indexer or a custom testnet gateway so data can load.'}
+              </div>
+
+              {debugVisible && (
+                <div className="footer-row footer-row-debug debug-panel">
+                  <div className="provider-title">Provider Status</div>
+                  <div className="provider-line">
+                    Block/Tx Provider: <span className="accent">{activeProvider ? providerLabel(activeProvider) : 'Resolving...'}</span>
+                  </div>
+                  {providerErrors.block && (
+                    <div className="provider-error">Block/Tx errors: {providerErrors.block}</div>
+                  )}
+                  <div className="provider-note">
+                    {ALLOW_BLOCKFROST_FALLBACK
+                      ? 'Blockfrost fallback enabled when both Midnight providers fail.'
+                      : 'Blockfrost fallback disabled; configure Midnight Indexer or a custom testnet gateway so data can load.'}
+                  </div>
                 </div>
-              </section>
-            )}
+              )}
+            </section>
           </div>
         ) : (
           <div className="hud-minimal-footer">MIDNIGHT TESTNET · live blocks</div>

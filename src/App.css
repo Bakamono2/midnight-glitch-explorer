@@ -429,6 +429,66 @@ body {
   gap: 0.35rem;
 }
 
+.footer-panel {
+  margin-top: 1.25rem;
+  padding: 0.7rem 1.1rem 0.7rem;
+  border-radius: 18px;
+  background: rgba(0, 8, 16, 0.9);
+  border: 1px solid rgba(0, 255, 210, 0.35);
+  box-shadow: 0 0 24px rgba(0, 255, 210, 0.25), 0 0 6px rgba(0, 255, 210, 0.85) inset;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.footer-row-primary {
+  color: rgba(200, 245, 240, 0.9);
+}
+
+.footer-brand {
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(180, 240, 235, 0.95);
+}
+
+.footer-message {
+  flex: 1;
+  text-align: center;
+  font-size: 0.76rem;
+  color: rgba(165, 220, 225, 0.9);
+}
+
+.footer-hints {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: rgba(140, 205, 205, 0.9);
+}
+
+.footer-hint::before {
+  content: '•';
+  margin-right: 0.25rem;
+  opacity: 0.6;
+}
+
+.footer-row-debug {
+  border-top: 1px solid rgba(0, 255, 210, 0.22);
+  padding-top: 0.4rem;
+  font-size: 0.76rem;
+  color: rgba(155, 215, 220, 0.95);
+}
+
 .provider-title {
   font-size: 0.72rem;
   letter-spacing: 0.16em;
