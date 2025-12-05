@@ -39,6 +39,7 @@ function App() {
       durationMs: 1600
     }
   });
+  const consoleLogRef = useRef(null);
 
   const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?;:*/';
   const [overlayMode, setOverlayMode] = useState('dark');
@@ -238,6 +239,16 @@ function App() {
       if (scheduleTimer) clearTimeout(scheduleTimer);
     };
   }, []);
+
+  // Keep the console log scrolled to the newest entry when visible/open
+  useEffect(() => {
+    if (!consoleVisible || !consoleOpen) return;
+
+    const el = consoleLogRef.current;
+    if (!el) return;
+
+    el.scrollTop = el.scrollHeight;
+  }, [consoleLines, consoleVisible, consoleOpen]);
 
   // Secret shortcuts to toggle the midnight console visibility (Ctrl+Alt+M primary, backtick fallback)
   useEffect(() => {
@@ -810,7 +821,7 @@ function App() {
 
             {consoleOpen && (
               <div className="midnight-console-body">
-                <div className="midnight-console-log">
+                <div className="midnight-console-log" ref={consoleLogRef}>
                   {consoleLines.map((line, idx) => (
                     <div
                       key={idx}
