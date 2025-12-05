@@ -328,7 +328,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: 10.5rem;
+  /* Responsive height: min 12rem, prefers 40vh, max 22rem */
+  max-height: clamp(12rem, 40vh, 22rem);
   overflow-y: auto;
   padding-right: 0.2rem;
 }
@@ -364,7 +365,7 @@ body {
 
 @media (max-width: 768px) {
   .timeline-scroll {
-    max-height: 14rem;
+    max-height: clamp(11rem, 55vh, 20rem);
   }
 }
 
