@@ -250,7 +250,7 @@ function App() {
     el.scrollTop = el.scrollHeight;
   }, [consoleLines, consoleVisible, consoleOpen]);
 
-  // Secret shortcuts to toggle the midnight console visibility (Ctrl+Alt+M primary, backtick fallback)
+  // Secret shortcut to toggle the midnight console visibility (Ctrl+Alt+M)
   useEffect(() => {
     const handler = (event) => {
       const target = event.target;
@@ -267,9 +267,8 @@ function App() {
       const code = event.code;
 
       const isCtrlAltM = event.ctrlKey && event.altKey && (lowerKey === 'm' || code === 'KeyM');
-      const isBacktick = !event.ctrlKey && !event.altKey && !event.shiftKey && (key === '`' || code === 'Backquote');
 
-      if (isCtrlAltM || isBacktick) {
+      if (isCtrlAltM) {
         console.log('[midnight-console] hotkey detected:', {
           key,
           code,
