@@ -49,6 +49,7 @@ function App() {
   const [overlayMode, setOverlayMode] = useState('dark');
 
   const ALLOW_BLOCKFROST_FALLBACK = isBlockfrostAllowed();
+  const MAX_TRACKED_BLOCKS = 200;
 
   const parseSeconds = (timestamp) => {
     if (!timestamp) return null;
@@ -368,7 +369,7 @@ function App() {
         setLatest(blockWithProvider);
         setRecentBlocks((prev) => {
           const filtered = prev.filter((b) => b.hash !== blockWithProvider.hash);
-          return [blockWithProvider, ...filtered].slice(0, 50);
+          return [blockWithProvider, ...filtered].slice(0, MAX_TRACKED_BLOCKS);
         });
 
         const txMeta = sanitizeTxMeta(txList, blockWithProvider.hash);
